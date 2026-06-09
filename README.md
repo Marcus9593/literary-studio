@@ -2,339 +2,655 @@
 
 <div align="center">
 
-**AI 驱动的网文与剧本创作平台 / AI-Powered Novel & Screenplay Writing Platform**
+**编剧级 AI 创作工作台 — 面向网文、长篇叙事与剧本的专业写作平台**
 
-[English](#english) · [中文](#中文)
+*Screenplay-grade AI writing workspace for web novels, long-form narrative, and screenplays*
+
+[中文](#中文) · [English](#english)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)
+![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)
 ![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)
 ![React](https://img.shields.io/badge/React-19-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.6.0-orange.svg)
 
 </div>
 
 ---
 
 <a id="中文"></a>
-## 📖 中文
 
-### 简介
+## 目录
 
-文匠 Studio 是一个面向网文和剧本创作者的 AI 辅助写作平台。它将 AI 对话、智能续写、故事知识管理、版本控制和多格式导出整合在一个统一的工作台中，帮助作者更高效地完成创作。
+- [项目是什么](#项目是什么)
+- [解决什么问题](#解决什么问题)
+- [核心功能](#核心功能)
+- [技术架构](#技术架构)
+- [环境要求](#环境要求)
+- [快速开始](#快速开始)
+- [使用指南](#使用指南)
+- [跨平台安装与部署](#跨平台安装与部署)
+- [生产环境部署](#生产环境部署)
+- [环境变量参考](#环境变量参考)
+- [项目结构](#项目结构)
+- [故障排查](#故障排查)
+- [贡献指南](#贡献指南)
+- [许可证](#许可证)
 
-### 核心功能
+---
 
-| 功能模块 | 说明 |
-|---------|------|
-| 🖊️ **智能写作工作台** | Markdown 编辑器 + AI 对话侧栏，支持焦点模式、自动保存 |
-| 🤖 **AI 续写与改写** | 通过 WebSocket 流式生成，支持续写、扩写、润色、改写 |
-| 📚 **故事知识库** | 自动提取人物、关系、时间线、伏笔、地点，构建结构化知识图谱 |
-| 🧠 **RAG 语义检索** | 基于 LanceDB 向量数据库，AI 对话时自动检索相关上下文 |
-| 📋 **故事规划器** | 章节路线图、写作任务调度、今日建议、故事目标追踪 |
-| ✅ **写后校验** | 自动检查一致性、伏笔回收、字数阈值等质量指标 |
-| 📊 **健康度仪表盘** | 故事 DNA 分析、冲突追踪、角色弧线监控 |
-| 🎬 **剧本引擎** | 专业剧本格式支持（AWR 规则）、场景/分集/分镜管理 |
-| 📤 **多格式导出** | 支持 ZIP、DOCX、EPUB、Fountain 格式 |
-| 🔄 **版本管理** | 章节级版本快照，支持对比和回滚 |
-| 💬 **留言板** | 内置反馈系统，支持图片上传 |
-| 🔌 **MCP 集成** | 支持 Model Context Protocol 服务器扩展 |
+## 项目是什么
 
-### 技术架构
+**文匠 Studio**（Literary Studio）是一款面向叙事创作者的 **本地优先（Local-first）AI 写作工作台**。它将 Markdown 编辑器、AI 对话引擎、故事知识图谱、创作规划、质量校验、版本管理与多格式导出整合在同一界面中，帮助网文作者、编剧和长篇叙事写作者完成从构思、大纲、成稿到改稿的全流程创作。
+
+与通用 AI 聊天工具不同，文匠 Studio 围绕**长篇叙事**的特有需求设计：
+
+- 章节级工作区与自动保存
+- 跨章节的人物、伏笔、时间线一致性管理
+- 基于向量检索（RAG）的上下文感知续写
+- 内嵌 **literary-writer** 技能包，提供网文写章、大纲规划、审稿等专业工作流
+- 支持剧本格式（AWR 规则）与 Fountain 导出
+
+> 产品定位：**编剧级创作台** — 为叙事创作者打磨每一稿。
+
+---
+
+## 解决什么问题
+
+长篇创作在使用通用 AI 工具时，普遍面临以下痛点。文匠 Studio 针对这些问题提供了系统化解决方案：
+
+| 痛点 | 文匠 Studio 的解法 |
+|------|-------------------|
+| AI 缺乏长篇记忆，续写容易「跑偏」 | LanceDB 向量检索 + 故事知识库，对话与续写时自动注入相关章节、角色与伏笔上下文 |
+| 人物设定、伏笔、时间线难以追踪 | 自动提取并结构化存储角色、关系、时间线、伏笔、地点，提供可视化知识图谱 |
+| 创作进度混乱，缺乏规划 | 故事规划器：章节路线图、写作任务调度、今日建议、目标追踪 |
+| 改稿后难以回退 | 章节级版本快照，支持差异对比与一键回滚 |
+| 多工具切换（编辑器、笔记、AI、导出）效率低 | 统一工作台：编辑、对话、审稿、导出在同一项目内完成 |
+| AI 能力难以扩展 | AI 中心支持多模型配置、Skill 技能包、MCP（Model Context Protocol）服务器接入 |
+| 稿件格式多样，导入导出麻烦 | 支持 DOCX / PDF / HTML 导入，ZIP / DOCX / EPUB / Fountain 导出 |
+| 本地数据安全与隐私 | 数据默认存储在本地 `data/` 目录，API 密钥仅存本机，无需上传云端 |
+
+---
+
+## 核心功能
+
+### 创作工作台
+
+| 模块 | 说明 |
+|------|------|
+| **智能写作工作台** | Markdown 编辑器 + AI 对话侧栏；焦点模式、自动保存、章节树导航 |
+| **AI 续写与改写** | WebSocket 流式生成；支持续写、扩写、润色、改写；总编辑代理按意图自动路由 |
+| **多会话管理** | 项目内多对话会话，支持焦点会话与上下文记忆 |
+| **文档导入** | 上传 DOCX / PDF / HTML，自动转换为 Markdown 章节 |
+| **多格式导出** | 单章或整书导出为 ZIP、DOCX、EPUB、Fountain |
+
+### 故事引擎
+
+| 模块 | 说明 |
+|------|------|
+| **故事知识库** | 角色、关系、时间线、伏笔、地点的结构化存储与可视化 |
+| **作品圣经（Bible）** | 世界观、设定集、核心冲突等创作约束文档 |
+| **节拍与悬念** | 故事节拍（Beats）规划、悬念线追踪 |
+| **RAG 语义检索** | 基于 LanceDB 向量库，AI 对话时检索最相关章节片段 |
+| **故事规划器** | 章节路线图、创作任务、今日建议、目标进度 |
+| **健康度仪表盘** | 故事 DNA 分析、冲突追踪、角色弧线、质量评分（6 维度） |
+| **写后校验** | 一致性检查、伏笔回收、字数阈值等自动质量指标 |
+
+### 协作与治理
+
+| 模块 | 说明 |
+|------|------|
+| **创作看板** | 全局数据一览：各项目改稿章节数、改动字数、近 7 日趋势 |
+| **审稿中心** | 跨项目选稿审稿：规则引擎 + Governor 决策 + 启发式正文分析 |
+| **项目版本** | 大改前创建快照，对比差异，一键回滚 |
+| **素材中心** | 跨项目角色卡、地点、灵感碎片备忘 |
+| **项目共享** | 多用户项目协作与权限控制（管理员可管理用户） |
+| **留言板** | 内置反馈系统，支持图文与多层回复 |
+
+### 剧本引擎
+
+| 模块 | 说明 |
+|------|------|
+| **专业剧本格式** | 遵循 AWR 规则的场景/对白排版 |
+| **结构管理** | 分集、场景、分镜层级管理 |
+| **Fountain 导出** | 行业标准剧本交换格式 |
+
+### AI 中心
+
+| 模块 | 说明 |
+|------|------|
+| **多模型支持** | OpenAI / Anthropic / DeepSeek / Gemini 等兼容 API；支持 CC-Switch 导入 |
+| **Skill 技能包** | 内嵌 literary-writer（v7.0），含网文初始化、规划、写章、审稿等子技能 |
+| **MCP 集成** | Model Context Protocol 服务器发现、安装、调用与健康检查 |
+| **工作流引擎** | 多步骤技能工作流（如角色塑造大师、大纲结构大师） |
+
+---
+
+## 技术架构
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Frontend (React)                  │
-│         Vite + Tailwind CSS + Zustand + WS          │
-└──────────┬──────────────────────────┬───────────────┘
-           │ REST API                 │ WebSocket
-           ▼                          ▼
-┌─────────────────────────────────────────────────────┐
-│               Backend (Node.js + Express)            │
-│  Auth · Projects · Chat · Story Engine · Versions   │
-│  Orchestrator · Event Bus · MCP Adapter             │
-└──┬────────────────┬─────────────────┬───────────────┘
-   │                │                 │
-   ▼                ▼                 ▼
-┌────────┐   ┌───────────┐   ┌──────────────┐
-│  Files │   │  SQLite   │   │   LanceDB    │
-│ (JSON) │   │  (meta)   │   │  (vectors)   │
-└────────┘   └───────────┘   └──────────────┘
-                                   ▲
-┌──────────────────────────────────┘
-│  Python Backend (文档处理)
-│  DOCX/PDF/HTML → Markdown 转换
-│  Markdown → DOCX 导出
-└──────────────────────────────────
+┌──────────────────────────────────────────────────────────────┐
+│                     Frontend（React 19）                      │
+│           Vite · Tailwind CSS · Zustand · WebSocket           │
+└────────────┬─────────────────────────────┬───────────────────┘
+             │ REST API                     │ WebSocket（流式 AI）
+             ▼                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                  Backend（Node.js 22 + Express）              │
+│  认证 · 项目管理 · 聊天 · 故事引擎 · 版本 · 编排器 · 事件总线  │
+│  总编辑代理 · 工作流引擎 · MCP 适配器 · 文档转换（Node 侧）     │
+└──────┬─────────────────┬──────────────────┬──────────────────┘
+       │                 │                  │
+       ▼                 ▼                  ▼
+┌────────────┐   ┌──────────────┐   ┌────────────────┐
+│ 文件存储    │   │   SQLite     │   │    LanceDB     │
+│（JSON/MD） │   │  （元数据）   │   │  （向量/RAG）   │
+└────────────┘   └──────────────┘   └────────────────┘
+                                              ▲
+┌─────────────────────────────────────────────┘
+│  Python Backend（可选 · 文档处理增强）
+│  DOCX / PDF / HTML → Markdown · Markdown → DOCX
+└──────────────────────────────────────────────────────────────
 ```
 
-### 快速开始
+**数据流要点：**
 
-#### 环境要求
+- 所有项目数据默认写入本地 `data/` 目录，便于备份与迁移
+- AI 请求经编排器（Orchestrator）路由至多模型提供商
+- 章节变更通过事件总线触发知识库同步与向量索引更新
+- literary-writer 技能包在启动时自动绑定，无需额外安装到 `~/.cursor/skills`
 
-- **Node.js** >= 18
-- **Python** >= 3.9
-- **npm** 或 **pnpm**
+---
 
-#### 安装
+## 环境要求
+
+| 组件 | 要求 | 必需 |
+|------|------|------|
+| **Node.js** | **22 及以上**（`node -v` 验证） | ✅ 必需 |
+| **npm** | 随 Node.js 附带，或使用 pnpm | ✅ 必需 |
+| **操作系统** | Windows 10+、macOS 12+、Linux（glibc 系） | ✅ 必需 |
+| **Python** | 3.9 及以上 | ⬜ 可选（文档转换增强、webnovel CLI） |
+| **反向代理** | Nginx / Caddy / IIS | ⬜ 公网部署时推荐 |
+
+---
+
+## 快速开始
+
+### 1. 获取代码
 
 ```bash
-# 克隆仓库
 git clone https://github.com/YOUR_USERNAME/literary-studio.git
 cd literary-studio
+```
 
-# 安装后端依赖
-cd backend-node
-npm install
-cd ..
+### 2. 一键启动（推荐）
 
-# 安装前端依赖
-cd frontend
-npm install
-cd ..
+项目根目录提供跨平台启动脚本，会自动检查 Node 版本、安装依赖、构建前端并启动服务：
 
-# 安装 Python 依赖
+```bash
+npm start
+```
+
+| 平台 | 等效命令 |
+|------|----------|
+| **任意平台** | `node scripts/start.mjs` |
+| **Windows** | 双击 `start.bat`，或 `.\start.ps1` |
+| **macOS / Linux** | `chmod +x start.sh && ./start.sh` |
+
+启动完成后，浏览器访问：**http://127.0.0.1:8765**
+
+默认登录账号：`admin` / `admin123`
+
+> ⚠️ **首次使用前请务必修改默认密码和 JWT Secret！**（见[环境变量参考](#环境变量参考)）
+
+### 3. 开发模式（前端热更新）
+
+需要修改前端代码时，使用双终端模式：
+
+```bash
+# 终端 1：启动后端（含静态资源服务）
+npm start
+
+# 终端 2：启动 Vite 开发服务器
+npm run frontend:dev
+# 浏览器打开 Vite 提示的地址（通常 http://localhost:5173）
+# API 请求仍走后端 8765 端口
+```
+
+### 4. 仅构建前端
+
+```bash
+npm run build
+# 或 node scripts/build.mjs
+```
+
+构建产物输出至 `frontend/dist/`，由 Node 后端统一托管。
+
+### 5. 可选：Python 依赖
+
+文档转换与 webnovel CLI 完整能力需要 Python：
+
+```bash
+# 主 Python 后端（文档处理）
 cd backend
 pip install -r requirements.txt
 cd ..
+
+# literary-writer 技能包 CLI 增强
+cd skills/literary-writer/scripts
+pip install -r requirements.txt
+cd ../../..
 ```
 
-#### 配置环境变量（可选）
+未安装 Python 时，Studio 核心功能（编辑、AI 对话、故事引擎）仍可正常使用；部分文档转换与 CLI 增强功能可能不可用。
+
+---
+
+## 使用指南
+
+### 首次配置
+
+1. 使用默认账号登录后，进入 **AI 中心 → 模型**，配置你的 LLM API（OpenAI 兼容或 Anthropic 兼容）
+2. 在 **AI 中心 → 技能** 确认默认技能为 `literary-writer`（通常已自动绑定）
+3. 可选：在 **AI 中心 → MCP** 接入外部工具服务器
+
+### 创建项目
+
+1. 侧栏进入 **项目库** → 点击「创建项目」
+2. 选择项目类型（网文 / 剧本 / 长篇叙事）
+3. 可直接导入已有 DOCX 文稿，或从空白项目开始
+
+### 日常创作流程
+
+```
+创建项目 → 编写大纲/设定 → 进入工作台写章
+    ↓
+AI 侧栏对话（续写/润色/改写）→ 自动保存
+    ↓
+故事知识库自动更新 → 健康度/校验检查
+    ↓
+版本快照（大改前）→ 导出 DOCX/EPUB/Fountain
+```
+
+### 主要界面导航
+
+| 侧栏入口 | 功能 |
+|----------|------|
+| **创作看板** | 全局创作数据统计 |
+| **项目库** | 项目列表与创建 |
+| **审稿中心** | 跨项目批量审稿 |
+| **素材中心** | 跨项目灵感与角色备忘 |
+| **项目版本** | 快照管理与回滚 |
+| **AI 中心** | 模型 / 技能 / MCP 配置 |
+| **留言板** | 产品反馈 |
+
+进入具体项目后，右侧导航可访问：工作台、今日建议、节拍、角色、圣经、悬念、知识库、规划、路线图、健康度、故事引擎等子模块。
+
+### literary-writer 技能包
+
+工程内已内嵌完整 literary-writer 技能（`skills/literary-writer/`），支持：
+
+- **webnovel-init** — 初始化新网文项目
+- **webnovel-plan** — 规划大纲、拆卷拆章
+- **webnovel-write** — 完整写章流程（上下文→起草→审查→润色→提交）
+- **webnovel-review** — 结构化审稿报告
+- **webnovel-query** — 查询设定、角色、伏笔
+
+若在外部目录维护主副本，可同步到工程：
 
 ```bash
-# 在项目根目录创建 .env 文件
-cp .env.example .env
-
-# 可配置项：
-# STUDIO_ADMIN_USER=admin          # 管理员用户名
-# STUDIO_ADMIN_PASSWORD=your_pass  # 管理员密码（默认 admin123）
-# STUDIO_JWT_SECRET=your_secret    # JWT 密钥（必须修改！）
-# PORT=8765                        # 后端端口
+node scripts/sync-literary-writer.mjs
+# 或指定路径
+node scripts/sync-literary-writer.mjs "D:\path\to\literary-writer"
 ```
 
-#### 启动
+---
+
+## 跨平台安装与部署
+
+### Windows
+
+**本地运行**
+
+```powershell
+# 方式 1：npm（推荐）
+npm start
+
+# 方式 2：PowerShell 脚本
+.\start.ps1
+
+# 方式 3：批处理
+start.bat
+```
+
+**生产后台运行**
+
+| 方式 | 说明 |
+|------|------|
+| **计划任务** | 任务计划程序 → 登录时触发 → `node backend-node\server.js`，起始于 `backend-node` 目录 |
+| **PowerShell 前台** | 设置 `STUDIO_PRODUCTION=1` 和 `STUDIO_JWT_SECRET` 后执行 `npm start` |
+| **NSSM 服务** | 使用 NSSM 将 Node 注册为 Windows 服务 |
+
+```powershell
+# NSSM 示例
+nssm install LiteraryStudio "C:\Program Files\nodejs\node.exe" "E:\literary-studio\literary-studio\backend-node\server.js"
+nssm set LiteraryStudio AppDirectory "E:\literary-studio\literary-studio\backend-node"
+nssm start LiteraryStudio
+```
+
+公网访问请配合 **IIS / Nginx for Windows / Caddy** 做 HTTPS 反向代理，不要将 Node 直接暴露到公网。
+
+### macOS
 
 ```bash
-# 启动后端（端口 8765）
-cd backend-node
-npm run dev
+# 本地运行
+chmod +x start.sh && ./start.sh
+# 或
+npm start
 
-# 新终端，启动前端（端口 5173）
-cd frontend
-npm run dev
+# 生产部署（launchd）
+npm run build
+sudo mkdir -p /var/log/literary-studio /var/lib/literary-studio/data
+# 编辑 deploy/literary-studio-macos.plist 中的路径与环境变量
+sudo cp deploy/literary-studio-macos.plist /Library/LaunchDaemons/com.literary-studio.plist
+sudo launchctl load /Library/LaunchDaemons/com.literary-studio.plist
 ```
 
-访问 http://localhost:5173 ，使用默认账号 `admin` / `admin123` 登录。
+### Linux
 
-> ⚠️ **重要**：首次使用前请务必修改默认密码和 JWT Secret！
+```bash
+# 本地运行
+chmod +x start.sh && ./start.sh
+# 或
+npm start
 
-### 项目结构
+# 生产部署（systemd）
+cd /opt/literary-studio/literary-studio
+npm run build
+# 编辑 deploy/literary-studio.service 中的路径与环境变量
+sudo cp deploy/literary-studio.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now literary-studio
+# 配合 Nginx 反代（见 deploy/nginx-literary-studio.conf）
+```
+
+### Docker / 容器化
+
+当前版本以本地 Node 进程部署为主，未提供官方 Docker 镜像。生产环境推荐通过 systemd / launchd / NSSM 管理 Node 进程，前置 Nginx/Caddy 反代。
+
+---
+
+## 生产环境部署
+
+### 必设环境变量
+
+公网或多人使用前，**必须**配置以下变量：
+
+```bash
+STUDIO_PRODUCTION=1
+STUDIO_JWT_SECRET=<随机 32+ 字符，务必修改>
+STUDIO_ADMIN_PASSWORD=<强密码>
+STUDIO_ALLOW_REGISTER=0          # 关闭公开注册
+STUDIO_CORS_ORIGIN=https://你的域名
+```
+
+### 推荐部署架构
+
+```
+用户浏览器
+    │
+    ▼
+Nginx / Caddy（HTTPS 终止、静态缓存）
+    │
+    ▼
+Node.js 后端（127.0.0.1:8765）
+    │
+    ├── data/          项目数据（定期备份）
+    ├── LanceDB        向量索引
+    └── SQLite         元数据
+```
+
+### 数据备份
+
+定期备份 `data/` 目录（或通过 `LITERARY_STUDIO_DATA` 指定的路径）。该目录包含所有项目、章节、知识库、版本快照与配置，是迁移和灾难恢复的唯一数据源。
+
+更详细的部署说明见 [`deploy/README.md`](deploy/README.md)。
+
+---
+
+## 环境变量参考
+
+在项目根目录创建 `.env` 文件（参考 `.env.example`）：
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `PORT` | 后端监听端口 | `8765` |
+| `STUDIO_HOST` | 绑定地址 | `127.0.0.1` |
+| `STUDIO_ADMIN_USER` | 管理员用户名 | `admin` |
+| `STUDIO_ADMIN_PASSWORD` | 管理员密码 | `admin123` |
+| `STUDIO_JWT_SECRET` | JWT 签名密钥 | （内置默认值，**必须修改**） |
+| `STUDIO_PRODUCTION` | 生产模式（`1` 启用） | 未设置 |
+| `STUDIO_ALLOW_REGISTER` | 允许用户注册（`1` 启用） | 未设置 |
+| `STUDIO_CORS_ORIGIN` | 允许的跨域来源 | `*` |
+| `LITERARY_STUDIO_DATA` | 数据存储目录 | `./data` |
+| `LITERARY_WRITER_ROOT` | literary-writer 技能路径 | `skills/literary-writer` |
+| `PYTHON` | Python 可执行文件路径 | `python3` |
+
+---
+
+## 项目结构
 
 ```
 literary-studio/
-├── frontend/              # React 前端
+├── frontend/                 # React 19 前端
 │   ├── src/
-│   │   ├── api.js         # REST API 客户端
-│   │   ├── App.jsx        # 路由与布局
-│   │   ├── components/    # 通用组件
-│   │   ├── features/      # 功能模块（剧本等）
-│   │   ├── pages/         # 页面组件
-│   │   ├── stores/        # Zustand 状态管理
-│   │   └── services/      # WebSocket 服务
+│   │   ├── api.js            # REST API 客户端
+│   │   ├── App.jsx           # 路由与布局
+│   │   ├── components/       # 通用组件
+│   │   ├── features/         # 功能模块（AI 中心、审稿、版本、剧本等）
+│   │   ├── pages/            # 页面（项目库、故事引擎各子页）
+│   │   ├── stores/           # Zustand 状态管理
+│   │   └── services/         # WebSocket 服务
 │   └── package.json
-├── backend-node/          # Node.js 后端（主服务）
-│   ├── server.js          # 入口
-│   ├── routes.js          # API 路由
-│   ├── auth/              # 认证模块
-│   ├── ai-runtime/        # AI 编排器
-│   ├── event-bus/         # 事件总线
-│   ├── memory/            # RAG 向量检索
-│   ├── storage/           # 存储层（文件 + SQLite）
+├── backend-node/             # Node.js 主后端
+│   ├── server.js             # 入口
+│   ├── routes.js             # API 路由（67+ 端点）
+│   ├── auth/                 # JWT 认证
+│   ├── ai-runtime/           # AI 编排器与多模型提供商
+│   ├── agents/               # 总编辑代理等
+│   ├── event-bus/            # 事件总线
+│   ├── memory/               # LanceDB 向量检索（RAG）
+│   ├── storage/              # 文件 + SQLite 存储层
+│   ├── story-kb/             # 故事知识库
+│   ├── workflow/             # 多步骤工作流引擎
 │   └── package.json
-├── backend/               # Python 后端（文档处理）
-│   ├── main.py            # FastAPI 入口
-│   ├── engine.py          # LLM 集成
-│   ├── document_convert.py # 文档转换
-│   ├── document_export.py  # 文档导出
+├── backend/                  # Python 后端（可选 · 文档处理）
+│   ├── main.py               # FastAPI 入口
+│   ├── document_convert.py   # 文档导入转换
+│   ├── document_export.py    # 文档导出
 │   └── requirements.txt
-├── skills/                # AI 技能包
-│   └── literary-writer/   # 写作技能
-├── data/                  # 运行时数据（不提交）
+├── skills/                   # AI 技能包
+│   └── literary-writer/      # 网文/剧本创作技能（v7.0）
+├── deploy/                   # 部署配置（systemd / launchd / Nginx）
+├── scripts/                  # 启动与构建脚本
+│   ├── start.mjs             # 跨平台启动
+│   └── build.mjs             # 前端构建
+├── data/                     # 运行时数据（不提交 Git）
+├── start.bat / start.sh / start.ps1
+├── .env.example
 └── LICENSE
 ```
 
-### 贡献指南
+---
 
-欢迎贡献！请遵循以下步骤：
+## 故障排查
+
+| 现象 | 处理方法 |
+|------|----------|
+| 端口被占用 | 再次运行 `npm start`（脚本会自动释放旧进程） |
+| 页面空白 | 运行 `npm run build`，确认 `frontend/dist/index.html` 存在 |
+| Node 版本错误 | 安装 Node.js 22+，执行 `node -v` 验证 |
+| Windows 无法运行 ps1 | 使用 `start.bat` 或 `npm start` |
+| macOS 权限不足 | `chmod +x start.sh` |
+| AI 无响应 | 检查 AI 中心模型配置与 API 密钥 |
+| 文档导入失败 | 确认 Python 依赖已安装（`backend/requirements.txt`） |
+
+---
+
+## 贡献指南
+
+欢迎贡献代码、文档与反馈！
 
 1. Fork 本仓库
-2. 创建功能分支：`git checkout -b feature/amazing-feature`
-3. 提交更改：`git commit -m 'feat: add amazing feature'`
-4. 推送分支：`git push origin feature/amazing-feature`
+2. 创建功能分支：`git checkout -b feature/your-feature`
+3. 提交更改：`git commit -m 'feat: describe your change'`
+4. 推送分支：`git push origin feature/your-feature`
 5. 提交 Pull Request
 
-### 许可证
+---
+
+## 许可证
 
 本项目基于 [MIT 许可证](LICENSE) 开源。
 
 ---
 
 <a id="english"></a>
-## 📖 English
 
-### Introduction
+## English
 
-Literary Studio is an AI-assisted writing platform designed for novel and screenplay creators. It integrates AI chat, intelligent writing assistance, story knowledge management, version control, and multi-format export into a unified workspace.
+### What is Literary Studio?
+
+**Literary Studio** is a **local-first AI writing workspace** for narrative creators — web novelists, screenwriters, and long-form fiction authors. It unifies a Markdown editor, AI chat engine, story knowledge graph, planning tools, quality verification, version control, and multi-format export in a single interface.
+
+Unlike generic AI chat tools, Literary Studio is purpose-built for **long-form narrative**:
+
+- Chapter-level workspaces with auto-save
+- Cross-chapter consistency for characters, foreshadowing, and timelines
+- RAG-powered context-aware continuation via LanceDB
+- Embedded **literary-writer** skill pack for professional web-novel workflows
+- Screenplay format support (AWR rules) and Fountain export
+
+### Problems It Solves
+
+| Pain Point | Solution |
+|------------|----------|
+| AI loses context in long works | LanceDB vector search + story knowledge base auto-injects relevant context |
+| Hard to track characters, foreshadowing, timelines | Structured extraction and visualization of story elements |
+| Disorganized creative progress | Story planner with roadmaps, tasks, and daily suggestions |
+| No rollback after major edits | Chapter-level version snapshots with diff and restore |
+| Tool fragmentation | Unified workspace: edit, chat, review, and export in one project |
+| Limited AI extensibility | AI Center with multi-model config, Skills, and MCP integration |
+| Format conversion headaches | Import DOCX/PDF/HTML; export ZIP/DOCX/EPUB/Fountain |
+| Data privacy concerns | All data stored locally in `data/`; API keys never leave your machine |
 
 ### Key Features
 
-| Module | Description |
-|--------|-------------|
-| 🖊️ **Smart Writing Workspace** | Markdown editor + AI chat sidebar with focus mode and auto-save |
-| 🤖 **AI Writing & Editing** | WebSocket-based streaming for continuation, expansion, polishing, and rewriting |
-| 📚 **Story Knowledge Base** | Auto-extracts characters, relationships, timeline, foreshadowing, and locations |
-| 🧠 **RAG Semantic Search** | LanceDB vector store for context-aware AI conversations |
-| 📋 **Story Planner** | Chapter roadmaps, task scheduling, daily suggestions, and goal tracking |
-| ✅ **Post-Write Verification** | Automatic consistency, foreshadowing, and quality checks |
-| 📊 **Health Dashboard** | Story DNA analysis, conflict tracking, character arc monitoring |
-| 🎬 **Screenplay Engine** | Professional screenplay format (AWR rules), scenes/episodes/shots management |
-| 📤 **Multi-Format Export** | ZIP, DOCX, EPUB, and Fountain formats |
-| 🔄 **Version Control** | Chapter-level snapshots with diff and rollback |
-| 💬 **Guestbook** | Built-in feedback system with image upload |
-| 🔌 **MCP Integration** | Model Context Protocol server extensions |
+- **Smart Writing Workspace** — Markdown editor + AI sidebar, focus mode, auto-save
+- **AI Writing & Editing** — WebSocket streaming for continuation, expansion, polishing, rewriting
+- **Story Knowledge Base** — Characters, relationships, timeline, foreshadowing, locations
+- **RAG Semantic Search** — LanceDB vector store for context-aware conversations
+- **Story Planner** — Chapter roadmaps, task scheduling, daily suggestions, goal tracking
+- **Post-Write Verification** — Consistency, foreshadowing recovery, word-count checks
+- **Health Dashboard** — Story DNA, conflict tracking, character arcs, 6-dimension quality scoring
+- **Screenplay Engine** — AWR format, scenes/episodes/shots, Fountain export
+- **Version Control** — Snapshots with diff and rollback
+- **Review Center** — Cross-project review with rule engine and heuristic analysis
+- **AI Center** — Multi-model support, literary-writer skills, MCP servers
+- **Guestbook** — Built-in feedback with image upload
 
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Frontend (React)                  │
-│         Vite + Tailwind CSS + Zustand + WS          │
-└──────────┬──────────────────────────┬───────────────┘
-           │ REST API                 │ WebSocket
-           ▼                          ▼
-┌─────────────────────────────────────────────────────┐
-│               Backend (Node.js + Express)            │
-│  Auth · Projects · Chat · Story Engine · Versions   │
-│  Orchestrator · Event Bus · MCP Adapter             │
-└──┬────────────────┬─────────────────┬───────────────┘
-   │                │                 │
-   ▼                ▼                 ▼
-┌────────┐   ┌───────────┐   ┌──────────────┐
-│  Files │   │  SQLite   │   │   LanceDB    │
-│ (JSON) │   │  (meta)   │   │  (vectors)   │
-└────────┘   └───────────┘   └──────────────┘
-                                   ▲
-┌──────────────────────────────────┘
-│  Python Backend (Document Processing)
-│  DOCX/PDF/HTML → Markdown conversion
-│  Markdown → DOCX export
-└──────────────────────────────────
+Frontend (React 19 + Vite + Tailwind + Zustand)
+    │ REST API + WebSocket
+    ▼
+Backend (Node.js 22 + Express)
+    ├── File storage (JSON/MD) + SQLite (metadata) + LanceDB (vectors)
+    └── Python backend (optional · document conversion)
 ```
+
+### Requirements
+
+| Component | Version | Required |
+|-----------|---------|----------|
+| Node.js | **22+** | Yes |
+| npm / pnpm | Latest | Yes |
+| OS | Windows 10+, macOS 12+, Linux | Yes |
+| Python | 3.9+ | Optional |
 
 ### Quick Start
 
-#### Prerequisites
-
-- **Node.js** >= 18
-- **Python** >= 3.9
-- **npm** or **pnpm**
-
-#### Installation
-
 ```bash
-# Clone the repository
 git clone https://github.com/YOUR_USERNAME/literary-studio.git
 cd literary-studio
-
-# Install backend dependencies
-cd backend-node
-npm install
-cd ..
-
-# Install frontend dependencies
-cd frontend
-npm install
-cd ..
-
-# Install Python dependencies
-cd backend
-pip install -r requirements.txt
-cd ..
+npm start
 ```
 
-#### Environment Variables (Optional)
+Open **http://127.0.0.1:8765** — login with `admin` / `admin123`.
+
+> ⚠️ Change the default password and JWT secret before any production use!
+
+**Development mode (hot reload):**
 
 ```bash
-# Create .env file in project root
-cp .env.example .env
+# Terminal 1
+npm start
 
-# Available settings:
-# STUDIO_ADMIN_USER=admin          # Admin username
-# STUDIO_ADMIN_PASSWORD=your_pass  # Admin password (default: admin123)
-# STUDIO_JWT_SECRET=your_secret    # JWT secret (MUST change!)
-# PORT=8765                        # Backend port
+# Terminal 2
+npm run frontend:dev
 ```
 
-#### Running
+### Cross-Platform Deployment
+
+| Platform | Local Start | Production |
+|----------|-------------|------------|
+| **Any** | `npm start` | Set `STUDIO_PRODUCTION=1` + strong secrets |
+| **Windows** | `start.bat` / `.\start.ps1` | Task Scheduler / NSSM + IIS or Nginx |
+| **macOS** | `./start.sh` | launchd (`deploy/literary-studio-macos.plist`) |
+| **Linux** | `./start.sh` | systemd (`deploy/literary-studio.service`) + Nginx |
+
+See [`deploy/README.md`](deploy/README.md) for detailed production setup.
+
+### Production Environment Variables
 
 ```bash
-# Start backend (port 8765)
-cd backend-node
-npm run dev
-
-# New terminal, start frontend (port 5173)
-cd frontend
-npm run dev
+STUDIO_PRODUCTION=1
+STUDIO_JWT_SECRET=<random 32+ chars>
+STUDIO_ADMIN_PASSWORD=<strong password>
+STUDIO_ALLOW_REGISTER=0
+STUDIO_CORS_ORIGIN=https://your-domain.com
 ```
-
-Visit http://localhost:5173 and login with default credentials `admin` / `admin123`.
-
-> ⚠️ **Important**: Change the default password and JWT secret before any production use!
 
 ### Project Structure
 
 ```
 literary-studio/
-├── frontend/              # React frontend
-│   ├── src/
-│   │   ├── api.js         # REST API client
-│   │   ├── App.jsx        # Routing & layout
-│   │   ├── components/    # Shared components
-│   │   ├── features/      # Feature modules (screenplay, etc.)
-│   │   ├── pages/         # Page components
-│   │   ├── stores/        # Zustand state management
-│   │   └── services/      # WebSocket service
-│   └── package.json
-├── backend-node/          # Node.js backend (primary)
-│   ├── server.js          # Entry point
-│   ├── routes.js          # API routes
-│   ├── auth/              # Authentication
-│   ├── ai-runtime/        # AI orchestrator
-│   ├── event-bus/         # Event bus
-│   ├── memory/            # RAG vector retrieval
-│   ├── storage/           # Storage layer (files + SQLite)
-│   └── package.json
-├── backend/               # Python backend (document processing)
-│   ├── main.py            # FastAPI entry
-│   ├── engine.py          # LLM integration
-│   ├── document_convert.py # Document conversion
-│   ├── document_export.py  # Document export
-│   └── requirements.txt
-├── skills/                # AI skill packs
-│   └── literary-writer/   # Writing skill
-├── data/                  # Runtime data (not committed)
-└── LICENSE
+├── frontend/          # React frontend
+├── backend-node/      # Node.js primary backend
+├── backend/           # Python document processing (optional)
+├── skills/            # AI skill packs (literary-writer)
+├── deploy/            # Deployment configs
+├── scripts/           # Start & build scripts
+└── data/              # Runtime data (not committed)
 ```
+
+### Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Port in use | Re-run `npm start` (auto-kills old process) |
+| Blank page | Run `npm run build`, check `frontend/dist/index.html` |
+| Node version error | Install Node.js 22+: `node -v` |
+| AI not responding | Check model config in AI Center |
 
 ### Contributing
 
-Contributions are welcome! Please follow these steps:
-
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'feat: add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+2. Create a feature branch
+3. Commit and push
+4. Open a Pull Request
 
 ### License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE)
