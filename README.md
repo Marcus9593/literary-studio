@@ -128,37 +128,76 @@
 
 ## 技术架构
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     Frontend（React 19）                      │
-│           Vite · Tailwind CSS · Zustand · WebSocket           │
-└────────────┬─────────────────────────────┬───────────────────┘
-             │ REST API                     │ WebSocket（流式 AI）
-             ▼                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                  Backend（Node.js 22 + Express）              │
-│  认证 · 项目管理 · 聊天 · 故事引擎 · 版本 · 编排器 · 事件总线  │
-│  总编辑代理 · 工作流引擎 · MCP 适配器 · 文档转换（Node 侧）     │
-└──────┬─────────────────┬──────────────────┬──────────────────┘
-       │                 │                  │
-       ▼                 ▼                  ▼
-┌────────────┐   ┌──────────────┐   ┌────────────────┐
-│ 文件存储    │   │   SQLite     │   │    LanceDB     │
-│（JSON/MD） │   │  （元数据）   │   │  （向量/RAG）   │
-└────────────┘   └──────────────┘   └────────────────┘
-                                              ▲
-┌─────────────────────────────────────────────┘
-│  Python Backend（可选 · 文档处理增强）
-│  DOCX / PDF / HTML → Markdown · Markdown → DOCX
-└──────────────────────────────────────────────────────────────
+### 系统拓扑
+
+文匠 Studio 采用 **单 Node 进程 + 本地存储** 架构。前端构建为静态资源，由 Node 后端统一托管；Python 仅作为可选子进程，在需要时由 Node 调用，并非独立运行的后端服务。
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ 客户端"]
+        FE["React 19 前端<br/><small>Vite · Tailwind · Zustand</small>"]
+    end
+
+    subgraph Node["⚙️ Node.js 服务（Express · 单进程）"]
+        direction TB
+        API["REST API<br/><small>项目 · 章节 · 导出 · 配置</small>"]
+        WS["WebSocket<br/><small>AI 流式对话与续写</small>"]
+        STORY["故事引擎<br/><small>知识库 · 规划 · 校验 · 版本</small>"]
+        RUNTIME["AI 运行时<br/><small>编排器 · Skill · MCP 适配器</small>"]
+    end
+
+    subgraph Store["💾 本地存储 · data/"]
+        FILES["文件系统<br/><small>章节 MD · 设定 JSON · 快照</small>"]
+        SQLITE["SQLite<br/><small>用户 · 项目元数据</small>"]
+        VEC["LanceDB<br/><small>章节向量 · RAG 检索</small>"]
+    end
+
+    subgraph Opt["🔧 可选 · 子进程"]
+        PY["Python CLI<br/><small>DOCX / PDF / HTML ↔ Markdown</small>"]
+    end
+
+    subgraph Ext["☁️ 外部服务"]
+        LLM["LLM API"]
+        MCP["MCP 服务器"]
+    end
+
+    FE -->|"HTTP"| API
+    FE -->|"WebSocket"| WS
+    API --> STORY
+    WS --> RUNTIME
+    STORY --> FILES
+    STORY --> SQLITE
+    RUNTIME --> VEC
+    RUNTIME --> LLM
+    RUNTIME --> MCP
+    API -.->|"spawn 子进程"| PY
+    PY -.->|"写入转换结果"| FILES
 ```
 
-**数据流要点：**
+### 创作流水线（Story OS）
 
-- 所有项目数据默认写入本地 `data/` 目录，便于备份与迁移
-- AI 请求经编排器（Orchestrator）路由至多模型提供商
-- 章节变更通过事件总线触发知识库同步与向量索引更新
-- literary-writer 技能包在启动时自动绑定，无需额外安装到 `~/.cursor/skills`
+故事相关功能按 **状态驱动** 组织，从文稿扫描到 AI 执行形成清晰链路：
+
+```mermaid
+flowchart LR
+    A["工作区<br/>正文 · 大纲 · 设定"] --> B["故事知识库<br/>角色 · 伏笔 · 时间线"]
+    B --> C["作品分析<br/>Current State"]
+    C --> D["创作目标<br/>Target State"]
+    D --> E["章节路线图"]
+    E --> F["今日任务"]
+    F --> G["修改计划"]
+    G --> H["AI 执行<br/>Skill / 模型"]
+```
+
+### 关键设计说明
+
+| 设计点 | 说明 |
+|--------|------|
+| **单进程部署** | 一个 Node 进程同时提供 API、WebSocket 和静态前端，无需额外反向代理即可本地使用 |
+| **本地优先** | 所有项目数据写入 `data/` 目录，备份该目录即可迁移全部内容 |
+| **Python 的角色** | 非独立后端；Node 在导入 DOCX/PDF 等格式时 `spawn` 调用 `backend/convert_cli.py`，未安装 Python 时核心功能仍可用 |
+| **RAG 检索** | 章节保存后，事件总线触发向量索引更新；AI 对话时从 LanceDB 检索相关片段注入上下文 |
+| **技能包** | 内嵌 `skills/literary-writer`，启动时自动绑定，无需安装到 `~/.cursor/skills` |
 
 ---
 
@@ -561,13 +600,17 @@ Unlike generic AI chat tools, Literary Studio is purpose-built for **long-form n
 
 ### Architecture
 
-```
-Frontend (React 19 + Vite + Tailwind + Zustand)
-    │ REST API + WebSocket
-    ▼
-Backend (Node.js 22 + Express)
-    ├── File storage (JSON/MD) + SQLite (metadata) + LanceDB (vectors)
-    └── Python backend (optional · document conversion)
+Single Node.js process serves API, WebSocket, and static frontend. Python runs as an optional subprocess for document conversion — not a separate backend.
+
+```mermaid
+flowchart TB
+    FE["React 19 Frontend"] -->|"HTTP / WS"| NODE["Node.js Server"]
+    NODE --> FILES["File Storage"]
+    NODE --> SQLITE["SQLite"]
+    NODE --> VEC["LanceDB"]
+    NODE --> LLM["LLM APIs"]
+    NODE -.-> PY["Python CLI (optional)"]
+    PY -.-> FILES
 ```
 
 ### Requirements
