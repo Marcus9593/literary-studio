@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.literary-studio</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/opt/literary-studio/literary-studio/backend-node/server.js</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/opt/literary-studio/literary-studio/backend-node</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
+    <key>STUDIO_PRODUCTION</key>
+    <string>1</string>
+    <key>PORT</key>
+    <string>8765</string>
+    <key>STUDIO_HOST</key>
+    <string>127.0.0.1</string>
+    <key>STUDIO_JWT_SECRET</key>
+    <string>CHANGE_ME</string>
+    <key>STUDIO_ADMIN_PASSWORD</key>
+    <string>CHANGE_ME</string>
+    <key>STUDIO_ALLOW_REGISTER</key>
+    <string>0</string>
+    <key>STUDIO_CORS_ORIGIN</key>
+    <string>https://studio.example.com</string>
+    <key>LITERARY_STUDIO_DATA</key>
+    <string>/var/lib/literary-studio/data</string>
+    <key>NODE_OPTIONS</key>
+    <string>--disable-warning=ExperimentalWarning</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/var/log/literary-studio/out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/literary-studio/err.log</string>
+</dict>
+</plist>

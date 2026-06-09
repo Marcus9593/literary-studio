@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/measurement-trends-series.json",
+  "title": "measurement/trends/series.json",
+  "description": "Time series derived from metrics rollups. Append-only points; never a source of narrative truth.",
+  "type": "object",
+  "required": ["schema", "project_id", "series"],
+  "properties": {
+    "schema": { "const": "measurement_trends_series" },
+    "project_id": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "series": {
+      "type": "object",
+      "properties": {
+        "overall_health": {
+          "type": "array",
+          "description": "From quality scorer + verify aggregate",
+          "items": { "$ref": "#/$defs/dataPoint" }
+        },
+        "verify_pass_rate": {
+          "type": "array",
+          "description": "Rolling pass rate from verify log",
+          "items": { "$ref": "#/$defs/dataPoint" }
+        },
+        "review_pacing": {
+          "type": "array",
+          "description": "From review/latest checks keyed 节奏密度",
+          "items": { "$ref": "#/$defs/dataPoint" }
+        },
+        "review_character": { "type": "array", "items": { "$ref": "#/$defs/dataPoint" } },
+        "review_foreshadow": { "type": "array", "items": { "$ref": "#/$defs/dataPoint" } },
+        "review_style": { "type": "array", "items": { "$ref": "#/$defs/dataPoint" } }
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/dataPoint" }
+      }
+    }
+  },
+  "$defs": {
+    "dataPoint": {
+      "type": "object",
+      "required": ["at", "value"],
+      "properties": {
+        "at": { "type": "string", "format": "date-time" },
+        "value": { "type": "number" },
+        "source": {
+          "enum": ["verify", "review", "quality_scorer", "manual_refresh"]
+        },
+        "ref_id": {
+          "type": ["string", "null"],
+          "description": "e.g. ver_xxx or review run id"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "schema": "studio_skill_manifest",
+  "entry": {
+    "path": "scripts/main.py",
+    "runner": "python",
+    "inject_project_root": true,
+    "project_root_flag": "--project-root",
+    "cwd": "scripts"
+  },
+  "commands": {
+    "preflight": {
+      "description": "环境自检",
+      "args": ["preflight", "--format", "json"]
+    },
+    "help": {
+      "description": "显示帮助",
+      "args": ["--help"]
+    }
+  }
+}

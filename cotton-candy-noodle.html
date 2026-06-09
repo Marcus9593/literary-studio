@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>棉花糖拉丝</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-height: 100vh;
+font-family: 'Segoe UI', sans-serif;
+overflow: hidden;
+}
+canvas {
+border-radius: 20px;
+cursor: grab;
+touch-action: none;
+box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+canvas:active { cursor: grabbing; }
+h1 {
+color: #ad1457;
+margin-bottom: 16px;
+font-size: 28px;
+text-shadow: 0 2px 8px rgba(173,20,87,0.15);
+}
+p {
+color: #7b1fa2;
+margin-bottom: 20px;
+font-size: 14px;
+opacity: 0.7;
+}
+</style>
+</head>
+<body>
+<h1>🍬 棉花糖拉丝</h1>
+<p>按住鼠标拖拽棉花糖，感受拉丝的快乐~</p>
+<canvas id="c" width="700" height="700"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const CENTER = { x: W / 2, y: H / 2 };
+
+// 软体粒子
+class Node {
+constructor(x, y, pinned = false) {
+this.x = x;
+this.y = y;
+this.px = x;
+this.py = y;
+this.pinned = pinned;
+this.mass = 1;
+}
+}
+
+// 约束（弹簧）
+class Constraint {
+constructor(a, b, stiffness = 0.5) {
+this.a = a;
+this.b = b;
+this.len = Math.hypot(a.x - b.x, a.y - b.y);
+this.stiffness = stiffness;
+}
+}
+
+// 棉花糖配置
+const ROWS = 18;
+const COLS = 24;
+const SPACING = 12;
+const nodes = [];
+const constraints = [];
+const grabbed = new Set();
+
+// 创建软体网格
+for (let r = 0; r < ROWS; r++) {
+for (let c = 0; c < COLS; c++) {
+const angle = (c / COLS) * Math.PI * 2;
+const radius = 60 + r * 8;
+const x = CENTER.x + Math.cos(angle) * radius;
+const y = CENTER.y + Math.sin(angle) * radius;
+const pinned = r === 0; // 内圈固定
+nodes.push(new Node(x, y, pinned));
+}
+}
+
+// 生成约束
+for (let r = 0; r < ROWS; r++) {
+for (let c = 0; c < COLS; c++) {
+const idx = r * COLS + c;
+const right = r * COLS + (c + 1) % COLS;
+const down = (r + 1) * COLS + c;
+if (r < ROWS - 1) constraints.push(new Constraint(nodes[idx], nodes[down], 0.6));
+constraints.push(new Constraint(nodes[idx], nodes[right], 0.4));
+// 对角线约束增加稳定性
+if (r < ROWS - 1) {
+const dr = (r + 1) * COLS + (c + 1) % COLS;
+constraints.push(new Constraint(nodes[idx], nodes[dr], 0.2));
+}
+}
+}
+
+// 鼠标/触摸交互
+let mouse = { x: -999, y: -999, down: false };
+let prevMouse = { x: -999, y: -999 };
+
+function getPos(e) {
+const rect = canvas.getBoundingClientRect();
+const t = e.touches ? e.touches[0] : e;
+return { x: (t.clientX - rect.left) * (W / rect.width), y: (t.clientY - rect.top) * (H / rect.height) };
+}
+
+canvas.addEventListener('mousedown', e => { mouse.down = true; Object.assign(mouse, getPos(e)); Object.assign(prevMouse, mouse); });
+canvas.addEventListener('mousemove', e => { Object.assign(prevMouse, mouse); Object.assign(mouse, getPos(e)); });
+canvas.addEventListener('mouseup', () => { mouse.down = false; grabbed.clear(); });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); mouse.down = true; Object.assign(mouse, getPos(e)); Object.assign(prevMouse, mouse); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); Object.assign(prevMouse, mouse); Object.assign(mouse, getPos(e)); }, { passive: false });
+canvas.addEventListener('touchend', () => { mouse.down = false; grabbed.clear(); });
+
+function simulate() {
+const gravity = 0.15;
+const damping = 0.98;
+const grabRadius = 60;
+
+// Verlet积分
+for (const n of nodes) {
+if (n.pinned || grabbed.has(n)) continue;
+const vx = (n.x - n.px) * damping;
+const vy = (n.y - n.py) * damping;
+n.px = n.x;
+n.py = n.y;
+n.x += vx;
+n.y += vy + gravity;
+}
+
+// 抓取交互
+if (mouse.down) {
+const dx = mouse.x - prevMouse.x;
+const dy = mouse.y - prevMouse.y;
+for (const n of nodes) {
+const dist = Math.hypot(n.x - mouse.x, n.y - mouse.y);
+if (dist < grabRadius) {
+grabbed.add(n);
+n.x += dx * 0.8;
+n.y += dy * 0.8;
+}
+}
+}
+
+// 约束求解（多次迭代增加稳定性）
+for (let iter = 0; iter < 6; iter++) {
+for (const c of constraints) {
+const dx = c.b.x - c.a.x;
+const dy = c.b.y - c.a.y;
+const dist = Math.hypot(dx, dy) || 0.01;
+const diff = (dist - c.len) / dist * c.stiffness;
+const ox = dx * diff * 0.5;
+const oy = dy * diff * 0.5;
+if (!c.a.pinned && !grabbed.has(c.a)) { c.a.x += ox; c.a.y += oy; }
+if (!c.b.pinned && !grabbed.has(c.b)) { c.b.x -= ox; c.b.y -= oy; }
+}
+}
+
+// 边界约束
+for (const n of nodes) {
+if (n.x < 20) n.x = 20;
+if (n.x > W - 20) n.x = W - 20;
+if (n.y < 20) n.y = 20;
+if (n.y > H - 20) n.y = H - 20;
+}
+}
+
+// 渲染
+const COLORS = ['#f48fb1', '#ce93d8', '#90caf9', '#a5d6a7', '#fff59d', '#ffab91'];
+
+function render() {
+ctx.clearRect(0, 0, W, H);
+
+// 绘制棉花糖丝状表面
+for (let r = 0; r < ROWS - 1; r++) {
+for (let c = 0; c < COLS; c++) {
+const i0 = r * COLS + c;
+const i1 = r * COLS + (c + 1) % COLS;
+const i2 = (r + 1) * COLS + (c + 1) % COLS;
+const i3 = (r + 1) * COLS + c;
+
+const n0 = nodes[i0], n1 = nodes[i1], n2 = nodes[i2], n3 = nodes[i3];
+
+// 渐变色
+const hue = (r * 20 + c * 15) % 360;
+const sat = 70 + Math.sin(Date.now() * 0.001 + r) * 15;
+const light = 75 + Math.sin(Date.now() * 0.002 + c) * 10;
+ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, 0.85)`;
+
+ctx.beginPath();
+ctx.moveTo(n0.x, n0.y);
+ctx.lineTo(n1.x, n1.y);
+ctx.lineTo(n2.x, n2.y);
+ctx.lineTo(n3.x, n3.y);
+ctx.closePath();
+ctx.fill();
+}
+}
+
+// 绘制丝状纤维效果
+ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+ctx.lineWidth = 1;
+for (let r = 0; r < ROWS; r += 2) {
+ctx.beginPath();
+for (let c = 0; c <= COLS; c++) {
+const n = nodes[r * COLS + (c % COLS)];
+if (c === 0) ctx.moveTo(n.x, n.y);
+else ctx.lineTo(n.x, n.y);
+}
+ctx.stroke();
+}
+
+// 绘制光晕
+const gradient = ctx.createRadialGradient(CENTER.x, CENTER.y, 30, CENTER.x, CENTER.y, 200);
+gradient.addColorStop(0, 'rgba(255,255,255,0.2)');
+gradient.addColorStop(1, 'rgba(255,255,255,0)');
+ctx.fillStyle = gradient;
+ctx.beginPath();
+ctx.arc(CENTER.x, CENTER.y, 200, 0, Math.PI * 2);
+ctx.fill();
+
+// 绘制抓取提示
+if (mouse.down) {
+ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+ctx.lineWidth = 2;
+ctx.setLineDash([4, 4]);
+ctx.beginPath();
+ctx.arc(mouse.x, mouse.y, 60, 0, Math.PI * 2);
+ctx.stroke();
+ctx.setLineDash([]);
+}
+}
+
+function loop() {
+simulate();
+render();
+requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

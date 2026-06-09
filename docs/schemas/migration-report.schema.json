@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/migration-report.json",
+  "title": "migration_report.json (Dry Run / Phase C plan)",
+  "type": "object",
+  "required": ["schema", "project_id", "generated_at", "entities", "snapshots"],
+  "properties": {
+    "schema": { "const": "migration_dry_run" },
+    "project_id": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "entities": {
+      "type": "object",
+      "properties": {
+        "active": { "type": "integer", "minimum": 0 },
+        "provisional": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "id_mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["legacy_id", "new_id", "status", "rule"],
+            "properties": {
+              "legacy_id": { "type": "string" },
+              "new_id": { "type": "string" },
+              "status": { "enum": ["active", "provisional"] },
+              "rule": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "snapshots": {
+      "type": "object",
+      "properties": {
+        "count": { "type": "integer" },
+        "bytes_before": { "type": "integer" },
+        "bytes_after_estimate": { "type": "integer" },
+        "dedup_hypothetical_savings_pct": { "type": "number" },
+        "policy": { "const": "full_content_per_version" }
+      }
+    },
+    "measurement": { "type": "object" },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

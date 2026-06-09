@@ -1,0 +1,482 @@
+{
+  "project_name": "文匠 Studio",
+  "version": "2.6.0",
+  "description": "基于 literary-writer skill 的网页版创作工具，支持小说、剧本、网文等文学体裁的创作与项目管理",
+  "tech_stack": {
+    "frontend": {
+      "framework": "React",
+      "build_tool": "Vite",
+      "routing": "react-router-dom",
+      "state_management": "React Context + Hooks",
+      "styling": "CSS (index.css)",
+      "key_dependencies": ["react", "react-dom", "react-router-dom"]
+    },
+    "backend": {
+      "runtime": "Node.js",
+      "framework": "Express",
+      "websocket": "ws (WebSocketServer)",
+      "storage": "文件系统 + SQLite (可选)",
+      "ai_runtime": "支持 OpenAI 和 Anthropic 协议",
+      "key_dependencies": ["express", "ws", "multer", "cors"]
+    },
+    "python_backend": {
+      "purpose": "文档转换 (docx/pdf/html → Markdown)",
+      "key_dependencies": ["mammoth", "fitz (PyMuPDF)"]
+    }
+  },
+  "architecture": {
+    "type": "前后端分离 + WebSocket 实时通信",
+    "frontend_port": 5173,
+    "backend_port": 8765,
+    "entry_point": "./start.sh"
+  },
+  "directory_structure": {
+    "frontend/": "React 前端应用",
+    "frontend/src/": "前端源代码",
+    "frontend/src/pages/": "页面组件",
+    "frontend/src/components/": "UI 组件",
+    "frontend/src/api.js": "API 客户端",
+    "frontend/src/services/": "服务层 (WebSocket 等)",
+    "frontend/src/lib/": "工具库",
+    "backend-node/": "Node.js 后端服务",
+    "backend-node/server.js": "Express 服务器入口",
+    "backend-node/routes.js": "API 路由定义",
+    "backend-node/storage.js": "数据存储层",
+    "backend-node/ws-handler.js": "WebSocket 处理器",
+    "backend-node/ai-runtime/": "AI 运行时 (LLM 调用)",
+    "backend-node/ai-runtime/orchestrator.js": "AI 编排器",
+    "backend-node/story-kb/": "故事知识库",
+    "backend-node/story-index/": "故事索引",
+    "backend-node/story-plans/": "写作计划",
+    "backend-node/story-diff/": "故事差异分析",
+    "backend-node/rewrite-engine/": "重写引擎",
+    "backend-node/quality/": "质量评分",
+    "backend-node/agents/": "AI 代理",
+    "backend-node/agents/chief-editor/": "总编辑代理",
+    "backend-node/workflow/": "工作流引擎",
+    "backend-node/memory/": "向量记忆存储",
+    "backend/": "Python 后端 (文档转换)",
+    "data/": "数据目录",
+    "data/projects/": "项目存储目录",
+    "data/settings.json": "全局设置",
+    "data/studio.json": "工作室状态",
+    "data/tools.json": "工具配置"
+  },
+  "core_modules": {
+    "storage": {
+      "file": "backend-node/storage.js",
+      "responsibilities": [
+        "项目 CRUD 操作",
+        "章节文件管理",
+        "会话 (Session) 管理",
+        "聊天历史存储",
+        "任务 (Job) 管理",
+        "设置存储"
+      ],
+      "data_structures": {
+        "project": {
+          "id": "UUID (12位)",
+          "title": "项目标题",
+          "genre": "类型 (玄幻/都市/科幻等)",
+          "work_type": "作品类型 (novel_long/novel_short/script等)",
+          "creation_mode": "创作模式 (scratch/continue/rewrite)",
+          "status": "状态 (draft/in_progress/completed)",
+          "workspace": "工作目录路径",
+          "created_at": "创建时间",
+          "updated_at": "更新时间"
+        },
+        "chapter": {
+          "filename": "文件名 (如: 第0001章-标题.md)",
+          "title": "章节标题",
+          "words": "字数",
+          "preview": "预览文本"
+        },
+        "session": {
+          "id": "会话ID",
+          "title": "会话标题",
+          "messages": "消息列表",
+          "bound_filename": "绑定的章节文件",
+          "memory_summary": "记忆摘要",
+          "claude_session_id": "Claude 会话ID"
+        }
+      }
+    },
+    "routes": {
+      "file": "backend-node/routes.js",
+      "api_prefix": "/api",
+      "endpoints": {
+        "health": "GET /health - 健康检查",
+        "models": {
+          "list": "GET /models - 列出模型配置",
+          "create": "POST /models - 创建模型配置",
+          "update": "PUT /models/:id - 更新模型配置",
+          "delete": "DELETE /models/:id - 删除模型配置",
+          "activate": "POST /models/:id/activate - 激活模型",
+          "test": "POST /models/test - 测试模型连接"
+        },
+        "projects": {
+          "list": "GET /projects - 列出项目",
+          "create": "POST /projects - 创建项目",
+          "get": "GET /projects/:id - 获取项目详情",
+          "update": "PATCH /projects/:id - 更新项目",
+          "delete": "DELETE /projects/:id - 删除项目",
+          "chapters": {
+            "list": "GET /projects/:id/chapters - 列出章节",
+            "get": "GET /projects/:id/chapters/:filename - 获取章节内容",
+            "update": "PUT /projects/:id/chapters/:filename - 更新章节",
+            "delete": "DELETE /projects/:id/chapters/:filename - 删除章节",
+            "create": "POST /projects/:id/manuscripts - 创建新章节"
+          },
+          "files": {
+            "list": "GET /projects/:id/files/:category - 列出文件",
+            "get": "GET /projects/:id/files/:category/:filename - 获取文件",
+            "update": "PUT /projects/:id/files/:category/:filename - 更新文件"
+          },
+          "chat": {
+            "get": "GET /projects/:id/chat - 获取聊天历史",
+            "send": "POST /projects/:id/chat - 发送消息",
+            "clear": "DELETE /projects/:id/chat - 清空聊天"
+          },
+          "sessions": {
+            "list": "GET /projects/:id/sessions - 列出会话",
+            "create": "POST /projects/:id/sessions - 创建会话",
+            "focus": "POST /projects/:id/sessions/focus - 聚焦会话",
+            "get": "GET /projects/:id/sessions/:sid - 获取会话",
+            "update": "PATCH /projects/:id/sessions/:sid - 更新会话",
+            "delete": "DELETE /projects/:id/sessions/:sid - 删除会话",
+            "clear_messages": "DELETE /projects/:id/sessions/:sid/messages - 清空消息"
+          },
+          "upload": "POST /projects/:id/upload - 上传文件",
+          "download": "GET /projects/:id/download - 下载项目",
+          "write": "POST /projects/:id/write - 写章 (已弃用，改用 WebSocket)"
+        },
+        "studio": {
+          "overview": "GET /studio/overview - 工作室概览",
+          "snapshots": {
+            "list": "GET /studio/snapshots - 列出快照",
+            "create": "POST /studio/snapshots - 创建快照",
+            "delete": "DELETE /studio/snapshots/:id - 删除快照",
+            "diff": "GET /studio/snapshots/:id/diff - 快照差异",
+            "restore": "POST /studio/snapshots/:id/restore - 恢复快照"
+          },
+          "assets": {
+            "list": "GET /studio/assets - 列出素材",
+            "create": "POST /studio/assets - 创建素材",
+            "update": "PUT /studio/assets/:id - 更新素材",
+            "delete": "DELETE /studio/assets/:id - 删除素材"
+          },
+          "review": {
+            "get": "GET /studio/review - 获取审稿结果",
+            "run": "POST /studio/review/run - 运行审稿"
+          }
+        },
+        "tools": {
+          "overview": "GET /tools/overview - 工具概览",
+          "skills": {
+            "list": "GET /tools/skills - 列出技能",
+            "search": "GET /tools/skills/search - 搜索技能",
+            "install": "POST /tools/skills/install - 安装技能"
+          },
+          "default_skill": {
+            "get": "GET /tools/default-skill - 获取默认技能",
+            "set": "PUT /tools/default-skill - 设置默认技能"
+          },
+          "mcp": {
+            "list": "GET /tools/mcp - 列出 MCP 配置",
+            "save": "PUT /tools/mcp - 保存 MCP 配置"
+          }
+        },
+        "story": {
+          "knowledge": {
+            "get": "GET /projects/:id/story/knowledge - 获取知识库",
+            "update": "PUT /projects/:id/story/knowledge - 更新知识库",
+            "rebuild": "POST /projects/:id/story/knowledge/rebuild - 重建知识库"
+          },
+          "summaries": {
+            "get": "GET /projects/:id/story/summaries - 获取摘要",
+            "rebuild": "POST /projects/:id/story/summaries/rebuild - 重建摘要"
+          },
+          "index": {
+            "query": "GET /projects/:id/story/index/query - 查询索引",
+            "character": "GET /projects/:id/story/index/character - 查询角色",
+            "relationship": "GET /projects/:id/story/index/relationship - 查询关系",
+            "timeline": "GET /projects/:id/story/index/timeline - 查询时间线",
+            "foreshadow": "GET /projects/:id/story/index/foreshadow - 查询伏笔",
+            "location": "GET /projects/:id/story/index/location - 查询地点"
+          },
+          "plans": {
+            "list": "GET /projects/:id/story/plans - 列出计划",
+            "get": "GET /projects/:id/story/plans/:planId - 获取计划",
+            "diff": "POST /projects/:id/story/plans/diff - 差异分析",
+            "rewrite": "POST /projects/:id/story/plans/rewrite - 重写计划",
+            "confirm": "POST /projects/:id/story/plans/:planId/confirm - 确认计划",
+            "complete": "POST /projects/:id/story/plans/:planId/complete - 完成计划"
+          },
+          "health": {
+            "get": "GET /projects/:id/story/health - 获取健康评分",
+            "review": "POST /projects/:id/story/health/review - 章节审稿"
+          },
+          "route": "POST /projects/:id/story/route - 总编辑路由"
+        }
+      }
+    },
+    "websocket": {
+      "file": "backend-node/ws-handler.js",
+      "path": "/ws",
+      "message_types": {
+        "chat": "聊天消息",
+        "write": "写章请求",
+        "cancel": "取消当前操作"
+      },
+      "event_types": {
+        "status": "状态更新 (thinking/streaming/done/error/cancelled)",
+        "content": "流式内容",
+        "session": "会话信息",
+        "context_summary": "上下文摘要",
+        "story_plan": "故事计划",
+        "write_result": "写章结果",
+        "error": "错误信息"
+      }
+    },
+    "ai_runtime": {
+      "file": "backend-node/ai-runtime/orchestrator.js",
+      "providers": ["openai", "anthropic"],
+      "capabilities": [
+        "流式聊天",
+        "写章",
+        "项目上下文构建",
+        "技能指令注入",
+        "工作流执行"
+      ],
+      "context_building": [
+        "项目元数据",
+        "大纲摘要",
+        "设定集摘要",
+        "最新章节摘要",
+        "故事知识库",
+        "故事摘要"
+      ]
+    },
+    "story_kb": {
+      "file": "backend-node/story-kb/",
+      "components": {
+        "store": "知识库存储",
+        "sync": "从工作区同步知识",
+        "paths": "路径配置",
+        "defaults": "默认值"
+      },
+      "data_types": [
+        "characters (角色)",
+        "relationships (关系)",
+        "timeline (时间线)",
+        "foreshadows (伏笔)",
+        "locations (地点)",
+        "story_summary (故事摘要)"
+      ]
+    },
+    "chief_editor": {
+      "file": "backend-node/agents/chief-editor/index.js",
+      "purpose": "总编辑代理 - 统一路由所有创作请求",
+      "intents": {
+        "story_diff": "故事差异分析 (删除/修改人称等)",
+        "rewrite": "重写/优化",
+        "review": "审稿",
+        "write_continue": "续写",
+        "rebuild_kb": "重建知识库",
+        "story_query": "故事查询",
+        "chat": "普通聊天"
+      },
+      "workflow": [
+        "1. 分类用户意图 (classifyIntent)",
+        "2. 根据意图路由到对应处理器",
+        "3. 构建上下文块 (contextBlocks)",
+        "4. 返回 action 和相关数据"
+      ]
+    },
+    "workflow_engine": {
+      "file": "backend-node/workflow/engine.js",
+      "purpose": "执行多步骤技能工作流",
+      "workflow_types": [
+        "character-master (角色塑造大师)",
+        "outline-master (大纲结构大师)"
+      ],
+      "execution_flow": [
+        "1. 接收工作流配置和步骤列表",
+        "2. 依次执行每个步骤",
+        "3. 收集步骤输出",
+        "4. 组合最终提示词",
+        "5. 调用 AI 运行时生成内容"
+      ]
+    },
+    "document_convert": {
+      "file": "backend-node/document-convert.js",
+      "supported_formats": [".docx", ".pdf", ".html", ".htm", ".zip", ".md", ".txt"],
+      "conversion_flow": [
+        "1. 检测文件类型",
+        "2. 文本文件直接读取",
+        "3. 需要转换的文件调用 Python CLI",
+        "4. 转换为 Markdown 格式",
+        "5. 保存到项目工作区"
+      ]
+    }
+  },
+  "business_flows": {
+    "project_creation": {
+      "description": "创建新项目",
+      "steps": [
+        "1. 用户填写项目信息 (标题、类型、创作模式)",
+        "2. 前端调用 POST /api/projects",
+        "3. 后端创建项目目录结构",
+        "4. 初始化状态文件 (state.json)",
+        "5. 创建默认大纲文件 (总纲.md)",
+        "6. 从工作区同步知识库",
+        "7. 返回项目信息"
+      ],
+      "directory_structure": {
+        "workspace/": "工作区根目录",
+        "workspace/正文/": "正文目录",
+        "workspace/大纲/": "大纲目录",
+        "workspace/设定集/": "设定集目录",
+        "workspace/archive/": "归档目录",
+        "workspace/试验稿/": "试验稿目录",
+        "workspace/.webnovel/": "状态和配置目录"
+      }
+    },
+    "chat_interaction": {
+      "description": "用户与 AI 聊天交互",
+      "steps": [
+        "1. 用户发送消息 (WebSocket: type=chat)",
+        "2. 后端获取或创建会话",
+        "3. 构建项目上下文 (大纲、设定、最新章节等)",
+        "4. 检测技能覆盖 (skill override)",
+        "5. 总编辑路由 (routeRequest) 分类意图",
+        "6. 根据意图执行相应操作",
+        "7. 流式返回 AI 响应",
+        "8. 保存消息到会话历史",
+        "9. 更新会话记忆摘要"
+      ],
+      "intent_handling": {
+        "chat": "普通聊天 - 直接调用 AI",
+        "write_continue": "续写 - 构建写章上下文并调用 AI",
+        "story_diff": "差异分析 - 生成分析计划",
+        "rewrite": "重写 - 生成重写计划",
+        "review": "审稿 - 构建审稿提示",
+        "story_query": "故事查询 - 查询故事索引",
+        "rebuild_kb": "重建知识库 - 同步并重建"
+      }
+    },
+    "chapter_writing": {
+      "description": "写章流程 (通过 WebSocket)",
+      "steps": [
+        "1. 用户触发写章 (WebSocket: type=write 或聊天中的写章指令)",
+        "2. 创建写章任务 (Job)",
+        "3. 构建写章上下文 (大纲、设定、前文摘要等)",
+        "4. 调用 AI 生成内容",
+        "5. 流式返回生成内容",
+        "6. 解析并保存章节文件",
+        "7. 更新项目状态",
+        "8. 触发后续处理 (更新摘要、重建索引等)"
+      ]
+    },
+    "document_upload": {
+      "description": "上传文档",
+      "steps": [
+        "1. 用户选择文件上传",
+        "2. 前端调用 POST /api/projects/:id/upload",
+        "3. 后端检测文件类型",
+        "4. 文本文件 (md/txt) 直接保存",
+        "5. 需要转换的文件 (docx/pdf/html) 调用 Python CLI",
+        "6. zip 文件解压并处理内部文件",
+        "7. 保存到项目工作区相应目录",
+        "8. 返回上传结果和章节列表"
+      ]
+    },
+    "story_knowledge_management": {
+      "description": "故事知识库管理",
+      "components": {
+        "characters": "角色管理 - 名称、角色、特征、关系",
+        "timeline": "时间线管理 - 事件、时间、描述",
+        "foreshadows": "伏笔管理 - 伏笔、状态、章节",
+        "locations": "地点管理 - 地点、描述、关联事件",
+        "relationships": "关系管理 - 角色间关系"
+      },
+      "sync_flow": [
+        "1. 从设定集 Markdown 提取角色名",
+        "2. 从大纲提取故事摘要",
+        "3. 更新知识库 JSON 文件",
+        "4. 重建故事索引"
+      ]
+    },
+    "studio_center": {
+      "target_architecture": "docs/v2.8-creative-cockpit-architecture.md",
+      "four_layers": ["Workspace", "Story OS", "Creative Cockpit", "Story Assets (Knowledge)"],
+      "description": "全局创作管理中心：仅 Cockpit + Versions。监控跨项目；资产与体检在项目内。",
+      "target_tabs_v2_8": {
+        "cockpit": "创作驾驶舱 - 产能/进度/健康摘要/待办 Task (Dashboard)",
+        "versions": "项目版本 - 快照/Diff/恢复"
+      },
+      "relocated_out_of_studio": {
+        "assets": "Story Assets → projects/{id}/knowledge/*",
+        "review": "Review Engine → Story OS Health (/projects/:id/health)"
+      },
+      "deprecated_v2_8": {
+        "assets_tab": "DEPRECATED",
+        "review_tab": "DEPRECATED",
+        "health_tab_on_studio": "不会新增 - Health 仅项目内 + Cockpit 摘要"
+      },
+      "data_boundaries": "docs/v2.8-data-boundaries.md",
+      "architecture_law_4": "Knowledge + Workspace only user-editable story facts; story-kb is pipeline",
+      "migration": "Phase C only after P3 review sign-off - see roadmap",
+      "roadmap": "docs/roadmap-v2.8-creative-center.md"
+    },
+    "tools_center": {
+      "description": "工具中心功能",
+      "features": {
+        "skills": "技能管理 - 查看、搜索、安装技能",
+        "default_skill": "默认技能设置 - 绑定默认创作技能",
+        "mcp": "MCP 配置 - 管理 Model Context Protocol 服务器",
+        "literary_writer": "literary-writer 路径配置"
+      }
+    }
+  },
+  "data_flow": {
+    "frontend_to_backend": {
+      "http_api": "RESTful API 调用",
+      "websocket": "实时消息传递 (聊天、写章)"
+    },
+    "backend_to_ai": {
+      "openai_protocol": "OpenAI 兼容 API",
+      "anthropic_protocol": "Anthropic API"
+    },
+    "storage_layers": {
+      "filesystem": "项目文件、章节、大纲、设定集",
+      "json_files": "配置、状态、知识库",
+      "sqlite": "可选的结构化存储 (KV、会话、归档)"
+    }
+  },
+  "key_features": {
+    "multi_model_support": "支持多个 AI 模型配置和切换",
+    "skill_system": "技能系统 - 可扩展的创作技能",
+    "workflow_engine": "工作流引擎 - 多步骤自动化任务",
+    "story_knowledge_base": "故事知识库 - 结构化管理故事元素",
+    "story_index": "故事索引 - 快速查询角色、事件、伏笔等",
+    "story_plans": "写作计划 - 差异分析、重写计划",
+    "quality_review": "质量审稿 - 自动分析写作质量",
+    "session_management": "会话管理 - 多会话、会话记忆",
+    "snapshot_restore": "快照恢复 - 项目状态版本管理",
+    "document_conversion": "文档转换 - 多格式转 Markdown",
+    "real_time_streaming": "实时流式输出 - WebSocket 通信"
+  },
+  "startup_flow": {
+    "description": "启动流程",
+    "steps": [
+      "1. 运行 ./start.sh",
+      "2. 检查并停止占用端口的进程",
+      "3. 启动 Node.js 后端 (端口 8765)",
+      "4. 加载配置和初始化存储",
+      "5. 注册事件订阅者",
+      "6. 启动 HTTP 服务器和 WebSocket",
+      "7. 打开浏览器访问 http://127.0.0.1:8765"
+    ]
+  }
+}

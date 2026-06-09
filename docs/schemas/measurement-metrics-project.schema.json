@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/measurement-metrics-project.json",
+  "title": "measurement/metrics/project.json",
+  "type": "object",
+  "required": ["schema", "project_id", "overall"],
+  "properties": {
+    "schema": { "const": "measurement_metrics_project" },
+    "project_id": { "type": "string" },
+    "overall": { "type": "number", "minimum": 0, "maximum": 100 },
+    "dimensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "score": { "type": "number" }
+        }
+      }
+    },
+    "chapter_scores": { "type": "array" },
+    "generated_at": { "type": "string", "format": "date-time" }
+  }
+}

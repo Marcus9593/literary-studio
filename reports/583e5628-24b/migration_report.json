@@ -1,0 +1,36 @@
+{
+  "schema": "migration_dry_run",
+  "project_id": "583e5628-24b",
+  "generated_at": "2026-06-02T13:48:00.793Z",
+  "dry_run": true,
+  "note": "new_id values are deterministic for dry-run only; Phase C uses generateEntityId()",
+  "entities": {
+    "active": 1,
+    "provisional": 0,
+    "rejected": 3,
+    "id_mappings": [
+      {
+        "legacy_id": "欧阳逸清",
+        "new_id": "char_zq3or2dj",
+        "status": "active",
+        "rule": "R3",
+        "reason": "mentions_320",
+        "mention_count": 320,
+        "entity_type": "character"
+      }
+    ]
+  },
+  "snapshots": {
+    "count": 3,
+    "bytes_before": 237133,
+    "bytes_after_estimate": 238669,
+    "dedup_hypothetical_savings_pct": 64.7,
+    "policy": "full_content_per_version"
+  },
+  "measurement": {
+    "review_migrate": true,
+    "verify_log_migrate": true,
+    "health_snapshot_drop": true
+  },
+  "warnings": []
+}

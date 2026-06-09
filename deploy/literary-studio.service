@@ -1,0 +1,37 @@
+# 文匠 Studio — systemd unit
+# 1. 修改 User、WorkingDirectory、Environment 值
+# 2. sudo cp deploy/literary-studio.service /etc/systemd/system/
+# 3. sudo systemctl daemon-reload && sudo systemctl enable --now literary-studio
+
+[Unit]
+Description=Literary Studio (Node backend)
+After=network.target
+
+[Service]
+Type=simple
+User=literary-studio
+Group=literary-studio
+WorkingDirectory=/opt/literary-studio/literary-studio/backend-node
+
+Environment=NODE_ENV=production
+Environment=STUDIO_PRODUCTION=1
+Environment=PORT=8765
+Environment=STUDIO_HOST=127.0.0.1
+Environment=STUDIO_JWT_SECRET=CHANGE_ME_openssl_rand_hex_32
+Environment=STUDIO_ADMIN_USER=admin
+Environment=STUDIO_ADMIN_PASSWORD=CHANGE_ME_strong_password
+Environment=STUDIO_ALLOW_REGISTER=0
+Environment=STUDIO_CORS_ORIGIN=https://studio.example.com
+Environment=LITERARY_STUDIO_DATA=/var/lib/literary-studio/data
+Environment=NODE_OPTIONS=--disable-warning=ExperimentalWarning
+
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+
+# 仅本机监听，由 Nginx 反代
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

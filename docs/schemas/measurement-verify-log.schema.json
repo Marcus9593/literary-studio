@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/measurement-verify-log.json",
+  "title": "measurement/verify/log.json",
+  "description": "Append-only verify events. Snapshot aggregates move to metrics/project.json; health_snapshot is deprecated as storage.",
+  "type": "object",
+  "required": ["version", "schema", "items"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "schema": { "const": "measurement_verify_log" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/verifyRecord" }
+    }
+  },
+  "$defs": {
+    "verifyRecord": {
+      "type": "object",
+      "required": ["id", "at", "schema", "kind", "status", "subject"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ver_[a-z0-9]{8}$" },
+        "at": { "type": "string", "format": "date-time" },
+        "schema": { "const": "verify_result" },
+        "kind": {
+          "enum": ["write_chapter", "plan_execution", "task_completion"]
+        },
+        "status": { "enum": ["pass", "partial", "fail"] },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "pass": { "type": "boolean" },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "task_id": { "type": ["string", "null"] },
+        "plan_id": { "type": ["string", "null"] },
+        "chapter": { "type": ["integer", "null"] },
+        "metrics_delta": { "type": "object" },
+        "created_action_id": { "type": ["string", "null"] },
+        "verified_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

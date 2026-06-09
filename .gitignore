@@ -1,0 +1,67 @@
+# === Dependencies ===
+node_modules/
+.venv/
+venv/
+ENV/
+
+# === Build Output ===
+frontend/dist/
+backend-node/dist/
+
+# === Data (user content, API keys, database) ===
+data/
+*.db
+*.db-journal
+*.db-wal
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# === IDE ===
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# === Logs ===
+*.log
+logs/
+
+# === Temp ===
+*.tmp
+*.temp
+*.zip
+*.bak
+*.bak.*
+
+# === LanceDB ===
+.lance/
+*.lance
+
+# === Misc ===
+*.tsbuildinfo
+.cache/

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/reject-report.json",
+  "title": "reject_report.json",
+  "type": "object",
+  "required": ["schema", "project_id", "rejected_entities"],
+  "properties": {
+    "schema": { "const": "migration_reject_report" },
+    "project_id": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "rejected_entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["legacy_id", "name", "type", "rule", "reason"],
+        "properties": {
+          "legacy_id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "enum": ["character", "location", "organization", "relationship", "event"] },
+          "rule": { "type": "string", "description": "R4, R5, etc." },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

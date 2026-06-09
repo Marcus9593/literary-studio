@@ -1,0 +1,21 @@
+{
+  "name": "literary-writer",
+  "version": "7.0.0",
+  "description": "全栈文学创作系统：小说、剧本、网文、图书等一切文学体裁。集成网文项目管理（skills + agents + data chain + RAG + dashboard）。",
+  "author": {
+    "name": "lingfengQAQ"
+  },
+  "homepage": "https://github.com/lingfengQAQ/webnovel-writer",
+  "repository": "https://github.com/lingfengQAQ/webnovel-writer",
+  "license": "GPL-3.0",
+  "keywords": [
+    "literary-writer",
+    "webnovel",
+    "novel",
+    "screenplay",
+    "claude-code",
+    "skills",
+    "agents",
+    "rag"
+  ]
+}

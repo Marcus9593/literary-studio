@@ -1,0 +1,1008 @@
+/* ── Screenplay Editor ── */
+
+.screenplay-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.screenplay-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.screenplay-tabs button {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.screenplay-tabs button.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ── Scene Board ── */
+
+.scene-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scene-board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.scene-board-info {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.scene-board-columns {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.scene-board-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scene-column-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.scene-column-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.scene-column-sublabel {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.scene-column-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.scene-column-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.scene-column-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* ── Scene Card ── */
+
+.scene-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.scene-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.scene-card-dragging {
+  opacity: 0.5;
+}
+
+.scene-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.scene-card-int-ext {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.scene-card-number {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.scene-card-act {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.scene-card-menu-trigger {
+  margin-left: auto;
+  position: relative;
+}
+
+.scene-card-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 10;
+  min-width: 80px;
+}
+
+.scene-card-menu button {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.scene-card-menu button:hover {
+  background: var(--bg-secondary);
+}
+
+.scene-card-menu button.danger {
+  color: #e74c3c;
+}
+
+.scene-card-body {
+  margin-bottom: 6px;
+}
+
+.scene-card-location {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.scene-card-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.scene-card-synopsis {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.scene-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scene-card-characters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.scene-card-char-tag {
+  font-size: 11px;
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.scene-card-char-more {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.scene-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scene-card-storyline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scene-card-duration {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ── Scene Edit Panel ── */
+
+.scene-edit-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+}
+
+.scene-edit-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.scene-edit-panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.scene-edit-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.form-row {
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg-primary);
+}
+
+.form-row textarea {
+  resize: vertical;
+}
+
+.char-input-row {
+  display: flex;
+  gap: 4px;
+}
+
+.char-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.char-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.char-tag button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.form-row-inline {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.form-row-inline input,
+.form-row-inline select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg-primary);
+}
+
+/* ── Storyline Legend ── */
+
+.storyline-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.storyline-legend-items {
+  display: flex;
+  gap: 4px;
+}
+
+.storyline-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.storyline-tag.active {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+}
+
+.storyline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Character Stats ── */
+
+.character-stats-panel {
+  padding: 16px;
+}
+
+.character-stats-panel h3 {
+  margin: 0 0 12px;
+}
+
+.character-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.character-stat-name {
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.character-stat-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.character-stat-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.character-stat-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 40px;
+  text-align: right;
+}
+
+.character-stat-acts {
+  display: flex;
+  gap: 4px;
+}
+
+.act-badge {
+  font-size: 11px;
+  background: var(--bg-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ── Episode List ── */
+
+.episode-list {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.episode-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.episode-list-toolbar h3 {
+  margin: 0;
+}
+
+.episode-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.episode-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.episode-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.episode-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.episode-card-header:hover {
+  background: var(--bg-secondary);
+}
+
+.episode-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.episode-number {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.episode-title {
+  margin: 0;
+  font-size: 14px;
+}
+
+.episode-timeline-badge {
+  font-size: 11px;
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.episode-scene-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.episode-hook {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.episode-card-actions {
+  position: relative;
+}
+
+.episode-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 10;
+}
+
+.episode-menu button {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.episode-menu button:hover {
+  background: var(--bg-secondary);
+}
+
+.episode-menu button.danger {
+  color: #e74c3c;
+}
+
+.episode-card-body {
+  padding: 0 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.episode-scenes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.episode-scenes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.episode-scene-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.episode-scene-int {
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.episode-scene-loc {
+  flex: 1;
+}
+
+.episode-scene-time {
+  color: var(--text-tertiary);
+}
+
+.episode-scene-syn {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* ── Foreshadow Tracker ── */
+
+.foreshadow-tracker {
+  padding: 16px;
+}
+
+.foreshadow-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.foreshadow-header h3 {
+  margin: 0;
+}
+
+.foreshadow-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.foreshadow-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.foreshadow-section h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.foreshadow-item {
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.foreshadow-item.resolved {
+  opacity: 0.6;
+}
+
+.foreshadow-content {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.foreshadow-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ── Character Arc Tracker ── */
+
+.character-arc-tracker {
+  padding: 16px;
+}
+
+.character-arc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.character-arc-header h3 {
+  margin: 0;
+}
+
+.arc-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.character-arc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-arc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.arc-name {
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.arc-role {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  min-width: 80px;
+}
+
+.arc-season {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.arc-episodes {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ── Shot Board ── */
+
+.shot-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.shot-board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.shot-board-info {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.over-target {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.shot-sections {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.shot-section {
+  margin-bottom: 16px;
+}
+
+.shot-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.shot-section-type {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.shot-section-type.type-hook {
+  background: #FF6B6B20;
+  color: #FF6B6B;
+}
+
+.shot-section-type.type-content {
+  background: #4ECDC420;
+  color: #4ECDC4;
+}
+
+.shot-section-type.type-cta {
+  background: #FFE66D20;
+  color: #B8A000;
+}
+
+.shot-section-duration {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.shot-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shot-section-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* ── Shot Card ── */
+
+.shot-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.shot-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shot-card-dragging {
+  opacity: 0.5;
+}
+
+.shot-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.shot-number {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.shot-duration {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.shot-card-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.shot-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shot-visual,
+.shot-subtitle,
+.shot-narration,
+.shot-music,
+.shot-camera {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── Rhythm Visualizer ── */
+
+.rhythm-visualizer {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.rhythm-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.rhythm-bar {
+  display: flex;
+  height: 12px;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rhythm-segment {
+  height: 100%;
+  min-width: 2px;
+}
+
+.rhythm-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.rhythm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.rhythm-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.rhythm-warning {
+  font-size: 12px;
+  color: #e74c3c;
+  margin-top: 4px;
+}
+
+/* ── Platform Switcher ── */
+
+.platform-switcher select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--bg-primary);
+}
+
+/* ── Loading / Error / Empty ── */
+
+.screenplay-editor-loading,
+.screenplay-editor-error,
+.screenplay-editor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-secondary);
+}
+
+.loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--text-tertiary);
+  border-radius: 50%;
+  animation: dot-pulse 1.4s infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}

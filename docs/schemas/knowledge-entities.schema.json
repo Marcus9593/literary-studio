@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://literary-studio.local/schemas/knowledge-entities.json",
+  "title": "knowledge/entities bundle (P3.2 target layout)",
+  "description": "Story Assets only. Foreshadows and inferred summaries belong in understanding/, not here.",
+  "type": "object",
+  "properties": {
+    "characters": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "integer" },
+        "updated_at": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "entity_type", "status"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(char|loc|org|rel|evt)_[a-z0-9]{8}$",
+                "description": "Immutable. See v2.8-entity-identity.md. LEGACY name-as-id disallowed for new writes."
+              },
+              "entity_type": { "enum": ["character", "location", "organization", "relationship", "event"] },
+              "name": { "type": "string" },
+              "aliases": { "type": "array", "items": { "type": "string" } },
+              "slug": { "type": ["string", "null"] },
+              "role": { "type": "string" },
+              "notes": { "type": "string" },
+              "source": { "enum": ["user", "inferred", "migrated_from_studio", "import"] },
+              "status": { "enum": ["active", "provisional", "merged", "deleted", "rejected"] },
+              "merged_into": { "type": ["string", "null"] },
+              "legacy_id": { "type": ["string", "null"] },
+              "created_at": { "type": "string", "format": "date-time" },
+              "updated_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "locations": { "$ref": "#/$defs/entityList" },
+    "organizations": { "$ref": "#/$defs/entityList" },
+    "relationships": { "$ref": "#/$defs/entityList" }
+  },
+  "$defs": {
+    "entityList": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "integer" },
+        "items": { "type": "array" }
+      }
+    }
+  }
+}
