@@ -29,7 +29,13 @@
 - [环境要求](#环境要求)
 - [快速开始](#快速开始)
 - [使用指南](#使用指南)
-- [跨平台安装与部署](#跨平台安装与部署)
+- [详细安装与部署指南](#详细安装与部署指南)
+  - [前置依赖总览](#前置依赖总览)
+  - [Windows 安装与启动](#windows-安装与启动)
+  - [macOS 安装与启动](#macos-安装与启动)
+  - [Linux 安装与启动](#linux-安装与启动)
+  - [首次登录与验证](#首次登录与验证)
+  - [开发模式与可选组件](#开发模式与可选组件)
 - [生产环境部署](#生产环境部署)
 - [环境变量参考](#环境变量参考)
 - [项目结构](#项目结构)
@@ -215,10 +221,12 @@ flowchart LR
 
 ## 快速开始
 
+> 需要 **Windows / macOS / Linux 分平台详细步骤**（含依赖安装与启动验证）？请直接阅读 [详细安装与部署指南](#详细安装与部署指南)。
+
 ### 1. 获取代码
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/literary-studio.git
+git clone https://github.com/Marcus9593/literary-studio.git
 cd literary-studio
 ```
 
@@ -345,77 +353,407 @@ node scripts/sync-literary-writer.mjs "D:\path\to\literary-writer"
 
 ---
 
-## 跨平台安装与部署
+## 详细安装与部署指南
 
-### Windows
+本节是**从零到可运行**的完整安装文档，覆盖 **Windows / macOS / Linux** 三个平台：如何安装前置依赖、如何获取代码、如何启动服务，以及安装后如何验证。
 
-**本地运行**
+> 若你只想最快跑起来，可先阅读上文 [快速开始](#快速开始)；本节适合首次部署、换机迁移或生产环境规划时查阅。
+
+---
+
+### 前置依赖总览
+
+| 组件 | 版本要求 | 是否必需 | 用途 |
+|------|----------|----------|------|
+| **Node.js** | **22 及以上** | ✅ 必需 | 主后端、前端构建、一键启动脚本 |
+| **npm** | 随 Node 附带 | ✅ 必需 | 安装 `backend-node` / `frontend` 依赖 |
+| **Git** | 任意较新版本 | ✅ 推荐 | 克隆仓库、后续更新 |
+| **Python** | 3.9 及以上 | ⬜ 可选 | DOCX / PDF / HTML 文档导入转换、literary-writer CLI 增强 |
+| **C++ 构建工具** | — | ⬜ Linux 常见需要 | 编译 LanceDB 等原生 Node 模块（见各平台说明） |
+
+**验证命令（三平台通用）：**
+
+```bash
+node -v    # 应显示 v22.x 或更高
+npm -v     # 应显示 10.x 或更高
+git --version
+python3 --version   # 可选
+```
+
+**默认访问地址：** http://127.0.0.1:8765  
+**默认管理员账号：** `admin` / `admin123`（首次登录后请立即修改，见 [环境变量参考](#环境变量参考)）
+
+---
+
+### Windows 安装与启动
+
+#### 1. 安装 Node.js 22+
+
+任选一种方式：
+
+**方式 A — 官方安装包（推荐新手）**
+
+1. 打开 https://nodejs.org/
+2. 下载 **Current** 或 **LTS（22+）** Windows 安装包（`.msi`）
+3. 安装时勾选 **Add to PATH**
+4. 重新打开 PowerShell / CMD，执行 `node -v` 确认版本 ≥ 22
+
+**方式 B — winget**
 
 ```powershell
-# 方式 1：npm（推荐）
+winget install OpenJS.NodeJS
+node -v
+```
+
+**方式 C — nvm-windows（适合多版本切换）**
+
+1. 安装 [nvm-windows](https://github.com/coreybutler/nvm-windows/releases)
+2. 执行：
+
+```powershell
+nvm install 22
+nvm use 22
+node -v
+```
+
+#### 2. 安装 Git（若尚未安装）
+
+```powershell
+winget install Git.Git
+git --version
+```
+
+#### 3. 安装 Python（可选 · 文档转换）
+
+1. 打开 https://www.python.org/downloads/windows/
+2. 下载 Python 3.11+ 安装包
+3. **务必勾选** “Add python.exe to PATH”
+4. 验证：`python --version`
+
+安装 Python 依赖（可选）：
+
+```powershell
+cd backend
+python -m pip install -r requirements.txt
+cd ..
+
+cd skills\literary-writer\scripts
+python -m pip install -r requirements.txt
+cd ..\..\..
+```
+
+#### 4. 获取代码
+
+```powershell
+git clone https://github.com/Marcus9593/literary-studio.git
+cd literary-studio
+```
+
+#### 5. 配置环境变量（推荐）
+
+```powershell
+copy .env.example .env
+notepad .env
+```
+
+至少在生产或公网使用前修改 `STUDIO_JWT_SECRET` 与 `STUDIO_ADMIN_PASSWORD`（详见 [环境变量参考](#环境变量参考)）。
+
+#### 6. 启动服务
+
+在项目根目录任选一种方式：
+
+```powershell
+# 方式 1：npm（推荐，跨平台一致）
 npm start
 
 # 方式 2：PowerShell 脚本
 .\start.ps1
 
-# 方式 3：批处理
-start.bat
+# 方式 3：双击 start.bat
 ```
 
-**生产后台运行**
+`npm start` 会自动完成：
 
-| 方式 | 说明 |
-|------|------|
-| **计划任务** | 任务计划程序 → 登录时触发 → `node backend-node\server.js`，起始于 `backend-node` 目录 |
-| **PowerShell 前台** | 设置 `STUDIO_PRODUCTION=1` 和 `STUDIO_JWT_SECRET` 后执行 `npm start` |
-| **NSSM 服务** | 使用 NSSM 将 Node 注册为 Windows 服务 |
+- 检查 Node.js 版本
+- 安装 `backend-node`、`frontend` 依赖（首次较慢）
+- 按需构建 `frontend/dist`
+- 释放被占用的 8765 端口
+- 启动 Node 后端并托管前端静态资源
+
+#### 7. 验证
+
+1. 浏览器打开：**http://127.0.0.1:8765**
+2. 使用 `admin` / `admin123` 登录
+3. 可选：命令行检查健康接口
 
 ```powershell
-# NSSM 示例
-nssm install LiteraryStudio "C:\Program Files\nodejs\node.exe" "E:\literary-studio\literary-studio\backend-node\server.js"
-nssm set LiteraryStudio AppDirectory "E:\literary-studio\literary-studio\backend-node"
-nssm start LiteraryStudio
+curl http://127.0.0.1:8765/api/health
 ```
 
-公网访问请配合 **IIS / Nginx for Windows / Caddy** 做 HTTPS 反向代理，不要将 Node 直接暴露到公网。
+#### Windows 常见问题
 
-### macOS
+| 现象 | 处理 |
+|------|------|
+| 无法运行 `.ps1` | 使用 `npm start` 或 `start.bat` |
+| `node` 不是内部命令 | 重装 Node 并勾选 PATH，或重启终端 |
+| 端口 8765 被占用 | 再次执行 `npm start`（脚本会尝试释放旧进程） |
+| 页面空白 | 执行 `npm run build` 后重启 |
+
+---
+
+### macOS 安装与启动
+
+#### 1. 安装 Homebrew（若尚未安装）
 
 ```bash
-# 本地运行
-chmod +x start.sh && ./start.sh
-# 或
-npm start
-
-# 生产部署（launchd）
-npm run build
-sudo mkdir -p /var/log/literary-studio /var/lib/literary-studio/data
-# 编辑 deploy/literary-studio-macos.plist 中的路径与环境变量
-sudo cp deploy/literary-studio-macos.plist /Library/LaunchDaemons/com.literary-studio.plist
-sudo launchctl load /Library/LaunchDaemons/com.literary-studio.plist
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### Linux
+#### 2. 安装 Node.js 22+
+
+**方式 A — Homebrew（推荐）**
 
 ```bash
-# 本地运行
-chmod +x start.sh && ./start.sh
-# 或
-npm start
-
-# 生产部署（systemd）
-cd /opt/literary-studio/literary-studio
-npm run build
-# 编辑 deploy/literary-studio.service 中的路径与环境变量
-sudo cp deploy/literary-studio.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now literary-studio
-# 配合 Nginx 反代（见 deploy/nginx-literary-studio.conf）
+brew install node@22
+brew link node@22 --force --overwrite
+node -v
+npm -v
 ```
 
-### Docker / 容器化
+**方式 B — nvm**
 
-当前版本以本地 Node 进程部署为主，未提供官方 Docker 镜像。生产环境推荐通过 systemd / launchd / NSSM 管理 Node 进程，前置 Nginx/Caddy 反代。
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# 重新打开终端后：
+nvm install 22
+nvm use 22
+node -v
+```
+
+**方式 C — 官方 pkg**
+
+从 https://nodejs.org/ 下载 macOS 安装包并安装。
+
+#### 3. 安装 Git
+
+```bash
+brew install git
+git --version
+```
+
+#### 4. 安装 Python（可选 · 文档转换）
+
+```bash
+brew install python@3.11
+python3 --version
+
+cd backend
+python3 -m pip install -r requirements.txt
+cd ..
+
+cd skills/literary-writer/scripts
+python3 -m pip install -r requirements.txt
+cd ../../..
+```
+
+#### 5. 获取代码
+
+```bash
+git clone https://github.com/Marcus9593/literary-studio.git
+cd literary-studio
+```
+
+#### 6. 配置环境变量（推荐）
+
+```bash
+cp .env.example .env
+# 使用任意编辑器修改 .env
+nano .env
+```
+
+#### 7. 启动服务
+
+```bash
+# 赋予脚本执行权限（首次）
+chmod +x start.sh
+
+# 任选一种启动方式
+npm start
+# 或
+./start.sh
+```
+
+#### 8. 验证
+
+1. 浏览器访问：**http://127.0.0.1:8765**
+2. 登录 `admin` / `admin123`
+3. 终端检查：
+
+```bash
+curl http://127.0.0.1:8765/api/health
+```
+
+#### macOS 常见问题
+
+| 现象 | 处理 |
+|------|------|
+| `Permission denied` 运行 start.sh | `chmod +x start.sh` |
+| `command not found: node` | 确认 `brew link` 或 nvm `use 22` |
+| Apple Silicon 原生模块编译失败 | 确保 Xcode Command Line Tools 已安装：`xcode-select --install` |
+
+---
+
+### Linux 安装与启动
+
+以下以 **Ubuntu / Debian** 为例；Fedora / CentOS 请将 `apt` 替换为 `dnf` / `yum`。
+
+#### 1. 安装系统基础工具
+
+```bash
+sudo apt update
+sudo apt install -y git curl build-essential
+```
+
+> `build-essential` 用于编译 LanceDB 等原生 Node 依赖，缺少时 `npm install` 可能失败。
+
+#### 2. 安装 Node.js 22+
+
+**方式 A — NodeSource（推荐生产环境）**
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+npm -v
+```
+
+**方式 B — nvm（推荐开发机）**
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+source ~/.bashrc
+nvm install 22
+nvm use 22
+node -v
+```
+
+#### 3. 安装 Python（可选 · 文档转换）
+
+```bash
+sudo apt install -y python3 python3-pip python3-venv
+python3 --version
+
+cd backend
+python3 -m pip install -r requirements.txt
+cd ..
+
+cd skills/literary-writer/scripts
+python3 -m pip install -r requirements.txt
+cd ../../..
+```
+
+#### 4. 获取代码
+
+```bash
+git clone https://github.com/Marcus9593/literary-studio.git
+cd literary-studio
+```
+
+#### 5. 配置环境变量（推荐）
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+#### 6. 启动服务
+
+```bash
+chmod +x start.sh
+npm start
+# 或
+./start.sh
+```
+
+#### 7. 验证
+
+```bash
+curl http://127.0.0.1:8765/api/health
+```
+
+浏览器访问 **http://127.0.0.1:8765**，使用 `admin` / `admin123` 登录。
+
+#### Linux 常见问题
+
+| 现象 | 处理 |
+|------|------|
+| `npm install` 编译失败 | 安装 `build-essential`，或检查 Node 是否为 22+ |
+| 仅本机访问 | 默认绑定 `127.0.0.1`，远程访问需改 `STUDIO_HOST` 并配合防火墙与反代 |
+| 权限错误写入 `data/` | 确保当前用户对项目目录有写权限 |
+
+---
+
+### 首次登录与验证
+
+安装并启动成功后，建议按以下顺序完成首次配置：
+
+| 步骤 | 操作 |
+|------|------|
+| 1 | 浏览器打开 http://127.0.0.1:8765 ，使用默认账号登录 |
+| 2 | 进入 **AI 中心 → 模型**，配置 LLM API（OpenAI / Anthropic 兼容地址与密钥） |
+| 3 | 确认 **AI 中心 → 技能** 中默认技能为 `literary-writer` |
+| 4 | **项目库 → 创建项目**，验证编辑与保存 |
+| 5 | （可选）上传 DOCX 测试文档导入（需已安装 Python 依赖） |
+| 6 | 修改 `.env` 中的 `STUDIO_ADMIN_PASSWORD` 与 `STUDIO_JWT_SECRET`，重启服务 |
+
+**停止服务：** 在运行 `npm start` 的终端按 `Ctrl + C`。
+
+**更新版本：**
+
+```bash
+git pull
+npm start
+```
+
+启动脚本会自动安装新依赖并按需重新构建前端。
+
+---
+
+### 开发模式与可选组件
+
+#### 前端热更新（三平台相同）
+
+```bash
+# 终端 1：后端
+npm start
+
+# 终端 2：Vite 开发服务器
+npm run frontend:dev
+# 浏览器打开终端提示的地址（通常 http://localhost:5173）
+```
+
+#### 仅构建前端
+
+```bash
+npm run build
+```
+
+产物输出至 `frontend/dist/`，由 Node 后端托管。
+
+#### 运行 API 集成测试（可选）
+
+```bash
+# 确保服务已启动
+cd test
+pip install -r requirements.txt
+pytest
+```
+
+详见 [`test/README.md`](test/README.md)。
+
+#### Docker / 容器化
+
+当前版本以本地 Node 进程部署为主，**未提供官方 Docker 镜像**。生产环境推荐 systemd（Linux）/ launchd（macOS）/ NSSM 或计划任务（Windows），前置 Nginx / Caddy 做 HTTPS 反代。
 
 ---
 
@@ -511,6 +849,7 @@ literary-studio/
 ├── skills/                   # AI 技能包
 │   └── literary-writer/      # 网文/剧本创作技能（v7.0）
 ├── deploy/                   # 部署配置（systemd / launchd / Nginx）
+├── test/                     # Python API 集成测试（pytest）
 ├── scripts/                  # 启动与构建脚本
 │   ├── start.mjs             # 跨平台启动
 │   └── build.mjs             # 前端构建
@@ -625,7 +964,7 @@ flowchart TB
 ### Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/literary-studio.git
+git clone https://github.com/Marcus9593/literary-studio.git
 cd literary-studio
 npm start
 ```
@@ -644,16 +983,23 @@ npm start
 npm run frontend:dev
 ```
 
-### Cross-Platform Deployment
+### Installation & Deployment (Windows / macOS / Linux)
 
-| Platform | Local Start | Production |
-|----------|-------------|------------|
-| **Any** | `npm start` | Set `STUDIO_PRODUCTION=1` + strong secrets |
-| **Windows** | `start.bat` / `.\start.ps1` | Task Scheduler / NSSM + IIS or Nginx |
-| **macOS** | `./start.sh` | launchd (`deploy/literary-studio-macos.plist`) |
-| **Linux** | `./start.sh` | systemd (`deploy/literary-studio.service`) + Nginx |
+Full step-by-step guides (prerequisites, clone, configure, start, verify) are in the Chinese section: [详细安装与部署指南](#详细安装与部署指南).
 
-See [`deploy/README.md`](deploy/README.md) for detailed production setup.
+**Quick reference:**
+
+| Platform | Install Node 22+ | Start |
+|----------|------------------|-------|
+| **Windows** | https://nodejs.org/ or `winget install OpenJS.NodeJS` | `npm start` / `.\start.ps1` / `start.bat` |
+| **macOS** | `brew install node@22` or nvm | `npm start` / `./start.sh` |
+| **Linux** | NodeSource 22.x or nvm | `npm start` / `./start.sh` |
+
+**Optional Python** (document import): `pip install -r backend/requirements.txt`
+
+**Verify:** open http://127.0.0.1:8765 — login `admin` / `admin123`
+
+**Production:** see [生产环境部署](#生产环境部署) and [`deploy/README.md`](deploy/README.md).
 
 ### Production Environment Variables
 
