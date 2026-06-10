@@ -1,0 +1,47 @@
+# Literary Studio — Docker Compose
+# Image: literarycraft/studio
+#
+# Quick start:
+#   cp .env.docker.example .env.docker
+#   # Edit .env.docker — set STUDIO_JWT_SECRET and STUDIO_ADMIN_PASSWORD
+#   docker compose up -d
+#
+# Open: http://127.0.0.1:8765
+
+services:
+  studio:
+    image: literarycraft/studio:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: literarycraft-studio
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8765}:8765"
+    env_file:
+      - .env.docker
+    environment:
+      PORT: "8765"
+      STUDIO_HOST: "0.0.0.0"
+      LITERARY_STUDIO_DATA: /app/data
+      LITERARY_WRITER_ROOT: /app/skills/literary-writer
+      PYTHON: python3
+    volumes:
+      - literarycraft-data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8765/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+volumes:
+  literarycraft-data:
+    name: literarycraft-data

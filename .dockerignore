@@ -1,0 +1,60 @@
+# Dependencies & build artifacts
+node_modules/
+frontend/node_modules/
+backend-node/node_modules/
+frontend/dist/
+backend-node/dist/
+.venv/
+venv/
+ENV/
+
+# Runtime data (mount as volume)
+data/
+*.db
+*.db-journal
+*.db-wal
+.lance/
+*.lance
+
+# Environment & secrets
+.env
+.env.*
+
+# Git & IDE
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# OS & logs
+.DS_Store
+Thumbs.db
+*.log
+logs/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Docs & misc (not needed in image)
+docs/
+deploy/
+*.md
+!skills/literary-writer/**/*.md
+
+# Skill dashboard dev tree (not used by main Studio)
+skills/literary-writer/dashboard/frontend/node_modules/
+skills/literary-writer/dashboard/frontend/dist/
+
+# Local scripts & temp
+*.tmp
+*.bak
+*.zip

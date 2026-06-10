@@ -5,6 +5,42 @@
 **默认访问地址：** http://127.0.0.1:8765  
 **默认管理员账号：** `admin` / `admin123`（首次登录后请立即修改，见 [环境变量参考](#环境变量参考)）
 
+## Docker 部署（推荐）
+
+官方镜像：**[`literarycraft/studio`](https://hub.docker.com/r/literarycraft/studio)**
+
+```bash
+# 拉取并运行
+docker pull literarycraft/studio:latest
+
+docker run -d \
+  --name literarycraft-studio \
+  --restart unless-stopped \
+  -p 8765:8765 \
+  -v literarycraft-data:/app/data \
+  -e STUDIO_PRODUCTION=1 \
+  -e STUDIO_JWT_SECRET=your_random_secret \
+  -e STUDIO_ADMIN_PASSWORD=your_strong_password \
+  -e STUDIO_ALLOW_REGISTER=0 \
+  literarycraft/studio:latest
+```
+
+或使用项目内 Compose：
+
+```bash
+cp .env.docker.example .env.docker
+# 编辑 .env.docker
+docker compose up -d --build
+```
+
+| 标签 | 说明 |
+|------|------|
+| `literarycraft/studio:latest` | 完整版（含 Python 文档转换） |
+| `literarycraft/studio:2.6.0` | 版本锁定 |
+| `literarycraft/studio:slim` | 精简版（无 DOCX/PDF 转换） |
+
+完整说明（构建、多架构、发布 Docker Hub）见 **[`deploy/docker/README.md`](docker/README.md)**。
+
 ---
 
 ## 目录
@@ -386,5 +422,8 @@ nssm start LiteraryStudio
 | macOS 权限 | `chmod +x start.sh` |
 | AI 无响应 | 检查 AI 中心模型配置与 API 密钥 |
 | 文档导入失败 | 安装 `backend/requirements.txt` |
+| Docker 容器重启 | 设置 `STUDIO_JWT_SECRET`；`docker compose logs studio` |
+| Docker 页面无法访问 | 检查 `8765:8765` 端口映射 |
+| Docker 文档转换失败 | 使用 `literarycraft/studio:latest`，不要用 `slim` 标签 |
 
 配置文件：`deploy/literary-studio.service`、`deploy/literary-studio-macos.plist`、`deploy/nginx-literary-studio.conf`
