@@ -418,12 +418,6 @@ export function createProject(title, genre = '玄幻', options = {}) {
   state.project_info.genre = genre;
   fs.writeFileSync(path.join(workspace, '.webnovel', 'state.json'), JSON.stringify(state, null, 2), 'utf-8');
 
-  // 剧本类型创建 screenplay.json
-  if (isScreenplayType(work_type)) {
-    const screenplayData = defaultScreenplayData(work_type, title);
-    saveScreenplay(projectId, screenplayData);
-  }
-
   // 大纲模板
   let outlineTemplate = `# ${title}\n\n## 一句话概述\n\n待补充\n`;
   if (work_type === 'screenplay_film') {
@@ -453,6 +447,13 @@ export function createProject(title, genre = '玄幻', options = {}) {
     workspace,
   };
   saveProjectMeta(meta);
+
+  // 剧本类型创建 screenplay.json（须在 meta 写入之后，saveScreenplay 会 touchProject）
+  if (isScreenplayType(work_type)) {
+    const screenplayData = defaultScreenplayData(work_type, title);
+    saveScreenplay(projectId, screenplayData);
+  }
+
   return normalizeProjectMeta(meta);
 }
 

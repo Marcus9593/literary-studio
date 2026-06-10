@@ -3,17 +3,11 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import * as store from './storage.js';
-import { requireProjectWrite } from './auth/project-access.js';
+import { ensureProjectAccess, requireProjectWrite } from './auth/project-access.js';
 
 const router = Router();
 
 function pid(req) { return req.params.id; }
-
-function ensureProject(req, res, next) {
-  if (req.projectMeta) return next();
-  try { store.getProject(pid(req)); next(); }
-  catch (e) { res.status(404).json({ error: e.message }); }
-}
 
 function ensureScreenplay(req, res, next) {
   const sp = store.loadScreenplay(pid(req));
@@ -24,6 +18,7 @@ function ensureScreenplay(req, res, next) {
 
 const base = '/projects/:id/screenplay';
 
+router.use(base, ensureProjectAccess);
 router.use(base, (req, res, next) => {
   if (['GET', 'HEAD'].includes(req.method)) return next();
   return requireProjectWrite(req, res, next);
@@ -31,11 +26,11 @@ router.use(base, (req, res, next) => {
 
 // ── 通用：加载/更新 screenplay.json ──
 
-router.get(base, ensureProject, ensureScreenplay, (req, res) => {
+router.get(base, ensureScreenplay, (req, res) => {
   res.json(req.screenplay);
 });
 
-router.patch(base, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(base, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const patch = req.body || {};
@@ -47,7 +42,7 @@ router.patch(base, ensureProject, ensureScreenplay, (req, res) => {
 
 // ── 通用：统计 ──
 
-router.get(`${base}/stats`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/stats`, ensureScreenplay, (req, res) => {
   const sp = req.screenplay;
   const meta = store.getProject(pid(req));
   const wt = meta.work_type;
@@ -121,7 +116,7 @@ router.get(`${base}/stats`, ensureProject, ensureScreenplay, (req, res) => {
 
 // ── 电影剧本：场景 CRUD ──
 
-router.post(`${base}/scenes`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/scenes`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     if (sp.schema !== 'screenplay_film') return res.status(400).json({ error: '仅限电影剧本' });
@@ -161,7 +156,7 @@ router.post(`${base}/scenes`, ensureProject, ensureScreenplay, (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.patch(`${base}/scenes/:sceneId`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/scenes/:sceneId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const idx = (sp.scenes || []).findIndex(s => s.id === req.params.sceneId);
@@ -174,7 +169,7 @@ router.patch(`${base}/scenes/:sceneId`, ensureProject, ensureScreenplay, (req, r
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.delete(`${base}/scenes/:sceneId`, ensureProject, ensureScreenplay, (req, res) => {
+router.delete(`${base}/scenes/:sceneId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const scene = (sp.scenes || []).find(s => s.id === req.params.sceneId);
@@ -194,7 +189,7 @@ router.delete(`${base}/scenes/:sceneId`, ensureProject, ensureScreenplay, (req, 
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.post(`${base}/scenes/reorder`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/scenes/reorder`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const order = req.body?.order;
@@ -218,11 +213,11 @@ router.post(`${base}/scenes/reorder`, ensureProject, ensureScreenplay, (req, res
 
 // ── 电影剧本：故事线 ──
 
-router.get(`${base}/storylines`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/storylines`, ensureScreenplay, (req, res) => {
   res.json(req.screenplay.storylines || []);
 });
 
-router.put(`${base}/storylines`, ensureProject, ensureScreenplay, (req, res) => {
+router.put(`${base}/storylines`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     sp.storylines = req.body || [];
@@ -233,7 +228,7 @@ router.put(`${base}/storylines`, ensureProject, ensureScreenplay, (req, res) => 
 
 // ── 电影剧本：角色统计 ──
 
-router.get(`${base}/characters`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/characters`, ensureScreenplay, (req, res) => {
   const sp = req.screenplay;
   const scenes = sp.scenes || [];
   const charMap = {};
@@ -259,7 +254,7 @@ router.get(`${base}/characters`, ensureProject, ensureScreenplay, (req, res) => 
 
 // ── 剧集：集 CRUD ──
 
-router.post(`${base}/episodes`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/episodes`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     if (sp.schema !== 'screenplay_series') return res.status(400).json({ error: '仅限剧集剧本' });
@@ -295,7 +290,7 @@ router.post(`${base}/episodes`, ensureProject, ensureScreenplay, (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.patch(`${base}/episodes/:episodeId`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/episodes/:episodeId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const idx = (sp.episodes || []).findIndex(ep => ep.id === req.params.episodeId);
@@ -308,7 +303,7 @@ router.patch(`${base}/episodes/:episodeId`, ensureProject, ensureScreenplay, (re
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.delete(`${base}/episodes/:episodeId`, ensureProject, ensureScreenplay, (req, res) => {
+router.delete(`${base}/episodes/:episodeId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const episode = (sp.episodes || []).find(ep => ep.id === req.params.episodeId);
@@ -330,7 +325,7 @@ router.delete(`${base}/episodes/:episodeId`, ensureProject, ensureScreenplay, (r
 
 // ── 剧集：集内场景 CRUD ──
 
-router.post(`${base}/episodes/:episodeId/scenes`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/episodes/:episodeId/scenes`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const episode = (sp.episodes || []).find(ep => ep.id === req.params.episodeId);
@@ -359,7 +354,7 @@ router.post(`${base}/episodes/:episodeId/scenes`, ensureProject, ensureScreenpla
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.patch(`${base}/episodes/:episodeId/scenes/:sceneId`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/episodes/:episodeId/scenes/:sceneId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const episode = (sp.episodes || []).find(ep => ep.id === req.params.episodeId);
@@ -375,7 +370,7 @@ router.patch(`${base}/episodes/:episodeId/scenes/:sceneId`, ensureProject, ensur
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.post(`${base}/episodes/:episodeId/scenes/reorder`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/episodes/:episodeId/scenes/reorder`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const episode = (sp.episodes || []).find(ep => ep.id === req.params.episodeId);
@@ -402,11 +397,11 @@ router.post(`${base}/episodes/:episodeId/scenes/reorder`, ensureProject, ensureS
 
 // ── 剧集：伏笔管理 ──
 
-router.get(`${base}/foreshadows`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/foreshadows`, ensureScreenplay, (req, res) => {
   res.json(req.screenplay.foreshadows || []);
 });
 
-router.put(`${base}/foreshadows`, ensureProject, ensureScreenplay, (req, res) => {
+router.put(`${base}/foreshadows`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     sp.foreshadows = req.body || [];
@@ -415,7 +410,7 @@ router.put(`${base}/foreshadows`, ensureProject, ensureScreenplay, (req, res) =>
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.post(`${base}/foreshadows`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/foreshadows`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const body = req.body || {};
@@ -432,7 +427,7 @@ router.post(`${base}/foreshadows`, ensureProject, ensureScreenplay, (req, res) =
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.patch(`${base}/foreshadows/:foreshadowId`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/foreshadows/:foreshadowId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const idx = (sp.foreshadows || []).findIndex(f => f.id === req.params.foreshadowId);
@@ -447,11 +442,11 @@ router.patch(`${base}/foreshadows/:foreshadowId`, ensureProject, ensureScreenpla
 
 // ── 剧集：角色弧线 ──
 
-router.get(`${base}/character-arcs`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/character-arcs`, ensureScreenplay, (req, res) => {
   res.json(req.screenplay.character_arcs || {});
 });
 
-router.patch(`${base}/character-arcs/:characterName`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/character-arcs/:characterName`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const name = decodeURIComponent(req.params.characterName);
@@ -466,7 +461,7 @@ router.patch(`${base}/character-arcs/:characterName`, ensureProject, ensureScree
 
 // ── 短视频：分镜 CRUD ──
 
-router.post(`${base}/shots`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/shots`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     if (sp.schema !== 'web_short') return res.status(400).json({ error: '仅限短视频脚本' });
@@ -502,7 +497,7 @@ router.post(`${base}/shots`, ensureProject, ensureScreenplay, (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.patch(`${base}/shots/:shotId`, ensureProject, ensureScreenplay, (req, res) => {
+router.patch(`${base}/shots/:shotId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const idx = (sp.shots || []).findIndex(sh => sh.id === req.params.shotId);
@@ -515,7 +510,7 @@ router.patch(`${base}/shots/:shotId`, ensureProject, ensureScreenplay, (req, res
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.delete(`${base}/shots/:shotId`, ensureProject, ensureScreenplay, (req, res) => {
+router.delete(`${base}/shots/:shotId`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const shot = (sp.shots || []).find(sh => sh.id === req.params.shotId);
@@ -535,7 +530,7 @@ router.delete(`${base}/shots/:shotId`, ensureProject, ensureScreenplay, (req, re
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.post(`${base}/shots/reorder`, ensureProject, ensureScreenplay, (req, res) => {
+router.post(`${base}/shots/reorder`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const order = req.body?.order;
@@ -559,7 +554,7 @@ router.post(`${base}/shots/reorder`, ensureProject, ensureScreenplay, (req, res)
 
 // ── 短视频：段落定义 ──
 
-router.put(`${base}/sections`, ensureProject, ensureScreenplay, (req, res) => {
+router.put(`${base}/sections`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     sp.sections = req.body || [];
@@ -570,7 +565,7 @@ router.put(`${base}/sections`, ensureProject, ensureScreenplay, (req, res) => {
 
 // ── 短视频：节奏分析 ──
 
-router.get(`${base}/rhythm`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/rhythm`, ensureScreenplay, (req, res) => {
   const sp = req.screenplay;
   const shots = sp.shots || [];
   const sections = sp.sections || [];
@@ -609,7 +604,7 @@ router.get(`${base}/rhythm`, ensureProject, ensureScreenplay, (req, res) => {
 
 // ── 短视频：平台设置 ──
 
-router.put(`${base}/platform`, ensureProject, ensureScreenplay, (req, res) => {
+router.put(`${base}/platform`, ensureScreenplay, (req, res) => {
   try {
     const sp = req.screenplay;
     const { platform, target_duration } = req.body || {};
@@ -622,7 +617,7 @@ router.put(`${base}/platform`, ensureProject, ensureScreenplay, (req, res) => {
 
 // ── 导出：Fountain 格式 ──
 
-router.get(`${base}/export/fountain`, ensureProject, ensureScreenplay, (req, res) => {
+router.get(`${base}/export/fountain`, ensureScreenplay, (req, res) => {
   const sp = req.screenplay;
   const meta = store.getProject(pid(req));
 

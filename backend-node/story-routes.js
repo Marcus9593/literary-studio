@@ -50,7 +50,7 @@ import {
 import { getProjectHealthView } from './measurement/health-facade.js';
 import { checkSettingsConsistency } from './export/epub-export.js';
 import * as store from './storage.js';
-import { requireProjectWrite } from './auth/project-access.js';
+import { ensureProjectAccess, requireProjectWrite } from './auth/project-access.js';
 
 const router = Router();
 
@@ -58,24 +58,15 @@ function pid(req) {
   return req.params.id;
 }
 
-function ensureProject(req, res, next) {
-  if (req.projectMeta) return next();
-  try {
-    store.getProject(pid(req));
-    next();
-  } catch (e) {
-    res.status(404).json({ error: e.message });
-  }
-}
-
 const base = '/projects/:id/story';
 
+router.use(base, ensureProjectAccess);
 router.use(base, (req, res, next) => {
   if (['GET', 'HEAD'].includes(req.method)) return next();
   return requireProjectWrite(req, res, next);
 });
 
-router.get(`${base}/knowledge`, ensureProject, (req, res) => {
+router.get(`${base}/knowledge`, (req, res) => {
   try {
     res.json(loadKnowledgeBundle(pid(req)));
   } catch (e) {
@@ -83,7 +74,7 @@ router.get(`${base}/knowledge`, ensureProject, (req, res) => {
   }
 });
 
-router.put(`${base}/knowledge`, ensureProject, (req, res) => {
+router.put(`${base}/knowledge`, (req, res) => {
   try {
     res.json(patchKnowledge(pid(req), req.body));
     rebuildStoryIndex(pid(req));
@@ -92,7 +83,7 @@ router.put(`${base}/knowledge`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/knowledge/rebuild`, ensureProject, (req, res) => {
+router.post(`${base}/knowledge/rebuild`, (req, res) => {
   try {
     res.json(bootstrapFromWorkspace(pid(req)));
   } catch (e) {
@@ -100,7 +91,7 @@ router.post(`${base}/knowledge/rebuild`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/summaries`, ensureProject, (req, res) => {
+router.get(`${base}/summaries`, (req, res) => {
   try {
     res.json(loadSummaryHierarchy(pid(req)));
   } catch (e) {
@@ -108,7 +99,7 @@ router.get(`${base}/summaries`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/summaries/rebuild`, ensureProject, (req, res) => {
+router.post(`${base}/summaries/rebuild`, (req, res) => {
   try {
     res.json(rebuildAllSummaries(pid(req)));
   } catch (e) {
@@ -116,7 +107,7 @@ router.post(`${base}/summaries/rebuild`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/query`, ensureProject, (req, res) => {
+router.get(`${base}/index/query`, (req, res) => {
   try {
     res.json(queryStory(pid(req), req.query.q || ''));
   } catch (e) {
@@ -124,7 +115,7 @@ router.get(`${base}/index/query`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/character`, ensureProject, (req, res) => {
+router.get(`${base}/index/character`, (req, res) => {
   try {
     res.json(findCharacter(pid(req), req.query.name || req.query.q || ''));
   } catch (e) {
@@ -132,7 +123,7 @@ router.get(`${base}/index/character`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/relationship`, ensureProject, (req, res) => {
+router.get(`${base}/index/relationship`, (req, res) => {
   try {
     res.json(findRelationship(pid(req), req.query.q || ''));
   } catch (e) {
@@ -140,7 +131,7 @@ router.get(`${base}/index/relationship`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/timeline`, ensureProject, (req, res) => {
+router.get(`${base}/index/timeline`, (req, res) => {
   try {
     res.json(findTimeline(pid(req), req.query.q || ''));
   } catch (e) {
@@ -148,7 +139,7 @@ router.get(`${base}/index/timeline`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/foreshadow`, ensureProject, (req, res) => {
+router.get(`${base}/index/foreshadow`, (req, res) => {
   try {
     res.json(findForeshadow(pid(req), req.query.q || ''));
   } catch (e) {
@@ -156,7 +147,7 @@ router.get(`${base}/index/foreshadow`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/index/location`, ensureProject, (req, res) => {
+router.get(`${base}/index/location`, (req, res) => {
   try {
     res.json(findLocation(pid(req), req.query.q || ''));
   } catch (e) {
@@ -164,7 +155,7 @@ router.get(`${base}/index/location`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/route`, ensureProject, async (req, res) => {
+router.post(`${base}/route`, async (req, res) => {
   try {
     res.json(await routeRequest(pid(req), req.body.message || ''));
   } catch (e) {
@@ -172,7 +163,7 @@ router.post(`${base}/route`, ensureProject, async (req, res) => {
   }
 });
 
-router.get(`${base}/plans`, ensureProject, (req, res) => {
+router.get(`${base}/plans`, (req, res) => {
   try {
     res.json({ plans: listPlans(pid(req), { status: req.query.status }) });
   } catch (e) {
@@ -180,7 +171,7 @@ router.get(`${base}/plans`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/plans/:planId`, ensureProject, (req, res) => {
+router.get(`${base}/plans/:planId`, (req, res) => {
   try {
     res.json(getPlan(pid(req), req.params.planId));
   } catch (e) {
@@ -188,7 +179,7 @@ router.get(`${base}/plans/:planId`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/plans/diff`, ensureProject, (req, res) => {
+router.post(`${base}/plans/diff`, (req, res) => {
   try {
     res.json(analyzeStoryDiff(pid(req), req.body.message || ''));
   } catch (e) {
@@ -196,7 +187,7 @@ router.post(`${base}/plans/diff`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/plans/rewrite`, ensureProject, (req, res) => {
+router.post(`${base}/plans/rewrite`, (req, res) => {
   try {
     res.json(createRewritePlan(pid(req), req.body.message || ''));
   } catch (e) {
@@ -204,7 +195,7 @@ router.post(`${base}/plans/rewrite`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/plans/:planId/confirm`, ensureProject, (req, res) => {
+router.post(`${base}/plans/:planId/confirm`, (req, res) => {
   try {
     res.json(prepareConfirmedPlan(pid(req), req.params.planId));
   } catch (e) {
@@ -212,7 +203,7 @@ router.post(`${base}/plans/:planId/confirm`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/plans/:planId/complete`, ensureProject, async (req, res) => {
+router.post(`${base}/plans/:planId/complete`, async (req, res) => {
   try {
     res.json(await completePlan(pid(req), req.params.planId));
   } catch (e) {
@@ -220,7 +211,7 @@ router.post(`${base}/plans/:planId/complete`, ensureProject, async (req, res) =>
   }
 });
 
-router.get(`${base}/health`, ensureProject, (req, res) => {
+router.get(`${base}/health`, (req, res) => {
   try {
     res.json(getProjectHealthView(pid(req)));
   } catch (e) {
@@ -228,7 +219,7 @@ router.get(`${base}/health`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/consistency`, ensureProject, (req, res) => {
+router.get(`${base}/consistency`, (req, res) => {
   try {
     res.json(checkSettingsConsistency(pid(req)));
   } catch (e) {
@@ -236,7 +227,7 @@ router.get(`${base}/consistency`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/verify`, ensureProject, (req, res) => {
+router.get(`${base}/verify`, (req, res) => {
   try {
     res.json(getVerifyBundle(pid(req)));
   } catch (e) {
@@ -244,7 +235,7 @@ router.get(`${base}/verify`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/verify/run`, ensureProject, (req, res) => {
+router.post(`${base}/verify/run`, (req, res) => {
   try {
     const { taskId, planId, chapter, filename } = req.body || {};
     const projectId = pid(req);
@@ -267,7 +258,7 @@ router.post(`${base}/verify/run`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/health/review`, ensureProject, (req, res) => {
+router.post(`${base}/health/review`, (req, res) => {
   try {
     const { filename } = req.body;
     if (!filename) throw new Error('需要 filename');
@@ -277,7 +268,7 @@ router.post(`${base}/health/review`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/understanding`, ensureProject, (req, res) => {
+router.get(`${base}/understanding`, (req, res) => {
   try {
     const bundle = loadUnderstandingBundle(pid(req));
     res.json(bundle);
@@ -286,7 +277,7 @@ router.get(`${base}/understanding`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/actions/today`, ensureProject, (req, res) => {
+router.get(`${base}/actions/today`, (req, res) => {
   try {
     const actions = loadActions(pid(req));
     const dna = loadUnderstandingBundle(pid(req)).story_dna;
@@ -302,7 +293,7 @@ router.get(`${base}/actions/today`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/actions/:actionId/plan`, ensureProject, (req, res) => {
+router.post(`${base}/actions/:actionId/plan`, (req, res) => {
   try {
     res.json(createPlanFromAction(pid(req), req.params.actionId));
   } catch (e) {
@@ -311,7 +302,7 @@ router.post(`${base}/actions/:actionId/plan`, ensureProject, (req, res) => {
 });
 
 /** 快速同步 / 全书理解 */
-router.post(`${base}/sync`, ensureProject, (req, res) => {
+router.post(`${base}/sync`, (req, res) => {
   try {
     const mode = req.body?.mode === 'deep' ? 'deep' : 'quick';
     if (mode === 'quick' && !req.body?.async) {
@@ -326,7 +317,7 @@ router.post(`${base}/sync`, ensureProject, (req, res) => {
 });
 
 /** Story OS Phase 1 — 规划生成 */
-router.post(`${base}/planner/generate`, ensureProject, (req, res) => {
+router.post(`${base}/planner/generate`, (req, res) => {
   try {
     const horizon = req.body?.horizon;
     const prefs = req.body?.preferences;
@@ -336,7 +327,7 @@ router.post(`${base}/planner/generate`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/planner/bundle`, ensureProject, (req, res) => {
+router.get(`${base}/planner/bundle`, (req, res) => {
   try {
     res.json(loadPlannerBundle(pid(req)));
   } catch (e) {
@@ -344,7 +335,7 @@ router.get(`${base}/planner/bundle`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/planner/goal`, ensureProject, (req, res) => {
+router.get(`${base}/planner/goal`, (req, res) => {
   try {
     const goal = loadStoryGoal(pid(req));
     if (!goal) {
@@ -357,7 +348,7 @@ router.get(`${base}/planner/goal`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/planner/roadmap`, ensureProject, (req, res) => {
+router.get(`${base}/planner/roadmap`, (req, res) => {
   try {
     const roadmap = loadChapterRoadmap(pid(req));
     if (!roadmap) {
@@ -370,7 +361,7 @@ router.get(`${base}/planner/roadmap`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/planner/preferences`, ensureProject, (req, res) => {
+router.get(`${base}/planner/preferences`, (req, res) => {
   try {
     res.json(loadPreferences(pid(req)));
   } catch (e) {
@@ -378,7 +369,7 @@ router.get(`${base}/planner/preferences`, ensureProject, (req, res) => {
   }
 });
 
-router.put(`${base}/planner/preferences`, ensureProject, (req, res) => {
+router.put(`${base}/planner/preferences`, (req, res) => {
   try {
     res.json(savePreferences(pid(req), req.body || {}));
   } catch (e) {
@@ -387,7 +378,7 @@ router.put(`${base}/planner/preferences`, ensureProject, (req, res) => {
 });
 
 /** Story OS — 今日创作（Scheduler） */
-router.get(`${base}/tasks/today`, ensureProject, (req, res) => {
+router.get(`${base}/tasks/today`, (req, res) => {
   try {
     res.json(getTodayCreation(pid(req)));
   } catch (e) {
@@ -395,7 +386,7 @@ router.get(`${base}/tasks/today`, ensureProject, (req, res) => {
   }
 });
 
-router.get(`${base}/tasks`, ensureProject, (req, res) => {
+router.get(`${base}/tasks`, (req, res) => {
   try {
     res.json(loadTasks(pid(req)));
   } catch (e) {
@@ -403,7 +394,7 @@ router.get(`${base}/tasks`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/tasks/rebuild`, ensureProject, (req, res) => {
+router.post(`${base}/tasks/rebuild`, (req, res) => {
   try {
     const prefs = loadPreferences(pid(req));
     const horizon = req.body?.horizon ?? prefs.default_horizon;
@@ -413,7 +404,7 @@ router.post(`${base}/tasks/rebuild`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/tasks/:taskId/plan`, ensureProject, (req, res) => {
+router.post(`${base}/tasks/:taskId/plan`, (req, res) => {
   try {
     const plan = createPlanFromTask(pid(req), req.params.taskId);
     const prep = prepareConfirmedPlan(pid(req), plan.id);
@@ -423,7 +414,7 @@ router.post(`${base}/tasks/:taskId/plan`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/tasks/:taskId/start`, ensureProject, (req, res) => {
+router.post(`${base}/tasks/:taskId/start`, (req, res) => {
   try {
     const plan = createPlanFromTask(pid(req), req.params.taskId);
     const prep = prepareConfirmedPlan(pid(req), plan.id);
@@ -437,7 +428,7 @@ router.post(`${base}/tasks/:taskId/start`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/tasks/next`, ensureProject, (req, res) => {
+router.post(`${base}/tasks/next`, (req, res) => {
   try {
     const result = startNextTask(pid(req));
     const prep = prepareConfirmedPlan(pid(req), result.plan.id);
@@ -451,7 +442,7 @@ router.post(`${base}/tasks/next`, ensureProject, (req, res) => {
   }
 });
 
-router.post(`${base}/tasks/:taskId/complete`, ensureProject, (req, res) => {
+router.post(`${base}/tasks/:taskId/complete`, (req, res) => {
   try {
     res.json(verifyAndCompleteTask(pid(req), req.params.taskId));
   } catch (e) {
