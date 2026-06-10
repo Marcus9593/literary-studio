@@ -12,7 +12,7 @@ const DATA_DIR = process.env.LITERARY_STUDIO_DATA || path.join(ROOT, 'data');
 const GUARD_PATH = path.join(DATA_DIR, 'migration', 'legacy-write-guard.json');
 
 export const LEGACY_STUDIO_WRITE_ERROR =
-  'Legacy studio.json writer disabled after Phase C. Use versions/ or measurement/. See docs/v2.8-phase-c-rollback.md';
+  'Legacy studio.json writer disabled after Phase C. Use versions/ or measurement/. See docs/archive/v2.8/v2.8-phase-c-rollback.md';
 
 export function isLegacyWriteGuardEnabled() {
   if (process.env.LEGACY_WRITE_GUARD === '1') return true;

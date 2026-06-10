@@ -20,8 +20,11 @@
       "key_dependencies": ["express", "ws", "multer", "cors"]
     },
     "python_backend": {
-      "purpose": "文档转换 (docx/pdf/html → Markdown)",
-      "key_dependencies": ["mammoth", "fitz (PyMuPDF)"]
+      "purpose": "CLI-only 文档处理（非独立服务）",
+      "entry_points": ["backend/convert_cli.py", "backend/export_cli.py"],
+      "invoked_by": "backend-node/document-convert.js, document-export.js",
+      "legacy_archived": "backend/_legacy/ (旧 FastAPI，勿启动)",
+      "key_dependencies": ["mammoth", "pymupdf", "python-docx"]
     }
   },
   "architecture": {
@@ -55,7 +58,10 @@
     "backend-node/agents/chief-editor/": "总编辑代理",
     "backend-node/workflow/": "工作流引擎",
     "backend-node/memory/": "向量记忆存储",
-    "backend/": "Python 后端 (文档转换)",
+    "backend/": "Python CLI (文档导入/导出)",
+    "backend/convert_cli.py": "DOCX/PDF/HTML/ZIP → Markdown（Node spawn）",
+    "backend/export_cli.py": "Markdown → DOCX（Node spawn）",
+    "backend/_legacy/": "已归档 FastAPI 后端（勿用）",
     "data/": "数据目录",
     "data/projects/": "项目存储目录",
     "data/settings.json": "全局设置",
@@ -408,7 +414,7 @@
       ]
     },
     "studio_center": {
-      "target_architecture": "docs/v2.8-creative-cockpit-architecture.md",
+      "target_architecture": "docs/archive/v2.8/v2.8-creative-cockpit-architecture.md",
       "four_layers": ["Workspace", "Story OS", "Creative Cockpit", "Story Assets (Knowledge)"],
       "description": "全局创作管理中心：仅 Cockpit + Versions。监控跨项目；资产与体检在项目内。",
       "target_tabs_v2_8": {
@@ -424,10 +430,10 @@
         "review_tab": "DEPRECATED",
         "health_tab_on_studio": "不会新增 - Health 仅项目内 + Cockpit 摘要"
       },
-      "data_boundaries": "docs/v2.8-data-boundaries.md",
+      "data_boundaries": "docs/archive/v2.8/v2.8-data-boundaries.md",
       "architecture_law_4": "Knowledge + Workspace only user-editable story facts; story-kb is pipeline",
       "migration": "Phase C only after P3 review sign-off - see roadmap",
-      "roadmap": "docs/roadmap-v2.8-creative-center.md"
+      "roadmap": "docs/archive/v2.8/roadmap-v2.8-creative-center.md"
     },
     "tools_center": {
       "description": "工具中心功能",

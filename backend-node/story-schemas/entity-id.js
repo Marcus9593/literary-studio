@@ -1,6 +1,6 @@
 /**
  * Entity Identity（公约 6）— 生成与解析；Phase C 前仅新代码路径使用
- * @see docs/v2.8-entity-identity.md
+ * @see docs/archive/v2.8/v2.8-entity-identity.md
  */
 import { randomBytes } from 'crypto';
 

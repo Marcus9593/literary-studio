@@ -1,6 +1,6 @@
 /**
  * Entity Resolution Layer — 全系统统一实体解析（非 Store / 非 DB）
- * @see docs/v2.8-entity-identity.md
+ * @see docs/archive/v2.8/v2.8-entity-identity.md
  */
 import { buildEntityIndex, buildEntityIndexFromRecords } from './entity-index.js';
 

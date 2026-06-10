@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 2C-3 §1 备份 — 独立脚本，不与 phase-c 合并
- * @see docs/v2.8-phase-c-rollback.md
+ * @see docs/archive/v2.8/v2.8-phase-c-rollback.md
  */
 import fs from 'fs';
 import path from 'path';

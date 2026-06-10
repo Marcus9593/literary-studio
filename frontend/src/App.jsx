@@ -11,16 +11,18 @@ import { CockpitPage } from './features/cockpit/index.js'
 import { VersionsPage } from './features/versions/index.js'
 import { ReviewPage } from './features/review/index.js'
 import { AssetsPage } from './features/assets/index.js'
-import StorySuggestionsPage from './pages/StorySuggestionsPage.jsx'
-import StoryKnowledgePage from './pages/StoryKnowledgePage.jsx'
-import StoryPlansPage from './pages/StoryPlansPage.jsx'
-import StoryHealthPage from './pages/StoryHealthPage.jsx'
-import StoryRoadmapPage from './pages/StoryRoadmapPage.jsx'
-import StorySuspensePage from './pages/StorySuspensePage.jsx'
-import StoryCharactersPage from './pages/StoryCharactersPage.jsx'
-import StoryBiblePage from './pages/StoryBiblePage.jsx'
-import StoryBeatsPage from './pages/StoryBeatsPage.jsx'
-import StoryEnginePage from './pages/StoryEnginePage.jsx'
+import {
+  StorySuggestionsPage,
+  StoryKnowledgePage,
+  StoryPlansPage,
+  StoryHealthPage,
+  StoryRoadmapPage,
+  StorySuspensePage,
+  StoryCharactersPage,
+  StoryBiblePage,
+  StoryBeatsPage,
+  StoryEnginePage,
+} from './features/story/index.js'
 import OnboardingGuide from './components/OnboardingGuide.jsx'
 import GuestbookPage from './pages/GuestbookPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -44,19 +46,27 @@ const NAV = [
 function AppShell() {
   const location = useLocation()
   const { isAdmin } = useAuth()
-  const isWorkspace = location.pathname.startsWith('/projects/')
   const isProjectScope = /^\/projects\/[^/]+/.test(location.pathname)
+  const isProjectWorkspace = /^\/projects\/[^/]+\/?$/.test(location.pathname)
+  const isProjectStory = isProjectScope && !isProjectWorkspace
 
   const navItems = isAdmin
     ? [...NAV, { to: '/users', label: '用户管理', icon: '👤', end: true }]
     : NAV
 
   return (
-    <div className={`shell ${isWorkspace ? 'shell-workspace' : ''} ${isProjectScope ? 'shell-project' : ''}`}>
-      <aside className={`sidebar ${isWorkspace ? 'sidebar-compact' : ''}`}>
+    <div
+      className={[
+        'shell',
+        isProjectScope ? 'shell-workspace' : '',
+        isProjectWorkspace ? 'shell-project' : '',
+        isProjectStory ? 'shell-story' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      <aside className={`sidebar ${isProjectScope ? 'sidebar-compact' : ''}`}>
         <NavLink to="/" className="brand">
           <span className="brand-mark">{BRAND.mark}</span>
-          {!isWorkspace && (
+          {!isProjectScope && (
             <div className="brand-text">
               <h1>{BRAND.title}</h1>
               <p title={BRAND.taglineHint}>{BRAND.tagline}</p>
@@ -76,16 +86,16 @@ function AppShell() {
               title={item.label}
             >
               <span className="nav-icon">{item.icon}</span>
-              {!isWorkspace && <span>{item.label}</span>}
+              {!isProjectScope && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
 
         <div className="sidebar-tools">
-          <ThemeToggle compact={isWorkspace} />
+          <ThemeToggle compact={isProjectScope} />
         </div>
 
-        {!isWorkspace && (
+        {!isProjectScope && (
           <footer className="sidebar-foot">
             <div className="sidebar-foot-row">
               <span className="status-dot status-dot-live" />
@@ -99,8 +109,14 @@ function AppShell() {
         )}
       </aside>
 
-      <main className={`main ${isWorkspace ? 'main-workspace' : ''}`}>
-        <AppTopBar compact={isWorkspace} />
+      <main
+        className={[
+          'main',
+          isProjectWorkspace ? 'main-workspace' : '',
+          isProjectStory ? 'main-story' : '',
+        ].filter(Boolean).join(' ')}
+      >
+        <AppTopBar compact={isProjectScope} />
         <div className="main-body">
         <Routes>
           <Route path="/" element={<CockpitPage />} />
@@ -137,7 +153,7 @@ function AppShell() {
         </Routes>
         </div>
       </main>
-      {isProjectScope ? <ProjectRightNav /> : null}
+      {isProjectWorkspace ? <ProjectRightNav /> : null}
       <OnboardingGuide />
     </div>
   )

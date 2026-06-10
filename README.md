@@ -319,10 +319,12 @@ literary-studio/
 │   ├── story-kb/             # 故事知识库
 │   ├── workflow/             # 多步骤工作流引擎
 │   └── package.json
-├── backend/                  # Python 后端（可选 · 文档处理）
-│   ├── main.py               # FastAPI 入口
+├── backend/                  # Python CLI（可选 · 文档导入/导出）
+│   ├── convert_cli.py        # Node 调用的导入 CLI
+│   ├── export_cli.py         # Node 调用的导出 CLI
 │   ├── document_convert.py   # 文档导入转换
 │   ├── document_export.py    # 文档导出
+│   ├── _legacy/              # 已归档的旧 FastAPI 后端（勿用）
 │   └── requirements.txt
 ├── skills/                   # AI 技能包
 │   └── literary-writer/      # 网文/剧本创作技能（v7.0）
@@ -463,7 +465,7 @@ Cross-platform installation, production deployment (systemd / launchd / Windows 
 literary-studio/
 ├── frontend/          # React frontend
 ├── backend-node/      # Node.js primary backend
-├── backend/           # Python document processing (optional)
+├── backend/           # Python CLI for doc import/export (optional)
 ├── skills/            # AI skill packs (literary-writer)
 ├── deploy/            # Deployment configs
 ├── scripts/           # Start & build scripts

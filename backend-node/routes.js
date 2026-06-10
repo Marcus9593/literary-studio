@@ -647,6 +647,10 @@ router.post('/projects/:id/upload', requireProjectWrite, upload.single('file'), 
       const result = convertUpload(ws, originalName, req.file.buffer, subdir);
       uploadType = result.upload_type || (ext === '.zip' ? 'zip' : 'document');
       converted = result.converted || [];
+      if (uploadType === 'zip') {
+        store.normalizeImportedWorkspace(req.params.id);
+        store.ensureWorkspaceDirs(ws);
+      }
     } else if (isTextExtension(ext) || isTextFile(ext)) {
       const targetDir = path.join(ws, subdir);
       fs.mkdirSync(targetDir, { recursive: true });
@@ -688,12 +692,20 @@ router.post('/projects/:id/upload', requireProjectWrite, upload.single('file'), 
     let takeover = null;
     try { takeover = store.buildTakeoverReport(req.params.id); } catch {}
 
+    const chapters = store.listChapters(req.params.id);
+    let import_warning = null;
+    if (uploadType === 'zip' && chapters.length === 0) {
+      import_warning =
+        'zip 已解压，但未在「正文/」下找到 .md 章节。请确认压缩包内含 正文/*.md，或先导出本项目 zip 作参考结构。';
+    }
+
     res.json({
       status: 'ok',
       upload_type: uploadType,
       result: uploadType === 'zip' ? 'extracted' : 'converted',
       converted,
-      chapters: store.listChapters(req.params.id),
+      chapters,
+      import_warning,
       takeover,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }

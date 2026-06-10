@@ -20,7 +20,7 @@ const router = Router();
 function markDeprecatedRoute(res, successorPath) {
   res.set('Deprecation', 'true');
   res.set('Link', `<${successorPath}>; rel="successor-version"`);
-  res.set('X-Architecture-Note', 'V2.8: use measurement/ or knowledge/; see docs/v2.8-data-boundaries.md');
+  res.set('X-Architecture-Note', 'V2.8: use measurement/ or knowledge/; see docs/archive/v2.8/v2.8-data-boundaries.md');
 }
 
 function markSnapshotDeprecated(res) {

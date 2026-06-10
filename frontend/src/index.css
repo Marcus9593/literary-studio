@@ -160,6 +160,11 @@ select {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Story OS 子页：全宽主栏，无右侧工程栏 */
+.shell-story.shell-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .shell-workspace .sidebar {
   display: none;
 }
@@ -554,6 +559,19 @@ select {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Story OS 子页：可滚动、保留页边距 */
+.main-story {
+  padding: 0 32px 48px;
+  overflow: auto;
+  height: auto;
+  min-height: 100vh;
+}
+
+.main-story .main-body {
+  padding-top: 8px;
+  overflow: visible;
 }
 
 /* ── Page headers ── */

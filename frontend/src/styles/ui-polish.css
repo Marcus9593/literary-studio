@@ -2154,12 +2154,45 @@
 /* ── 故事子页面导航 ── */
 
 .story-subnav-bar {
+  margin-bottom: 24px;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.story-subnav-top {
+  padding: 12px 16px 0;
+}
+
+.story-subnav-toolbar {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border-light);
+  background: linear-gradient(180deg, var(--bg-paper) 0%, var(--bg-elevated) 100%);
+}
+
+@media (min-width: 900px) {
+  .story-subnav-toolbar {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+  }
+
+  .story-subnav-scenarios {
+    flex-shrink: 0;
+  }
+
+  .story-subnav-tabs {
+    flex: 1;
+    justify-content: flex-start;
+    min-width: 0;
+  }
 }
 
 .story-back-link {
@@ -2189,6 +2222,35 @@
   content: '·';
   margin-right: 10px;
   opacity: 0.5;
+}
+
+.story-subnav-scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story-subnav-scenario {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
+
+.story-subnav-scenario:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.story-subnav-scenario.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .story-subnav-tabs {
@@ -2285,11 +2347,24 @@
   border: 1px solid var(--border-light);
 }
 
-.story-plans-layout {
+.story-plans-page .story-plans-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 300px) 1fr;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
+  min-height: 420px;
+}
+
+.story-plan-detail {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-plan-detail .hint {
+  margin: auto;
+  text-align: center;
+  padding: 48px 24px;
 }
 
 @media (max-width: 800px) {
@@ -2309,14 +2384,29 @@
 
 .story-plans-list li button {
   width: 100%;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
   text-align: left;
-  flex-wrap: wrap;
-  gap: 6px;
+  padding: 10px 12px;
+}
+
+.story-plans-list li button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.plan-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ink-muted);
 }
 
 .plan-status {
-  margin-left: auto;
+  margin-left: 0;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -3587,6 +3677,109 @@
   font-weight: 700;
   line-height: 14px;
   text-align: center;
+}
+
+.project-right-nav-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px 0;
+  opacity: 0.72;
+}
+
+.project-right-nav-group.is-active-group {
+  opacity: 1;
+}
+
+.project-right-nav-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 2px 4px 4px;
+  max-width: 52px;
+  line-height: 1.2;
+}
+
+.project-right-nav-group.is-active-group .project-right-nav-group-label {
+  color: var(--accent);
+}
+
+/* ── 创作进度卡片（工作台） ── */
+
+.creative-progress-card {
+  margin: 0 16px 12px;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.creative-progress-card-compact {
+  margin: 0 12px 10px;
+  padding: 12px 14px;
+}
+
+.creative-progress-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.creative-progress-phase {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.creative-progress-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.creative-progress-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.creative-progress-metric-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-bottom: 2px;
+}
+
+.creative-progress-metric strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.creative-progress-bar-wrap {
+  position: relative;
+  height: 6px;
+  background: var(--bg-paper);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.creative-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #c9a227);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+.creative-progress-bar-label {
+  display: block;
+  font-size: 11px;
+  margin-top: 6px;
 }
 
 /* Onboarding guide */

@@ -35,9 +35,14 @@ export default function UploadModal({ open, onClose, onUpload }) {
         const pages = c.pages ? `，${c.pages} 页` : ''
         return `${c.source} → ${c.output}（${c.converter}，${c.words} 字${pages}）`
       })
+      if (result.import_warning) {
+        setHint(`错误：${result.import_warning}`)
+        return
+      }
+      const chapterCount = result.chapters?.length ?? 0
       setHint(
         result.upload_type === 'zip'
-          ? `已解压项目包，转换 ${lines.length} 个文件`
+          ? `已解压项目包${chapterCount ? `，识别 ${chapterCount} 个章节` : ''}${lines.length ? `，转换 ${lines.length} 个文件` : ''}`
           : lines.length ? lines.join('；') : '已导入',
       )
       onClose?.()

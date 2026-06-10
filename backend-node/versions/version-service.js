@@ -1,6 +1,6 @@
 /**
  * Version Domain — 读写 projects/{id}/versions/（非 studio.json）
- * @see docs/v2.8-migration-design.md §2
+ * @see docs/archive/v2.8/v2.8-migration-design.md §2
  */
 import fs from 'fs';
 import path from 'path';

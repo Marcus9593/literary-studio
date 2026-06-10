@@ -19,16 +19,20 @@ from document_convert import (  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Convert uploaded documents to Markdown")
-    parser.add_argument("--workspace", required=True, help="Project workspace directory")
-    parser.add_argument("--filename", required=True, help="Original filename")
+    parser.add_argument("--workspace", help="Project workspace directory")
+    parser.add_argument("--filename", help="Original filename")
     parser.add_argument("--subdir", default="正文", help="Target subdirectory")
-    parser.add_argument("--data-file", required=True, help="Path to uploaded binary file")
+    parser.add_argument("--data-file", help="Path to uploaded binary file")
     parser.add_argument("--formats-only", action="store_true", help="Print supported formats JSON")
     args = parser.parse_args()
 
     if args.formats_only:
         print(json.dumps(supported_formats_payload(), ensure_ascii=False))
         return 0
+
+    if not args.workspace or not args.filename or not args.data_file:
+        print(json.dumps({"error": "需要 --workspace、--filename、--data-file"}), file=sys.stderr)
+        return 1
 
     workspace = Path(args.workspace)
     data_path = Path(args.data_file)

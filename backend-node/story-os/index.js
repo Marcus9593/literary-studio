@@ -1,5 +1,8 @@
 /**
- * Story OS 三层入口（Architecture Refactor Sprint 1）
+ * Story OS 三层门面（Architecture Refactor Sprint 1）
+ *
+ * 新代码请优先：`import * as storyOs from '../story-os/index.js'`
+ * 旧路径（story-planner/、story-tasks/ 等）仍可用，将逐步收敛到此入口。
  *
  * planner/     — 推进：Goal, Roadmap, Tasks
  * diagnosis/   — 诊断：Actions

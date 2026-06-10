@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { workspacePath, touchProject } from '../storage.js';
 import { loadStudioState, saveStudioState } from './studio-state.js';
 
-/** @deprecated V2.8 — 素材已迁至 Knowledge，见 docs/v2.8-creative-cockpit-architecture.md */
+/** @deprecated V2.8 — 素材已迁至 Knowledge，见 docs/archive/v2.8/v2.8-creative-cockpit-architecture.md */
 
 function now() {
   return new Date().toISOString();

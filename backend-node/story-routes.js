@@ -22,32 +22,36 @@ import {
   completePlan,
 } from './agents/chief-editor/index.js';
 import { loadUnderstandingBundle } from './story-understanding/store.js';
-import { loadActions } from './story-actions/store.js';
-import { rankTodayActions } from './story-actions/ranker.js';
-import { createPlanFromAction } from './story-actions/to-plan.js';
+import { diagnosis, planner, measurement } from './story-os/index.js';
 import { startSyncJob, runQuickSync } from './story-kb/rebuild.js';
-import {
+
+const {
+  loadActions,
+  rankTodayActions,
+  createPlanFromAction,
+} = diagnosis;
+
+const {
   generateStoryOS,
   getTodayCreation,
   startNextTask,
   loadTasks,
   createPlanFromTask,
-} from './story-tasks/index.js';
-import {
+  getTask,
   loadPlannerBundle,
   loadStoryGoal,
   loadChapterRoadmap,
   loadPreferences,
   savePreferences,
-} from './story-planner/store.js';
-import { getTask } from './story-tasks/store.js';
-import {
+} = planner;
+
+const {
   verifyAndCompleteTask,
   getVerifyBundle,
   verifyAfterWrite,
   verifyAfterPlanComplete,
-} from './story-verify/index.js';
-import { getProjectHealthView } from './measurement/health-facade.js';
+  getProjectHealthView,
+} = measurement;
 import { checkSettingsConsistency } from './export/epub-export.js';
 import * as store from './storage.js';
 import { ensureProjectAccess, requireProjectWrite } from './auth/project-access.js';

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 2C-2 Migration Dry Run — 只读，不写 data/
- * @see docs/v2.8-migration-design.md
+ * @see docs/archive/v2.8/v2.8-migration-design.md
  *
  * Usage:
  *   node backend-node/scripts/migration-dry-run.mjs --project <id> [--out reports/]

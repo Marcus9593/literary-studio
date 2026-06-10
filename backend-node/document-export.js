@@ -4,17 +4,11 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createWorkspaceZip } from './zip-export.js';
+import { findPython } from './python-runtime.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const EXPORT_CLI = path.join(ROOT, 'backend', 'export_cli.py');
-
-function findPython() {
-  if (process.env.PYTHON) return process.env.PYTHON;
-  const venvPython = path.join(ROOT, '.venv', 'bin', 'python3');
-  if (fs.existsSync(venvPython)) return venvPython;
-  return 'python3';
-}
 
 let docxExportAvailableCache = null;
 
@@ -28,6 +22,7 @@ export function isDocxExportAvailable() {
   try {
     const probe = spawnSync(py, [EXPORT_CLI, '--mode', 'check'], {
       encoding: 'utf-8',
+      shell: process.platform === 'win32',
       timeout: 10000,
     });
     if (probe.status === 0) {

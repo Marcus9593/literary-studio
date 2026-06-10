@@ -2,7 +2,7 @@
 /**
  * 2C-3 Phase C 一次性迁移 — 独立脚本，幂等，不写业务逻辑
  * 前置：migration-backup.mjs
- * @see docs/v2.8-migration-design.md
+ * @see docs/archive/v2.8/v2.8-migration-design.md
  */
 import fs from 'fs';
 import path from 'path';

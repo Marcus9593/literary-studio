@@ -279,6 +279,74 @@ def convert_workspace_documents(workspace: Path) -> list[dict[str, Any]]:
     return converted
 
 
+WORKSPACE_DIRS = frozenset({"正文", "大纲", "设定集", "archive", "试验稿"})
+
+
+def _zip_member_name(raw: str) -> str:
+    return raw.replace("\\", "/").lstrip("./")
+
+
+def _zip_skip_member(name: str) -> bool:
+    return (
+        not name
+        or name.startswith("__MACOSX")
+        or "/." in name
+        or name.startswith(".")
+    )
+
+
+def _zip_strip_prefix(names: list[str]) -> str:
+    clean = [n for n in names if n and not n.endswith("/")]
+    if not clean or not all("/" in n for n in clean):
+        return ""
+    roots = {n.split("/")[0] for n in clean}
+    if len(roots) != 1:
+        return ""
+    root = next(iter(roots))
+    if root in WORKSPACE_DIRS:
+        return ""
+    return f"{root}/"
+
+
+def _unique_dest(dest: Path) -> Path:
+    if not dest.exists():
+        return dest
+    n = 2
+    while True:
+        candidate = dest.with_name(f"{dest.stem}-{n}{dest.suffix}")
+        if not candidate.exists():
+            return candidate
+        n += 1
+
+
+def _normalize_workspace_layout(workspace: Path) -> None:
+    """把常见 zip 包结构整理为 workspace/正文/*.md 等标准布局。"""
+    import shutil
+
+    body = workspace / "正文"
+    body.mkdir(parents=True, exist_ok=True)
+
+    for md in list(workspace.glob("*.md")):
+        shutil.move(str(md), str(_unique_dest(body / md.name)))
+
+    for child in list(workspace.iterdir()):
+        if not child.is_dir() or child.name in WORKSPACE_DIRS or child.name.startswith("."):
+            continue
+        inner_body = child / "正文"
+        if inner_body.is_dir():
+            for md in inner_body.rglob("*.md"):
+                if md.is_file():
+                    shutil.move(str(md), str(_unique_dest(body / md.name)))
+        for md in child.glob("*.md"):
+            if md.is_file():
+                shutil.move(str(md), str(_unique_dest(body / md.name)))
+        try:
+            if child.is_dir() and not any(child.rglob("*")):
+                child.rmdir()
+        except OSError:
+            pass
+
+
 def extract_zip_to_workspace(workspace: Path, data: bytes) -> list[dict[str, Any]]:
     if workspace.exists():
         import shutil
@@ -287,16 +355,25 @@ def extract_zip_to_workspace(workspace: Path, data: bytes) -> list[dict[str, Any
     workspace.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        members: list[tuple[zipfile.ZipInfo, str]] = []
         for info in zf.infolist():
             if info.is_dir():
                 continue
-            name = info.filename
-            if name.startswith("__MACOSX") or "/." in name:
+            name = _zip_member_name(info.filename)
+            if _zip_skip_member(name):
                 continue
-            target = workspace / name
+            members.append((info, name))
+
+        prefix = _zip_strip_prefix([name for _, name in members])
+        for info, name in members:
+            rel = name[len(prefix) :] if prefix and name.startswith(prefix) else name
+            if not rel or rel.endswith("/"):
+                continue
+            target = workspace / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(zf.read(info))
 
+    _normalize_workspace_layout(workspace)
     return convert_workspace_documents(workspace)
 
 

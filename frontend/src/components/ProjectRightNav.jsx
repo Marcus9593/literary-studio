@@ -1,6 +1,11 @@
 import { useCallback } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { STORY_NAV_ITEMS, storyNavBadge } from '../lib/storyNavItems.js'
+import {
+  STORY_NAV_GROUPS,
+  storyNavBadge,
+  storyNavGroupForSegment,
+  storyNavSegment,
+} from '../lib/storyNavItems.js'
 import { useWorkspaceStoryStats } from '../lib/useWorkspaceStoryStats.js'
 import { useToast } from './Toast.jsx'
 
@@ -16,6 +21,8 @@ export default function ProjectRightNav() {
 
   const base = `/projects/${projectId}`
   const onWorkspace = location.pathname === base || location.pathname === `${base}/`
+  const segment = storyNavSegment(location.pathname, projectId)
+  const activeGroup = storyNavGroupForSegment(segment)
 
   return (
     <aside className="project-right-nav" aria-label="故事工程">
@@ -32,25 +39,35 @@ export default function ProjectRightNav() {
       <div className="project-right-nav-divider" />
 
       <nav className="project-right-nav-items">
-        {STORY_NAV_ITEMS.map((item) => {
-          const badge = storyNavBadge(item, storyStats)
-          return (
-            <NavLink
-              key={item.to}
-              to={`${base}/${item.to}`}
-              className={({ isActive }) =>
-                `project-right-nav-btn ${isActive ? 'active' : ''}`.trim()
-              }
-              title={item.label}
-            >
-              <span className="project-right-nav-icon" aria-hidden="true">{item.icon}</span>
-              <span className="project-right-nav-label">{item.shortLabel || item.label}</span>
-              {badge != null && (
-                <span className="project-right-nav-badge">{badge}</span>
-              )}
-            </NavLink>
-          )
-        })}
+        {STORY_NAV_GROUPS.map((group) => (
+          <div
+            key={group.id}
+            className={`project-right-nav-group ${group.id === activeGroup.id ? 'is-active-group' : ''}`}
+          >
+            <div className="project-right-nav-group-label" title={group.hint}>
+              {group.label}
+            </div>
+            {group.items.map((item) => {
+              const badge = storyNavBadge(item, storyStats)
+              return (
+                <NavLink
+                  key={item.to}
+                  to={`${base}/${item.to}`}
+                  className={({ isActive }) =>
+                    `project-right-nav-btn ${isActive ? 'active' : ''}`.trim()
+                  }
+                  title={item.label}
+                >
+                  <span className="project-right-nav-icon" aria-hidden="true">{item.icon}</span>
+                  <span className="project-right-nav-label">{item.shortLabel || item.label}</span>
+                  {badge != null && (
+                    <span className="project-right-nav-badge">{badge}</span>
+                  )}
+                </NavLink>
+              )
+            })}
+          </div>
+        ))}
       </nav>
     </aside>
   )

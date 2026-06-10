@@ -62,6 +62,10 @@ logs/
 .lance/
 *.lance
 
+# === Generated / local analysis ===
+reports/
+feature-gap-analysis*.json
+
 # === Misc ===
 *.tsbuildinfo
 .cache/

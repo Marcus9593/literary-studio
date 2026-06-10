@@ -9,6 +9,7 @@ import ResourceSidebar from '../components/ResourceSidebar.jsx'
 import UploadModal from '../components/UploadModal.jsx'
 import TakeoverReport from '../components/TakeoverReport.jsx'
 import WorkspaceHeader from '../components/WorkspaceHeader.jsx'
+import CreativeProgressCard from '../components/CreativeProgressCard.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import ProjectSettingsModal from '../components/ProjectSettingsModal.jsx'
 import WritePreviewModal from '../components/WritePreviewModal.jsx'
@@ -349,9 +350,15 @@ export default function ProjectPage() {
     const res = await uploadProjectFile(projectId, file, subdir)
     const p = await refresh()
     setUploadOpen(false)
-    showToast('导入完成，可在「更多 → 项目诊断」查看建议')
     const chs = p.chapters || res.chapters || []
-    if ((subdir === '正文' || subdir === '试验稿') && chs.length > 0) {
+    if (res.import_warning) {
+      showToast(res.import_warning, 'error')
+    } else if (chs.length > 0) {
+      showToast('导入完成，可在「更多 → 项目诊断」查看建议', 'success')
+    } else {
+      showToast('文件已导入，当前目录下暂无可识别的章节', 'info')
+    }
+    if ((subdir === '正文' || subdir === '试验稿' || res.upload_type === 'zip') && chs.length > 0) {
       loadManuscript(chs[chs.length - 1], { force: true })
     }
     return res
@@ -965,6 +972,14 @@ export default function ProjectPage() {
             setExportOpen(true)
           }}
         />
+        {!focusMode && !isScreenplayType(project?.work_type) && (
+          <CreativeProgressCard
+            projectId={projectId}
+            project={project}
+            chapters={chapters}
+            compact
+          />
+        )}
         {error && <div className="workspace-inline-error">{error}</div>}
         {isScreenplayType(project?.work_type) ? (
           <ScreenplayEditor
