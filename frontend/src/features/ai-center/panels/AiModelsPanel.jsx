@@ -28,6 +28,13 @@ const EMPTY_FORM = {
   api_key: '',
 }
 
+function inferProtocolFromBaseUrl(baseUrl) {
+  const url = String(baseUrl || '').trim().toLowerCase()
+  if (url.includes('/anthropic')) return 'anthropic'
+  if (/\/v1\/?$/.test(url.replace(/\/+$/, ''))) return 'openai'
+  return null
+}
+
 const TEMPLATES = [
   {
     label: 'OpenAI',
@@ -498,7 +505,15 @@ export default function AiModelsPanel() {
             <input
               id="model-base-url"
               value={form.base_url}
-              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+              onChange={(e) => {
+                const base_url = e.target.value
+                const inferred = inferProtocolFromBaseUrl(base_url)
+                setForm((f) => ({
+                  ...f,
+                  base_url,
+                  ...(inferred ? { protocol: inferred } : {}),
+                }))
+              }}
               placeholder="https://api.openai.com/v1"
               required
             />

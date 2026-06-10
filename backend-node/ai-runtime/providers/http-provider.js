@@ -40,7 +40,7 @@ function throwForHttpError(res, data) {
   if (res.status === 421 || res.status === 403 || moderation) {
     throw new Error(moderation || formatModelTestError(null, data));
   }
-  throw new Error(formatModelTestError(null, data));
+  throw new Error(formatModelTestError(null, data, res));
 }
 
 async function* streamOpenAI(cfg, request, signal) {

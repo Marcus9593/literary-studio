@@ -57,11 +57,69 @@ export function formatModerationError(data) {
   return '';
 }
 
-export function formatModelTestError(err, data) {
+export function inferProtocolFromBaseUrl(baseUrl) {
+  const url = String(baseUrl || '').trim().toLowerCase();
+  if (!url) return null;
+  if (url.includes('/anthropic')) return 'anthropic';
+  if (/\/v1\/?$/.test(url.replace(/\/+$/, '')) || url.endsWith('/v1')) return 'openai';
+  return null;
+}
+
+export function validateModelProtocol(baseUrl, protocol) {
+  const url = String(baseUrl || '').trim().toLowerCase();
+  const p = String(protocol || '').trim() || 'openai';
+  const inferred = inferProtocolFromBaseUrl(baseUrl);
+  if (!inferred || inferred === p) return p;
+
+  if (inferred === 'anthropic' && p === 'openai') {
+    throw new Error(
+      'Base URL 为 Anthropic 端点（含 /anthropic），请将「协议类型」改为 Anthropic 兼容，或改用 MiMo OpenAI 模板（…/v1）',
+    );
+  }
+  if (inferred === 'openai' && p === 'anthropic') {
+    throw new Error(
+      '协议为 Anthropic，但 Base URL 是 OpenAI 端点（含 /v1）。请改为 OpenAI 兼容，或把 Base URL 换成 …/anthropic',
+    );
+  }
+  return p;
+}
+
+export async function parseResponseBody(res) {
+  const ct = String(res?.headers?.get?.('content-type') || '').toLowerCase();
+  if (ct.includes('application/json')) {
+    try {
+      return await res.json();
+    } catch {}
+  }
+  try {
+    const text = String(await res.text()).trim();
+    if (!text) return {};
+    if (text.startsWith('{') || text.startsWith('[')) {
+      try {
+        return JSON.parse(text);
+      } catch {}
+    }
+    const title = text.match(/<title>([^<]+)<\/title>/i)?.[1]?.trim();
+    if (title) return { message: title };
+    return { message: text.slice(0, 240) };
+  } catch {
+    return {};
+  }
+}
+
+export function formatModelTestError(err, data, res) {
   const moderation = formatModerationError(data);
   if (moderation) return moderation;
 
-  const msg = String(data?.error?.message || data?.message || err?.message || '').trim();
+  const msg = String(
+    data?.error?.message
+      || data?.error?.msg
+      || data?.message
+      || data?.msg
+      || data?.detail
+      || err?.message
+      || '',
+  ).trim();
   if (isContentModerationText(msg)) return formatModerationError({ error: { message: msg } });
 
   if (/invalid api key|incorrect api key|unauthorized|401/i.test(msg)) {
@@ -71,6 +129,13 @@ export function formatModelTestError(err, data) {
     return '无法连接模型 API，请检查 Base URL 是否正确、本机网络是否可达';
   }
   if (String(err?.name || '') === 'AbortError') return '模型测试超时（15s），请稍后重试';
+
+  const status = Number(res?.status || 0);
+  if (status === 404 || /not found/i.test(msg)) {
+    return '模型 API 返回 404：请核对 Base URL 与协议类型是否匹配（MiMo OpenAI 用 …/v1 + OpenAI 兼容；Anthropic 用 …/anthropic + Anthropic 兼容）';
+  }
+  if (status >= 500) return msg || `模型 API 服务异常（HTTP ${status}），请稍后重试`;
+
   return msg || '模型连接测试失败';
 }
 
@@ -83,7 +148,7 @@ export async function postWithAuth(url, payload, apiKey, protocol, signal) {
       body: JSON.stringify(payload),
       signal,
     });
-    const data = await res.json().catch(() => ({}));
+    const data = await parseResponseBody(res);
     if (res.status !== 401) return { res, data };
     last = { res, data };
   }

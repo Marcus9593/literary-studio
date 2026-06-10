@@ -53,9 +53,11 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
 FROM runtime-base AS runtime-slim
 
 USER root
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends gosu \
-  && rm -rf /var/lib/apt/lists/*
+# Claude Code CLI — required for Studio AI chat / skill workflows
+RUN npm install -g @anthropic-ai/claude-code
+
+# Avoid apt in slim image (helps slow/unreachable Debian mirrors on some servers)
+ADD --chmod=755 https://github.com/tianon/gosu/releases/download/1.16/gosu-amd64 /usr/local/bin/gosu
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
@@ -68,14 +70,20 @@ CMD ["node", "server.js"]
 
 FROM runtime-base AS runtime
 
+ARG APT_MIRROR=
 USER root
-RUN apt-get update \
+RUN if [ -n "${APT_MIRROR}" ]; then \
+      sed -i "s|deb.debian.org|${APT_MIRROR}|g; s|security.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sources; \
+    fi \
+  && apt-get update \
   && apt-get install -y --no-install-recommends python3 python3-pip gosu \
   && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt /tmp/backend-requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/backend-requirements.txt \
   && rm /tmp/backend-requirements.txt
+
+RUN npm install -g @anthropic-ai/claude-code
 
 ENV PYTHON=python3
 

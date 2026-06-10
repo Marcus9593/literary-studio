@@ -14,7 +14,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime
+      target: ${DOCKER_TARGET:-runtime}
+      args:
+        APT_MIRROR: ${APT_MIRROR:-}
     container_name: literarycraft-studio
     restart: unless-stopped
     ports:

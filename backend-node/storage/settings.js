@@ -20,6 +20,7 @@ function maskKey(key) {
 }
 
 function migrateLegacy(raw) {
+  if (!raw || typeof raw !== 'object') return defaultSettings();
   if (raw.models) return raw;
   const baseUrl = String(raw.base_url || '').trim();
   const model = String(raw.model || '').trim();

@@ -42,6 +42,7 @@ import { searchProjectManuscripts } from './search/manuscript-search.js';
 import {
   buildUrl,
   formatModelTestError,
+  validateModelProtocol,
   postWithAuth,
 } from './ai-runtime/http-client.js';
 import guestbookRouter from './guestbook/guestbook-routes.js';
@@ -97,10 +98,13 @@ function maskKey(key) {
 }
 
 async function testModelConnection(cfg) {
-  const protocol = String(cfg.protocol || '').trim() || (String(cfg.base_url || '').includes('/anthropic') ? 'anthropic' : 'openai');
   const baseUrl = String(cfg.base_url || '').trim();
   const model = String(cfg.model || '').trim();
   const apiKey = String(cfg.api_key || '').trim();
+  const protocol = validateModelProtocol(
+    baseUrl,
+    String(cfg.protocol || '').trim() || (baseUrl.includes('/anthropic') ? 'anthropic' : 'openai'),
+  );
   if (!baseUrl) throw new Error('Base URL 不能为空');
   if (!model) throw new Error('模型名称不能为空');
   if (!apiKey) throw new Error('请填写 API Key');
@@ -121,7 +125,7 @@ async function testModelConnection(cfg) {
         protocol,
         controller.signal,
       );
-      if (!res.ok) throw new Error(formatModelTestError(null, data));
+      if (!res.ok) throw new Error(formatModelTestError(null, data, res));
       const text = (data?.content || []).map((c) => c?.text || '').join('').trim();
       return { ok: true, reply_preview: text.slice(0, 80) || '（模型已响应，但未返回文本内容）' };
     }
@@ -137,8 +141,12 @@ async function testModelConnection(cfg) {
       protocol,
       controller.signal,
     );
-    if (!res.ok) throw new Error(formatModelTestError(null, data));
-    const text = String(data?.choices?.[0]?.message?.content || '').trim();
+    if (!res.ok) throw new Error(formatModelTestError(null, data, res));
+    const text = String(
+      data?.choices?.[0]?.message?.content
+        || data?.choices?.[0]?.message?.reasoning_content
+        || '',
+    ).trim();
     return { ok: true, reply_preview: text.slice(0, 80) || '（模型已响应，但未返回文本内容）' };
   } catch (e) {
     throw new Error(formatModelTestError(e));
@@ -203,18 +211,18 @@ router.post('/models', (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.put('/models/:id', (req, res) => {
-  try { res.json(store.updateModel(req.params.id, req.body)); }
+router.put('/models/:modelId', (req, res) => {
+  try { res.json(store.updateModel(req.params.modelId, req.body)); }
   catch (e) { res.status(e.message.includes('不存在') ? 404 : 400).json({ error: e.message }); }
 });
 
-router.delete('/models/:id', (req, res) => {
-  try { res.json(store.deleteModel(req.params.id)); }
+router.delete('/models/:modelId', (req, res) => {
+  try { res.json(store.deleteModel(req.params.modelId)); }
   catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.post('/models/:id/activate', (req, res) => {
-  try { res.json(store.setActiveModel(req.params.id)); }
+router.post('/models/:modelId/activate', (req, res) => {
+  try { res.json(store.setActiveModel(req.params.modelId)); }
   catch (e) { res.status(404).json({ error: e.message }); }
 });
 
@@ -249,9 +257,9 @@ router.post('/models/test', async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-router.post('/models/:id/test', async (req, res) => {
+router.post('/models/:modelId/test', async (req, res) => {
   try {
-    const cfg = store.getModelById(req.params.id);
+    const cfg = store.getModelById(req.params.modelId);
     res.json(await testModelConnection(cfg));
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

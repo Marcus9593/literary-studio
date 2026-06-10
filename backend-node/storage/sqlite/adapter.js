@@ -19,11 +19,12 @@ export function useSqlite() {
 
 export function readKv(key, filePath, fallback, readJSON) {
   if (!useSqlite()) return readJSON(filePath, fallback);
-  const v = kvGet(key, undefined);
-  if (v !== undefined) return v;
+  // kvGet default fallback is null; passing `undefined` still triggers that default in JS.
+  const v = kvGet(key);
+  if (v != null) return v;
   const fromFile = readJSON(filePath, fallback);
-  if (fromFile !== fallback) kvSet(key, fromFile);
-  return fromFile;
+  if (fromFile != null && fromFile !== fallback) kvSet(key, fromFile);
+  return fromFile ?? fallback;
 }
 
 export function writeKv(key, filePath, data, writeJSON) {
