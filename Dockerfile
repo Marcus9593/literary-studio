@@ -53,8 +53,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
 FROM runtime-base AS runtime-slim
 
 USER root
-# Claude Code CLI — required for Studio AI chat / skill workflows
-RUN npm install -g @anthropic-ai/claude-code
+# Claude Code CLI — native linux-x64 optional dep + postinstall for real binary
+RUN npm install -g @anthropic-ai/claude-code @anthropic-ai/claude-code-linux-x64 \
+  && node /usr/local/lib/node_modules/@anthropic-ai/claude-code/install.cjs
 
 # Avoid apt in slim image (helps slow/unreachable Debian mirrors on some servers)
 ADD --chmod=755 https://github.com/tianon/gosu/releases/download/1.16/gosu-amd64 /usr/local/bin/gosu
@@ -83,7 +84,8 @@ COPY backend/requirements.txt /tmp/backend-requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/backend-requirements.txt \
   && rm /tmp/backend-requirements.txt
 
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code @anthropic-ai/claude-code-linux-x64 \
+  && node /usr/local/lib/node_modules/@anthropic-ai/claude-code/install.cjs
 
 ENV PYTHON=python3
 
