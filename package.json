@@ -11,6 +11,8 @@
     "build": "node scripts/build.mjs",
     "sync:skill": "node scripts/sync-literary-writer.mjs",
     "backend": "npm run start --prefix backend-node",
-    "frontend:dev": "npm run dev --prefix frontend"
+    "frontend:dev": "npm run dev --prefix frontend",
+    "docker:release": "node scripts/release-docker.mjs",
+    "docker:release:slim": "node scripts/release-docker.mjs --target runtime-slim --tags slim"
   }
 }

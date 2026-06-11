@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
+import UserManualModal from './UserManualModal.jsx'
 
 const ROLE_LABEL = {
   super_admin: '超级管理员',
@@ -15,6 +16,7 @@ function userInitial(user) {
 export default function UserMenu({ compact = false }) {
   const { user, logout, isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
   const rootRef = useRef(null)
 
   useEffect(() => {
@@ -85,6 +87,17 @@ export default function UserMenu({ compact = false }) {
           )}
           <button
             type="button"
+            className="user-menu-item"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              setManualOpen(true)
+            }}
+          >
+            📖 用户手册
+          </button>
+          <button
+            type="button"
             className="user-menu-item user-menu-item-danger"
             role="menuitem"
             onClick={() => {
@@ -94,6 +107,7 @@ export default function UserMenu({ compact = false }) {
           >
             退出登录
           </button>
+          <UserManualModal open={manualOpen} onClose={() => setManualOpen(false)} />
         </div>
       )}
     </div>

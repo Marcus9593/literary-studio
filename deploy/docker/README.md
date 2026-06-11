@@ -47,6 +47,42 @@ docker run -d \
 
 ---
 
+## 一键发布（推荐）
+
+改完代码并提交后，在本机执行：
+
+```bash
+# 1. 登录 Docker Hub（首次或 token 过期时）
+docker login
+
+# 2. 构建并推送完整版（标签: 2.6.0 + latest）
+npm run docker:release
+
+# 3. 精简版（标签: slim + 2.6.0，适合老服务器）
+npm run docker:release:slim
+
+# 仅预览命令、不实际构建
+npm run docker:release -- --dry-run --no-push
+```
+
+多架构构建并直接推送：
+
+```bash
+npm run docker:release -- --platform linux/amd64,linux/arm64
+```
+
+**服务器更新**（数据卷保留）：
+
+```bash
+cd /opt/literary-studio
+./deploy/docker/upgrade.sh
+
+# 或锁定版本
+IMAGE_TAG=2.6.0 ./deploy/docker/upgrade.sh
+```
+
+---
+
 ## 构建镜像
 
 ### 完整版（含 Python 文档转换，默认）

@@ -369,6 +369,13 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
     const body = cancelled ? `${fullText}\n\n[已停止生成]` : fullText;
     const writePlan = extractWritePlan(body);
     const extra = writePlan ? { write_plan: writePlan } : {};
+    const activeModel = store.getActiveModel?.();
+    if (activeModel?.id) {
+      store.updateSessionFields(projectId, sid, {
+        inference_model_id: activeModel.id,
+        claude_bound_model_id: activeModel.id,
+      });
+    }
     store.appendSessionMessage(projectId, sid, 'assistant', body, extra);
     store.refreshSessionMemory(projectId, sid);
     emit(EVENTS.MESSAGE_RECEIVED, { projectId, sessionId: sid, role: 'assistant' });

@@ -10,7 +10,7 @@
 
 services:
   studio:
-    image: literarycraft/studio:latest
+    image: literarycraft/studio:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile

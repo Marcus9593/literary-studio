@@ -352,6 +352,7 @@ export function clearSessionMessages(projectId, sessionId) {
   session.memory_updated_at = null;
   session.memory_message_count = 0;
   session.claude_session_id = null;
+  session.claude_bound_model_id = null;
   session.context_notes = [];
   session.updated_at = now();
   sqlAdapter.writeSessionData(projectId, session, writeJSON, sessionFilePath);

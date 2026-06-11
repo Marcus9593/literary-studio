@@ -28,7 +28,7 @@ import {
 
 const contextCache = new Map();
 
-export function buildSystemPrompt(projectContext, skillBlock = '') {
+export function buildSystemPrompt(projectContext, skillBlock = '', modelConfig = null) {
   const {
     title, genre, chapter_count, latest_chapter_title,
     work_type, work_type_label, creation_mode_label, unit_label, rewrite_note,
@@ -84,7 +84,9 @@ export function buildSystemPrompt(projectContext, skillBlock = '') {
 - 回复简洁，像编辑搭档一样直给
 - 讨论方向时不要直接输出整章/场正文
 - 需要动笔时，直接写入文件并告知作者
-- 写完后简要说明写了什么、字数、需要注意的地方${skillBlock}`;
+- 写完后简要说明写了什么、字数、需要注意的地方${modelConfig?.name ? `
+
+当前推理后端：${modelConfig.name}（${modelConfig.model}）。作者询问模型身份时，如实说明此后端名称，不要自称 Anthropic Claude。` : ''}${skillBlock}`;
 }
 
 function getContextCacheKey(projectId) {
@@ -480,13 +482,39 @@ export async function* streamChat(projectId, message, session = {}, options = {}
     ? buildSkillInstructionBlock(binding, { override: isOverride })
     : '';
 
-  const systemPrompt = buildSystemPrompt(context, skillBlock);
+  const systemPrompt = buildSystemPrompt(context, skillBlock, modelConfig);
   const excludeTail = computeExcludeTail(session, effectiveMessage, regenerate);
   const promptCtx = buildChatPromptContext(session, effectiveMessage, { regenerate });
   const { memoryBlock } = promptCtx;
 
-  const claudeSessionId = session.claude_session_id || ensureClaudeSessionId(session);
-  const useResume = !httpMode && !!session.claude_session_id && !options.forceFullHistory;
+  const currentModelId = modelConfig?.id || '';
+  let claudeSessionId = session.claude_session_id || ensureClaudeSessionId(session);
+  let claudeSessionReset = false;
+  const hasAssistantTurns = (session.messages || []).some((m) => m.role === 'assistant');
+  if (!httpMode && currentModelId) {
+    const claudeBoundModelId = String(session.claude_bound_model_id || '').trim();
+    const needsModelRebind = claudeBoundModelId !== currentModelId;
+    if (needsModelRebind) {
+      claudeSessionReset = true;
+      claudeSessionId = ensureClaudeSessionId({});
+      if (session.id) {
+        storage.updateSessionFields(projectId, session.id, {
+          claude_session_id: claudeSessionId,
+          inference_model_id: currentModelId,
+          claude_bound_model_id: currentModelId,
+        });
+        session.claude_session_id = claudeSessionId;
+        session.inference_model_id = currentModelId;
+        session.claude_bound_model_id = currentModelId;
+      }
+    }
+  }
+  const useResume = !httpMode
+    && !!session.claude_session_id
+    && hasAssistantTurns
+    && String(session.claude_bound_model_id || '') === currentModelId
+    && !options.forceFullHistory
+    && !claudeSessionReset;
 
   let historyBlock = '';
   if (!useResume || options.forceFullHistory) {
@@ -541,7 +569,7 @@ export async function* streamChat(projectId, message, session = {}, options = {}
       excludeTail,
     });
     slimMessages = buildHttpChatMessagesSlim({
-      systemPrompt: buildSystemPrompt(context, skillBlock),
+      systemPrompt: buildSystemPrompt(context, skillBlock, modelConfig),
       userMessage: httpUserMessage,
     });
     fullPrompt = effectiveMessage;

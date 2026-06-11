@@ -159,7 +159,18 @@ async function testModelConnection(cfg) {
 
 router.get('/health', async (_req, res) => {
   if (isProduction()) {
-    res.json({ status: 'ok' });
+    const aiHealth = await checkHealth();
+    res.json({
+      status: 'ok',
+      inference: aiHealth.inference,
+      claude_code: {
+        available: aiHealth.claude_code?.available === true,
+        version: aiHealth.claude_code?.version || '',
+      },
+      api_model: aiHealth.api_model
+        ? { available: aiHealth.api_model.available === true, error: aiHealth.api_model.error || '' }
+        : null,
+    });
     return;
   }
   const aiHealth = await checkHealth();
