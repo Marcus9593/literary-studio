@@ -779,6 +779,300 @@ pre {
   }
 }
 
+/* ------------------------------------------------------------------
+   Arc Tracking System
+   ------------------------------------------------------------------ */
+
+.arc-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 0;
+  overflow-x: auto;
+}
+
+.arc-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 60px;
+}
+
+.arc-stage-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-main);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  z-index: 1;
+}
+
+.arc-stage-label {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+.arc-stage.active .arc-stage-label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.arc-stage-connector {
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 10px);
+  right: calc(-50% + 10px);
+  height: 3px;
+  z-index: 0;
+}
+
+.arc-mini-badge {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.arc-mini-empty {
+  color: var(--text-mute);
+}
+
+.arc-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.arc-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.arc-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arc-detail-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.arc-detail-confidence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.confidence-label {
+  color: var(--text-mute);
+}
+
+.confidence-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.arc-elements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.arc-element {
+  border: 2px solid var(--border-soft);
+  background: var(--bg-panel);
+  padding: 8px 10px;
+}
+
+.arc-element-label {
+  display: block;
+  color: var(--text-mute);
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.arc-element-value {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.arc-timeline-section {
+  margin-top: 4px;
+}
+
+.arc-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.arc-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 3px solid var(--border-soft);
+  margin-left: 8px;
+  padding-left: 16px;
+}
+
+.arc-timeline-item {
+  position: relative;
+  padding: 6px 0;
+}
+
+.arc-timeline-dot {
+  position: absolute;
+  left: -21px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  border: 2px solid var(--border-main);
+}
+
+.arc-timeline-content {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.arc-timeline-chapter {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent-blue);
+  white-space: nowrap;
+}
+
+.arc-timeline-type {
+  font-size: 14px;
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.arc-timeline-desc {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.arc-timeline-empty {
+  padding: 12px;
+  text-align: center;
+}
+
+.arc-timeline-empty-text {
+  color: var(--text-mute);
+  font-size: 13px;
+}
+
+.arc-mini-flaw {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+/* Arc tracking tab layout */
+
+.arc-tracking-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arc-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+.arc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arc-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arc-stage-indicator {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.arc-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arc-card-field {
+  border: 2px solid var(--border-soft);
+  background: var(--bg-panel);
+  padding: 6px 10px;
+}
+
+.arc-card-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-mute);
+  margin-bottom: 1px;
+}
+
+.arc-card-field-value {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.arc-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--text-mute);
+}
+
+.arc-confidence {
+  font-weight: 600;
+}
+
+.arc-event-count {
+  font-weight: 600;
+}
+
+.arc-card-timeline {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 8px;
+}
+
+.protagonist-badge {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 @media (max-width: 560px) {
   .sidebar-header h1 {
     font-size: 10px;

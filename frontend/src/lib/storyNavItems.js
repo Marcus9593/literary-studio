@@ -16,6 +16,7 @@ export const STORY_NAV_GROUPS = [
     hint: '质量、节奏与知识',
     items: [
       { to: 'health', label: '作品质量', shortLabel: '质量', icon: '◆', statKey: 'health' },
+      { to: 'dynamics', label: '故事动力', shortLabel: '动力', icon: '💓' },
       { to: 'suspense', label: '悬念分析', shortLabel: '悬念', icon: '⚡' },
       { to: 'beats', label: '节拍大纲', shortLabel: '节拍', icon: '▣' },
       { to: 'knowledge', label: '作品知识', shortLabel: '知识', icon: '◎', statKey: 'knowledge' },

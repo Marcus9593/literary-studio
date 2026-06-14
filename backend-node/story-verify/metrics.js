@@ -1,4 +1,5 @@
 import { loadUnderstandingBundle } from '../story-understanding/store.js';
+import { verifyStructure } from './structure-verifier.js';
 
 /**
  * 从 Understanding 提取可对比的启发式指标（V2.9）
@@ -19,12 +20,46 @@ export function extractUnderstandingMetrics(bundle) {
   };
 }
 
+/**
+ * 从 Understanding bundle 计算结构完整性指标
+ * 返回 { structure_score, structure_gaps } 供指标对比使用
+ */
+export function extractStructureMetrics(bundle) {
+  if (!bundle) return { structure_score: null, structure_gaps: [] };
+
+  const arcs = bundle?.arcs?.items || [];
+  const conflicts = bundle?.conflicts?.items || [];
+  const valueShifts = bundle?.value_shifts?.items || bundle?.valueShifts || [];
+  const turningPoints = bundle?.turning_points?.items || bundle?.turningPoints || [];
+  const emotionCurve = bundle?.emotion_curve || bundle?.emotionCurve || [];
+  const totalChapters = bundle?.total_chapters || bundle?.outline?.total_chapters || 0;
+
+  try {
+    const result = verifyStructure({
+      arcs,
+      conflicts,
+      valueShifts,
+      turningPoints,
+      emotionCurve,
+      totalChapters,
+    });
+    return {
+      structure_score: result.score,
+      structure_gaps: result.gaps.map((g) => g.check_id),
+    };
+  } catch {
+    return { structure_score: null, structure_gaps: [] };
+  }
+}
+
 export function loadCurrentMetrics(projectId) {
   try {
     const bundle = loadUnderstandingBundle(projectId);
-    return extractUnderstandingMetrics(bundle);
+    const base = extractUnderstandingMetrics(bundle);
+    const structure = extractStructureMetrics(bundle);
+    return { ...base, ...structure };
   } catch {
-    return extractUnderstandingMetrics({});
+    return { ...extractUnderstandingMetrics({}), structure_score: null, structure_gaps: [] };
   }
 }
 
@@ -39,6 +74,8 @@ export function compareUnderstandingMetrics(before, after, { kind } = {}) {
     arc_high_risk: (after.arc_high_risk || 0) - (before.arc_high_risk || 0),
     conflict_with_gap: (after.conflict_with_gap || 0) - (before.conflict_with_gap || 0),
     dna_confidence: (after.dna_confidence ?? 0) - (before.dna_confidence ?? 0),
+    structure_score: (after.structure_score ?? 0) - (before.structure_score ?? 0),
+    structure_gaps_delta: (after.structure_gaps?.length || 0) - (before.structure_gaps?.length || 0),
   };
 
   const checks = [];
@@ -49,6 +86,22 @@ export function compareUnderstandingMetrics(before, after, { kind } = {}) {
     pass: after.has_dna,
     detail: after.has_dna ? 'story_dna 可读' : '缺失',
   });
+
+  // 结构完整性指标
+  if (before.structure_score != null && after.structure_score != null) {
+    checks.push({
+      id: 'structure_score_maintained',
+      label: '结构完整性评分维持',
+      pass: delta.structure_score >= -5,
+      detail: `${before.structure_score} → ${after.structure_score}（Δ${delta.structure_score >= 0 ? '+' : ''}${delta.structure_score}）`,
+    });
+    checks.push({
+      id: 'structure_gaps_not_worse',
+      label: '结构缺口未增加',
+      pass: delta.structure_gaps_delta <= 0,
+      detail: `${before.structure_gaps?.length || 0} → ${after.structure_gaps?.length || 0} 个缺口`,
+    });
+  }
 
   const isRewrite = kind === 'rewrite_plan' || kind === 'arc_step' || kind === 'rewrite_chapter';
   if (isRewrite) {

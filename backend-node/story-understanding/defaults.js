@@ -19,8 +19,46 @@ export function emptyStoryDna() {
   };
 }
 
+export function emptyValueShifts() {
+  return {
+    version: 2,
+    schema: 'value_shifts',
+    updated_at: null,
+    source: null,
+    items: [],
+    value_curve: [],
+    flat_ranges: [],
+  };
+}
+
+export function emptyEmotionCurve() {
+  return {
+    version: 1,
+    schema: 'emotion_curve',
+    updated_at: null,
+    source: null,
+    curve: [],
+    fatigue_warnings: [],
+    summary: {
+      avg_intensity: 0,
+      emotion_distribution: {},
+      value_shifts: 0,
+      chapter_count: 0,
+      peak_intensity: 0,
+      lowest_intensity: 0,
+    },
+  };
+}
+
+export function emptyGaps() {
+  return { version: 2, schema: 'gaps', updated_at: null, source: null, items: [] };
+}
+
 export const UNDERSTANDING_FILE_MAP = {
   arcs: 'character_arcs.json',
   conflicts: 'conflicts.json',
   story_dna: 'story_dna.json',
+  value_shifts: 'value_shifts.json',
+  emotion_curve: 'emotion_curve.json',
+  gaps: 'gaps.json',
 };

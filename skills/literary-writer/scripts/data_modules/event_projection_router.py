@@ -17,6 +17,7 @@ class EventProjectionRouter:
         "promise_created": ["memory"],
         "promise_paid_off": ["memory"],
         "artifact_obtained": ["index", "vector"],
+        "value_shift_occurred": ["memory", "vector"],
     }
 
     def route(self, event: Dict) -> List[str]:

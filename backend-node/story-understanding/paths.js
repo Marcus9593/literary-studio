@@ -9,6 +9,9 @@ export const UNDERSTANDING_FILES = {
   arcs: 'character_arcs.json',
   conflicts: 'conflicts.json',
   story_dna: 'story_dna.json',
+  value_shifts: 'value_shifts.json',
+  emotion_curve: 'emotion_curve.json',
+  gaps: 'gaps.json',
 };
 
 export function understandingDir(projectId) {

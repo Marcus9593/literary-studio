@@ -9,6 +9,9 @@ import {
   emptyArcs,
   emptyConflicts,
   emptyStoryDna,
+  emptyValueShifts,
+  emptyEmotionCurve,
+  emptyGaps,
   UNDERSTANDING_FILE_MAP,
 } from './defaults.js';
 
@@ -16,6 +19,9 @@ const DEFAULTS = {
   arcs: emptyArcs,
   conflicts: emptyConflicts,
   story_dna: emptyStoryDna,
+  value_shifts: emptyValueShifts,
+  emotion_curve: emptyEmotionCurve,
+  gaps: emptyGaps,
 };
 
 function now() {

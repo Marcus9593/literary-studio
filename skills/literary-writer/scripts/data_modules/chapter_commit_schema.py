@@ -54,6 +54,8 @@ EVENT_TYPE_ALIASES = {
     "scene_open": "open_loop_created",
     "open_loop": "open_loop_created",
     "loop_closed": "open_loop_closed",
+    "value_shift": "value_shift_occurred",
+    "value_change": "value_shift_occurred",
 }
 
 

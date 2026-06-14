@@ -17,6 +17,8 @@ import {
 } from './verifiers.js';
 import { loadBaselineForVerify, captureExecutionBaseline } from './baseline.js';
 import { loadCurrentMetrics, compareUnderstandingMetrics, mergeMetricChecks } from './metrics.js';
+import { verifyStructure } from './structure-verifier.js';
+import { loadUnderstandingBundle } from '../story-understanding/store.js';
 import { createActionFromVerify } from './action-followup.js';
 import { onContentApproved } from '../story-engine/hooks.js';
 
@@ -76,7 +78,8 @@ function refreshHealthSnapshot(projectId) {
 
 export function recordVerify(projectId, verifyResult) {
   const originalStatus = verifyResult.status;
-  const enriched = enrichWithMetrics(projectId, verifyResult);
+  const withMetrics = enrichWithMetrics(projectId, verifyResult);
+  const enriched = enrichWithStructureCheck(projectId, withMetrics);
   const record = appendVerifyRecord(projectId, enriched);
 
   const actionId = originalStatus !== 'pass'
@@ -129,6 +132,104 @@ export function verifyAndCompleteTask(projectId, taskId) {
   return { task, ...wrapped };
 }
 
+/**
+ * 结构完整性验证：从 Understanding bundle 提取数据并运行七维度检查
+ */
+export function verifyStructureIntegrity(projectId) {
+  const bundle = (() => {
+    try {
+      return loadUnderstandingBundle(projectId);
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!bundle) {
+    return {
+      score: 0,
+      dimensionScores: {},
+      checks: [{
+        id: 'structure_data_available',
+        label: '结构数据可用',
+        pass: false,
+        detail: '无法读取 Understanding bundle',
+      }],
+      gaps: [{ check_id: 'structure_data_available', label: '结构数据可用', detail: '无法读取 Understanding bundle' }],
+      suggestions: [{ dimension: 'data', priority: 'high', action: '请先执行作品分析同步，生成 Understanding 数据' }],
+    };
+  }
+
+  const arcs = bundle?.arcs?.items || [];
+  const conflicts = bundle?.conflicts?.items || [];
+  const valueShifts = bundle?.value_shifts?.items || bundle?.valueShifts || [];
+  const turningPoints = bundle?.turning_points?.items || bundle?.turningPoints || [];
+  const emotionCurve = bundle?.emotion_curve || bundle?.emotionCurve || [];
+  const totalChapters = bundle?.total_chapters || bundle?.outline?.total_chapters || 0;
+
+  return verifyStructure({
+    arcs,
+    conflicts,
+    valueShifts,
+    turningPoints,
+    emotionCurve,
+    totalChapters,
+  });
+}
+
+/**
+ * 在验收流程中追加结构完整性检查
+ * 将结构检查结果合入已有的 verifyResult
+ */
+function enrichWithStructureCheck(projectId, verifyResult) {
+  try {
+    const structureResult = verifyStructureIntegrity(projectId);
+    if (!structureResult || structureResult.score === 0 && !structureResult.checks?.length) {
+      return verifyResult;
+    }
+
+    // 将结构检查作为额外 checks 合入
+    const structureChecks = [
+      {
+        id: 'structure_score',
+        label: `结构完整性评分（${structureResult.score}/100）`,
+        pass: structureResult.score >= 70,
+        detail: `综合得分 ${structureResult.score}，维度：${Object.entries(structureResult.dimensionScores || {})
+          .map(([k, v]) => `${k}=${v}`)
+          .join(', ')}`,
+      },
+      // 仅取 gaps 的前 5 条作为 checks 展示
+      ...structureResult.gaps.slice(0, 5).map((g) => ({
+        id: `structure_gap_${g.check_id}`,
+        label: `结构·${g.label}`,
+        pass: false,
+        detail: g.detail,
+      })),
+    ];
+
+    const checks = [...(verifyResult.checks || []), ...structureChecks];
+    const allPass = checks.every((c) => c.pass);
+    const anyPass = checks.some((c) => c.pass);
+    let status = verifyResult.status;
+    // 结构检查仅作为参考，不改变已通过的验收结果
+    if (status !== 'pass') {
+      if (allPass) status = 'pass';
+      else if (anyPass) status = 'partial';
+      else status = 'fail';
+    }
+
+    return {
+      ...verifyResult,
+      status,
+      checks,
+      structure_score: structureResult.score,
+      structure_gaps: structureResult.gaps,
+      structure_suggestions: structureResult.suggestions,
+    };
+  } catch {
+    return verifyResult;
+  }
+}
+
 export function getVerifyBundle(projectId) {
   return {
     latest: getLatestVerify(projectId),
@@ -141,6 +242,7 @@ export {
   verifyWriteChapter,
   verifyPlanExecution,
   verifyTaskCompletion,
+  verifyStructureIntegrity,
   getLatestVerify,
   listRecentVerifies,
   captureExecutionBaseline,

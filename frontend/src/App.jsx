@@ -22,6 +22,7 @@ import {
   StoryBiblePage,
   StoryBeatsPage,
   StoryEnginePage,
+  StoryDynamicsPage,
 } from './features/story/index.js'
 import OnboardingGuide from './components/OnboardingGuide.jsx'
 import GuestbookPage from './pages/GuestbookPage.jsx'
@@ -150,6 +151,7 @@ function AppShell() {
           <Route path="/projects/:projectId/roadmap" element={<StoryRoadmapPage />} />
           <Route path="/projects/:projectId/health" element={<StoryHealthPage />} />
           <Route path="/projects/:projectId/engine" element={<StoryEnginePage />} />
+          <Route path="/projects/:projectId/dynamics" element={<StoryDynamicsPage />} />
         </Routes>
         </div>
       </main>

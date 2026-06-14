@@ -71,6 +71,14 @@ export function fetchFileContent(path) {
     return fetchJSON('/api/files/read', { path })
 }
 
+export function fetchStoryEvents(params = {}) {
+    return fetchJSON('/api/story-events', params)
+}
+
+export function fetchEmotionCurve() {
+    return fetchJSON('/api/emotion-curve')
+}
+
 export function subscribeSSE(onMessage, handlers = {}) {
     const { onOpen, onError } = handlers
     const eventSource = new EventSource(`${BASE}/api/events`)

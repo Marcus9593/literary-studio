@@ -286,3 +286,8 @@ export const completeTask = (projectId, taskId) =>
 
 export const listChapters = (projectId) =>
   request(`/projects/${projectId}/chapters`)
+
+// ── 情感曲线（P0-3 Emotion Curve Visualization） ──
+
+export const getEmotionCurve = (projectId) =>
+  request(`/projects/${projectId}/story/understanding`).then((b) => b?.emotion_curve || null)
