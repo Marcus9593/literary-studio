@@ -198,7 +198,11 @@ export function getDashboardStats(user = null) {
   };
 }
 
-/** @deprecated 使用 getDashboardStats */
+/**
+ * @deprecated 使用 getDashboardStats(user) 替代。
+ * 注意：此函数不传 user 参数，将返回空数据。
+ * 保留仅为向后兼容，新代码请勿使用。
+ */
 export function getCockpitOverview() {
   const dash = getDashboardStats();
   return {

@@ -36,6 +36,7 @@ export default function StoryBiblePage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [sectionDraft, setSectionDraft] = useState({ title: '', type: 'world', content: '' })
+  const [changelogLimit, setChangelogLimit] = useState(20)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -92,7 +93,10 @@ export default function StoryBiblePage() {
     setBusy(true)
     try {
       const res = await exportManuscript(projectId, { format })
-      showToast(`已导出 ${res.filename}`)
+      const msg = res._mvp
+        ? `已导出 ${res.filename}（MVP 限制：纯文本格式，非完整 Word 文档）`
+        : `已导出 ${res.filename}`
+      showToast(msg)
     } catch (e) {
       showToast(e.message, 'error')
     } finally {
@@ -181,7 +185,7 @@ export default function StoryBiblePage() {
         <section className="card">
           <h3>变更日志</h3>
           <ul className="bible-changelog">
-            {(bible.changelog || []).slice(0, 20).map((c, i) => (
+            {(bible.changelog || []).slice(0, changelogLimit).map((c, i) => (
               <li key={i}>
                 <time className="muted">{c.at?.slice(0, 19)}</time>
                 <span>{c.field}</span>
@@ -189,6 +193,16 @@ export default function StoryBiblePage() {
               </li>
             ))}
           </ul>
+          {changelogLimit < (bible.changelog || []).length && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              style={{ marginTop: 8 }}
+              onClick={() => setChangelogLimit((prev) => prev + 20)}
+            >
+              显示更多（剩余 {(bible.changelog || []).length - changelogLimit} 条）
+            </button>
+          )}
         </section>
       )}
     </StoryOsPage>

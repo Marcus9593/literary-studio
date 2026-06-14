@@ -3,6 +3,7 @@
  * @see docs/archive/v2.8/v2.8-entity-identity.md
  */
 import { buildEntityIndex, buildEntityIndexFromRecords } from './entity-index.js';
+import { invalidateStoryIndex } from '../story-index/build.js';
 
 const STABLE_ID = /^(char|loc|org|rel|evt)_[a-z0-9]{8}$/;
 
@@ -10,6 +11,8 @@ const indexCache = new Map();
 
 export function invalidateEntityIndex(projectId) {
   indexCache.delete(projectId);
+  // 同步失效 story-index 缓存，确保两套索引一致
+  invalidateStoryIndex(projectId);
 }
 
 export function getEntityIndex(projectId) {

@@ -1,4 +1,4 @@
-import { countMarkers, maxI, minF, minI, truncate } from './utils.js';
+import { countMarkers, maxI, minF, minI, round1, truncate } from './utils.js';
 
 const INTENSITY_MARKERS = [
   'tension', 'urgency', 'deadline', 'countdown', 'secret', 'reveal', 'betrayal',
@@ -89,7 +89,7 @@ function buildThreads(lines, episode) {
       const intensity = calcLineIntensity(lower);
       threads.push({
         name: truncate(line.trim(), 50),
-        intensity: intensity * 10,
+        intensity: round1(intensity),
         status: intensity > 7 ? 'peak' : 'active',
         episode,
         category: cat.catName,

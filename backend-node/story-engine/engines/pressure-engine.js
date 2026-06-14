@@ -44,9 +44,14 @@ export function analyzePressure(content, totalBeats = 0) {
   const half = Math.floor(lines.length / 2);
   let direction = 'stable';
   if (half > 0) {
-    const firstHalf = minF(10, countMarkers(lines.slice(0, half), SUSPENSE_MARKERS) * 0.5);
-    const secondHalf = minF(10, countMarkers(lines.slice(half), SUSPENSE_MARKERS) * 0.5);
-    const diff = secondHalf - firstHalf;
+    const firstHalfSuspense = minF(10, countMarkers(lines.slice(0, half), SUSPENSE_MARKERS) * 0.5);
+    const secondHalfSuspense = minF(10, countMarkers(lines.slice(half), SUSPENSE_MARKERS) * 0.5);
+    const firstHalfEmotion = minF(10, countMarkers(lines.slice(0, half), EMOTION_MARKERS) * 0.6);
+    const secondHalfEmotion = minF(10, countMarkers(lines.slice(half), EMOTION_MARKERS) * 0.6);
+    // Weighted combination: suspense 0.6 + emotion 0.4
+    const firstCombined = firstHalfSuspense * 0.6 + firstHalfEmotion * 0.4;
+    const secondCombined = secondHalfSuspense * 0.6 + secondHalfEmotion * 0.4;
+    const diff = secondCombined - firstCombined;
     if (diff > 1.5) direction = 'increasing';
     else if (diff < -1.5) direction = 'decreasing';
   }

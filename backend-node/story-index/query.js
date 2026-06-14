@@ -1,4 +1,5 @@
 import { getStoryIndex, rebuildStoryIndex } from './build.js';
+import { isPlausibleCharacterName } from '../story-kb/character-name-filter.js';
 
 function norm(s) {
   return String(s || '').trim().toLowerCase();
@@ -9,7 +10,8 @@ function matchText(hay, needle) {
 }
 
 export function findCharacter(projectId, nameOrQuery) {
-  rebuildStoryIndex(projectId);
+  // 使用缓存的索引，不每次重建
+  // 索引在知识库更新时通过 invalidateStoryIndex 或 rebuildStoryIndex 刷新
   const index = getStoryIndex(projectId);
   const q = String(nameOrQuery || '').trim();
   if (!q) return [];
@@ -17,7 +19,7 @@ export function findCharacter(projectId, nameOrQuery) {
   const results = [];
   for (const [key, char] of index.characters) {
     const names = [key, char.name, ...(char.aliases || [])].filter(Boolean);
-    if (names.some((n) => matchText(n, q) || matchText(q, n))) {
+    if (names.some((n) => q.length >= 2 ? (matchText(n, q) || matchText(q, n)) : norm(n) === norm(q))) {
       results.push(char);
     }
   }
@@ -70,7 +72,9 @@ export function queryStory(projectId, question) {
   const foreshadows = findForeshadow(projectId, q);
   const locations = findLocation(projectId, q);
 
-  const nameHits = [...q.matchAll(/[\u4e00-\u9fa5]{2,4}/g)].map((m) => m[0]);
+  const nameHits = [...q.matchAll(/[\u4e00-\u9fa5]{2,4}/g)]
+    .map((m) => m[0])
+    .filter((n) => isPlausibleCharacterName(n));
   const characterPairs = [];
   for (const n of nameHits) {
     const found = findCharacter(projectId, n);

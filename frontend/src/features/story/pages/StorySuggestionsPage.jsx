@@ -57,18 +57,26 @@ export default function StorySuggestionsPage() {
 
   const load = useCallback((opts = {}) => {
     if (!opts.silent) setLoading(true)
-    return Promise.all([
+    return Promise.allSettled([
       getProject(projectId),
       getTodayTasks(projectId),
       getTodaySuggestions(projectId, 5),
     ])
-      .then(([p, today, diag]) => {
-        setProject(p)
-        setTodayData(today)
-        setDiagData(diag)
-        if (today?.preferences?.default_horizon) {
-          setHorizon(today.preferences.default_horizon)
+      .then(([pResult, todayResult, diagResult]) => {
+        if (pResult.status === 'fulfilled') setProject(pResult.value)
+        if (todayResult.status === 'fulfilled') {
+          const today = todayResult.value
+          setTodayData(today)
+          if (today?.preferences?.default_horizon) {
+            setHorizon(today.preferences.default_horizon)
+          }
         }
+        if (diagResult.status === 'fulfilled') setDiagData(diagResult.value)
+        const errors = [pResult, todayResult, diagResult]
+          .filter((r) => r.status === 'rejected')
+          .map((r) => r.reason?.message)
+          .filter(Boolean)
+        if (errors.length) showToast(errors.join('; '), 'error')
       })
       .catch((e) => showToast(e.message, 'error'))
       .finally(() => { if (!opts.silent) setLoading(false) })

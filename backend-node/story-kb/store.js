@@ -13,6 +13,9 @@ const ENTITIES_FILE_MAP = {
   timeline: 'events.json',
 };
 
+// 影响 entity index 的知识库 key（entity-index.js 中 loadEntityRecords 使用）
+const ENTITY_INDEX_KEYS = new Set(['characters', 'locations', 'timeline']);
+
 function entitiesPath(projectId, filename) {
   return path.join(knowledgeDir(projectId), 'entities', filename);
 }
@@ -135,7 +138,7 @@ export function saveKnowledgeFile(projectId, key, data) {
 
   const payload = { ...data, updated_at: now() };
   writeJson(knowledgePath(projectId, file), payload);
-  if (key === 'characters') invalidateEntityIndex(projectId);
+  if (ENTITY_INDEX_KEYS.has(key)) invalidateEntityIndex(projectId);
   return payload;
 }
 

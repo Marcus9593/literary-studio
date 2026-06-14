@@ -135,6 +135,10 @@ router.patch(`${base}/pipelines/:runId`, (req, res) => {
 });
 
 router.post(`${base}/governor/decide`, (req, res) => {
+  // 限制：仅管理员可直接调用 Governor 决策，防止客户端构造假报告绕过审查
+  if (!req.user || req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: '仅管理员可直接调用 Governor 决策' });
+  }
   const { critic_report: criticReport, unit_index: unitIndex = 1 } = req.body || {};
   if (!criticReport) return res.status(400).json({ error: '需要 critic_report' });
   res.json(decideGovernor(pid(req), criticReport, Number(unitIndex) || 1));
@@ -206,11 +210,15 @@ router.post(`${base}/pipeline/run`, async (req, res) => {
 router.post(`${base}/memory/sync`, (req, res) => {
   try {
     const body = req.body || {};
+    // 必须显式传入 verify_status，防止绕过验收流程
+    if (!body.verify_status) {
+      return res.status(400).json({ error: '缺少 verify_status 参数（pass/partial/completed）' });
+    }
     const result = onContentApproved(pid(req), {
       filename: body.filename,
       chapter: body.unit_index ?? body.chapter,
       content: body.content,
-      verifyStatus: body.verify_status || 'pass',
+      verifyStatus: body.verify_status,
     });
     if (!result) return res.status(400).json({ error: '无法同步记忆（内容为空或未通过验收）' });
     res.json(result);

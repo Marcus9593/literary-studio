@@ -11,6 +11,10 @@ const TARGET_TEMPLATES = [
 
 /**
  * Story Goal — Target State（Current State 真相源在 Understanding）
+ * @param {object} ctx
+ * @param {{ act1Threshold?: number, act2Threshold?: number }} [ctx.actThresholds]
+ *   act1Threshold: chapters below this are Act 1 (default 30)
+ *   act2Threshold: chapters below this are Act 2 (default 80)
  */
 export function buildStoryGoal(ctx) {
   const { currentChapter, horizon, storyDna, latestChapter, outlineExcerpt, conflicts, arcs } = ctx;
@@ -45,7 +49,9 @@ export function buildStoryGoal(ctx) {
     ? `${protagonistName}处于「${protagonist.current_stage || '成长中'}」阶段`
     : '';
 
-  const actIndex = currentChapter < 30 ? 1 : currentChapter < 80 ? 2 : 3;
+  const act1Threshold = ctx.actThresholds?.act1Threshold ?? 30;
+  const act2Threshold = ctx.actThresholds?.act2Threshold ?? 80;
+  const actIndex = currentChapter < act1Threshold ? 1 : currentChapter < act2Threshold ? 2 : 3;
   const targetState = outlineExcerpt.length > 80
     ? `按总纲推进：${outlineExcerpt.slice(0, 80).replace(/\n/g, ' ')}…`
     : `${TARGET_TEMPLATES[actIndex % TARGET_TEMPLATES.length]}（围绕：${mainConflict}）`;

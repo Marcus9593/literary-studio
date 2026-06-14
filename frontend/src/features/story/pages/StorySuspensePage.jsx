@@ -111,7 +111,7 @@ export default function StorySuspensePage() {
               ))}
             </select>
           </label>
-          <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => analyze()}>
+          <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => analyze(selectedFile)}>
             {busy ? '\u5206\u6790\u4e2d\u2026' : '\u91cd\u65b0\u5206\u6790'}
           </button>
         </div>

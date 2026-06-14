@@ -5,6 +5,7 @@ import { decodeBuffer } from '../encoding.js';
 import { loadKnowledgeBundle, saveKnowledgeFile } from './store.js';
 import { listCharacters } from './entity-resolver.js';
 import { rebuildStoryIndex } from '../story-index/build.js';
+import { isPlausibleCharacterName } from './character-name-filter.js';
 
 function now() {
   return new Date().toISOString();
@@ -22,7 +23,9 @@ function extractNamesFromSettings(text) {
     let m;
     while ((m = re.exec(text))) {
       const n = m[1].trim();
-      if (n.length >= 2 && n.length <= 12) names.add(n);
+      if (n.length >= 2 && n.length <= 12 && isPlausibleCharacterName(n)) {
+        names.add(n);
+      }
     }
   }
   return [...names];

@@ -106,7 +106,7 @@ export async function continuePipelineAfterRevision(projectId, plan) {
     });
   } else {
     updatePipelineRun(projectId, pipeline.id, {
-      status: result.governor?.decision === 'APPROVE' ? 'complete' : 'complete',
+      status: result.governor?.decision === 'APPROVE' ? 'complete' : 'failed',
     });
   }
 

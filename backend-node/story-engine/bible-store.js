@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { knowledgeDir } from '../story-kb/paths.js';
 
 const BIBLE_FILE = 'bible.json';
@@ -67,8 +68,12 @@ export function saveBible(projectId, patch) {
     current.sections = patch.sections;
   }
 
-  if (changes.length) {
-    current.changelog = appendChangelog(current, changes);
+  // 合并外部传入的 changelog（来自 upsertBibleSection/deleteBibleSection）
+  const externalChangelog = Array.isArray(patch.changelog) ? patch.changelog : [];
+  const allChanges = [...changes, ...externalChangelog];
+
+  if (allChanges.length) {
+    current.changelog = appendChangelog(current, allChanges);
   }
 
   current.updated_at = now();
@@ -80,7 +85,7 @@ export function saveBible(projectId, patch) {
 export function upsertBibleSection(projectId, section) {
   const bible = loadBible(projectId);
   const sections = [...(bible.sections || [])];
-  const id = section.id || `sec_${Date.now()}`;
+  const id = section.id || `sec_${randomUUID().slice(0, 8)}`;
   const idx = sections.findIndex((s) => s.id === id);
 
   const next = {
@@ -91,31 +96,36 @@ export function upsertBibleSection(projectId, section) {
     updated_at: now(),
   };
 
+  const changelogEntries = [];
+
   if (idx >= 0) {
-    changesPush(bible, sections[idx], next);
+    // 收集变更记录
+    const oldSec = sections[idx];
+    if (oldSec.content !== next.content) {
+      changelogEntries.push({
+        field: 'section_content',
+        section_id: oldSec.id,
+        old_value: (oldSec.content || '').slice(0, 80),
+        new_value: (next.content || '').slice(0, 80),
+      });
+    }
     sections[idx] = next;
   } else {
     sections.push(next);
-    bible.changelog = appendChangelog(bible, [{ field: 'section_add', section_id: id, new_value: next.title }]);
+    changelogEntries.push({ field: 'section_add', section_id: id, new_value: next.title });
   }
 
-  return saveBible(projectId, { ...bible, sections });
-}
-
-function changesPush(bible, oldSec, newSec) {
-  if (oldSec.content !== newSec.content) {
-    bible.changelog = appendChangelog(bible, [{
-      field: 'section_content',
-      section_id: oldSec.id,
-      old_value: (oldSec.content || '').slice(0, 80),
-      new_value: (newSec.content || '').slice(0, 80),
-    }]);
-  }
+  // 将 changelog 条目作为 patch 的一部分传递给 saveBible
+  return saveBible(projectId, { ...bible, sections, changelog: changelogEntries });
 }
 
 export function deleteBibleSection(projectId, sectionId) {
   const bible = loadBible(projectId);
   const sections = (bible.sections || []).filter((s) => s.id !== sectionId);
-  bible.changelog = appendChangelog(bible, [{ field: 'section_delete', section_id: sectionId }]);
-  return saveBible(projectId, { ...bible, sections });
+  // 将 changelog 条目作为 patch 的一部分传递给 saveBible
+  return saveBible(projectId, {
+    ...bible,
+    sections,
+    changelog: [{ field: 'section_delete', section_id: sectionId }],
+  });
 }

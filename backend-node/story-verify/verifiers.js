@@ -95,6 +95,16 @@ function buildSuggestAction(kind, subject) {
  */
 export function verifyWriteChapter(projectId, { chapter, filename, taskId, minWords = MIN_WRITE_WORDS } = {}) {
   const ch = parseInt(chapter, 10);
+  if (Number.isNaN(ch)) {
+    return buildResult({
+      kind: 'write_chapter',
+      subject: '章节号无效',
+      checks: [{ id: 'chapter_number', label: '章节号有效', pass: false, detail: `无效的章节号: ${chapter}` }],
+      message: `验收失败：章节号无效 (${chapter})`,
+      taskId,
+      chapter: null,
+    });
+  }
   const { words, filename: resolved } = readChapterText(projectId, ch, filename);
   const checks = [
     {
@@ -189,7 +199,9 @@ export function verifyTaskCompletion(projectId, task) {
   if (task.plan_id) {
     try {
       const plan = getPlan(projectId, task.plan_id);
-      return verifyPlanExecution(projectId, { ...plan, status: 'completed' }, { taskId: task.id });
+      // 使用 plan 的真实状态，不强制设置为 completed
+      // 验收应反映 plan 的实际完成情况
+      return verifyPlanExecution(projectId, plan, { taskId: task.id });
     } catch {
       /* fall through */
     }

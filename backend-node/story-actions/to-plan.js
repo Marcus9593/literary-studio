@@ -39,11 +39,11 @@ export function createPlanFromUserRequest(projectId, message) {
     const bundle = loadUnderstandingBundle(projectId);
     const arc = findArcForMessage(bundle.arcs, message);
     const arcAction = buildArcAction(arc);
-    if (arcAction) matched = [arcAction];
+    if (arcAction) matched.push(arcAction);
 
     const conflict = findConflictForMessage(bundle.conflicts, message);
     const confAction = buildConflictAction(conflict);
-    if (/冲突|张力|对抗/.test(message) && confAction) matched = [confAction];
+    if (/冲突|张力|对抗/.test(message) && confAction) matched.push(confAction);
   }
 
   const action = matched[0];

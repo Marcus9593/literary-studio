@@ -17,6 +17,7 @@ export function signToken(user) {
   const header = b64urlJson({ alg: 'HS256', typ: 'JWT' });
   const now = Date.now();
   const payload = b64urlJson({
+    iss: 'literary-studio',
     sub: user.id,
     username: user.username,
     role: user.role,

@@ -45,7 +45,7 @@ export default function StoryBeatsPage() {
       .then(([p, ch]) => {
         setProject(p)
         setChapters(ch || [])
-        const last = ch?.length ? ch[ch.length - 1].number ?? ch.length : 1
+        const last = ch?.length ? Math.max(...ch.map(c => c.number ?? 0)) || 1 : 1
         setUnitIndex(last)
         loadOutline(last)
       })

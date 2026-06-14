@@ -12,7 +12,7 @@ import {
   queryStory,
 } from './story-index/query.js';
 import { rebuildStoryIndex } from './story-index/build.js';
-import { listPlans, getPlan } from './story-plans/store.js';
+import { listPlans, getPlan, updatePlanStatus } from './story-plans/store.js';
 import { analyzeStoryDiff } from './story-diff/analyzer.js';
 import { createRewritePlan } from './rewrite-engine/engine.js';
 import { writeChapterReviewMd } from './quality/scorer.js';
@@ -409,39 +409,63 @@ router.post(`${base}/tasks/rebuild`, (req, res) => {
 });
 
 router.post(`${base}/tasks/:taskId/plan`, (req, res) => {
+  const projectId = pid(req);
+  const taskId = req.params.taskId;
+  let plan = null;
   try {
-    const plan = createPlanFromTask(pid(req), req.params.taskId);
-    const prep = prepareConfirmedPlan(pid(req), plan.id);
+    plan = createPlanFromTask(projectId, taskId);
+    const prep = prepareConfirmedPlan(projectId, plan.id);
     res.json({ plan: prep.plan, user_message: prep.user_message });
   } catch (e) {
+    if (plan?.id) {
+      try {
+        updatePlanStatus(projectId, plan.id, 'rolled_back', { error: e.message });
+      } catch { /* 回滚失败不掩盖原始错误 */ }
+    }
     res.status(400).json({ error: e.message });
   }
 });
 
 router.post(`${base}/tasks/:taskId/start`, (req, res) => {
+  const projectId = pid(req);
+  const taskId = req.params.taskId;
+  let plan = null;
   try {
-    const plan = createPlanFromTask(pid(req), req.params.taskId);
-    const prep = prepareConfirmedPlan(pid(req), plan.id);
+    plan = createPlanFromTask(projectId, taskId);
+    const prep = prepareConfirmedPlan(projectId, plan.id);
     res.json({
-      task: getTask(pid(req), req.params.taskId),
+      task: getTask(projectId, taskId),
       plan: prep.plan,
       user_message: prep.user_message,
     });
   } catch (e) {
+    // 回滚已创建的 plan，避免孤立数据
+    if (plan?.id) {
+      try {
+        updatePlanStatus(projectId, plan.id, 'rolled_back', { error: e.message });
+      } catch { /* 回滚失败不掩盖原始错误 */ }
+    }
     res.status(400).json({ error: e.message });
   }
 });
 
 router.post(`${base}/tasks/next`, (req, res) => {
+  const projectId = pid(req);
+  let result = null;
   try {
-    const result = startNextTask(pid(req));
-    const prep = prepareConfirmedPlan(pid(req), result.plan.id);
+    result = startNextTask(projectId);
+    const prep = prepareConfirmedPlan(projectId, result.plan.id);
     res.json({
       task: result.task,
       plan: prep.plan,
       user_message: prep.user_message,
     });
   } catch (e) {
+    if (result?.plan?.id) {
+      try {
+        updatePlanStatus(projectId, result.plan.id, 'rolled_back', { error: e.message });
+      } catch { /* 回滚失败不掩盖原始错误 */ }
+    }
     res.status(400).json({ error: e.message });
   }
 });

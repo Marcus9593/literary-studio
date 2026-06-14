@@ -9,13 +9,24 @@ export function buildCharacterGraph(projectId) {
   const relations = kb.relationships?.items || [];
 
   const nameToId = new Map();
+  const nameCount = new Map();
   const nodes = characters.map((c, i) => {
-    const id = c.id || c.name || `char_${i}`;
-    nameToId.set(c.name, id);
+    let name = c.name;
+    if (name && nameCount.has(name)) {
+      const count = nameCount.get(name) + 1;
+      nameCount.set(name, count);
+      const suffixName = `${name}_${count}`;
+      console.warn(`[character-graph] 重名角色检测: "${name}" 已存在，重命名为 "${suffixName}"`);
+      name = suffixName;
+    } else if (name) {
+      nameCount.set(name, 1);
+    }
+    const id = c.id || name || `char_${i}`;
+    nameToId.set(name, id);
     if (c.id) nameToId.set(c.id, id);
     return {
       id,
-      name: c.name,
+      name,
       role: c.role || '',
       arc_stage: c.arc_stage || 'setup',
     };

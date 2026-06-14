@@ -8,6 +8,13 @@ import { manuscriptDirForMode } from '../projectProfile.js';
 const AI_PHRASES = [
   '不禁', '嘴角微微上扬', '心头一紧', '瞳孔微缩', '目光深邃',
   '仿佛', '宛如', '与此同时', '总而言之', '毋庸置疑',
+  '缓缓说道', '淡淡一笑', '眼中闪过一丝', '嘴角勾起一抹',
+  '心中暗想', '不由自主', '恍然大悟', '若有所思',
+  '波澜不惊', '意味深长', '不言而喻', '一抹不易察觉',
+  '微微颔首', '轻叹一声', '暗暗下定决心', '心中五味杂陈',
+  '嘴角微微上扬', '眼眸中闪过', '一字一顿地说道',
+  '空气中弥漫着', '气氛骤然凝重', '时间仿佛静止',
+  '掷地有声', '义正言辞', '斩钉截铁', '语重心长',
 ];
 
 const DIMENSIONS = [
@@ -35,6 +42,52 @@ function scoreDimension(text, dim) {
     if (quotes < 4) score -= 8;
   }
   if (dim === '剧情推进' && len < 800) score -= 15;
+
+  // 人物塑造：检测对话密度、动作描写、称谓多样性
+  if (dim === '人物塑造') {
+    const dialogueLines = (text.match(/[「」"""].*?[「」"""]/g) || []).length;
+    const dialogueDensity = len > 0 ? dialogueLines / (len / 1000) : 0;
+    if (dialogueDensity < 1) score -= 6; // 对话太少，人物不立体
+    const actionVerbs = ['走', '拿', '看', '站', '跑', '坐', '笑', '哭', '叫', '怒',
+      '拿', '递', '推', '拉', '挥', '拍', '点', '摇', '转', '抱'];
+    const actionHits = actionVerbs.filter((v) => text.includes(v)).length;
+    if (actionHits < 3) score -= 5; // 动作描写不足
+    const honorifics = ['先生', '小姐', '老师', '哥', '姐', '爸', '妈', '叔', '婶'];
+    const honorificHits = honorifics.filter((h) => text.includes(h)).length;
+    if (honorificHits >= 3) score += 3; // 称谓多样说明人物关系丰富
+  }
+
+  // 情绪张力：检测情绪词汇密度和对话中的情绪表达
+  if (dim === '情绪张力') {
+    const emotionWords = ['愤怒', '悲伤', '开心', '恐惧', '惊讶', '厌恶', '焦虑',
+      '泪', '哭', '笑', '怒', '怕', '惊', '恨', '爱', '痛',
+      'angry', 'sad', 'happy', 'fear', 'surprise', 'cry', 'laugh', 'rage', 'love'];
+    const emotionHits = emotionWords.filter((w) => text.toLowerCase().includes(w)).length;
+    if (emotionHits < 3) score -= 8; // 情绪表达不足
+    else if (emotionHits >= 6) score += 4; // 情绪丰富
+    const exclamationCount = (text.match(/[!！]/g) || []).length;
+    if (exclamationCount > 2 && exclamationCount < 20) score += 2; // 适度感叹增强张力
+  }
+
+  // 设定一致性：检测世界观关键词连续性和专有名词一致性
+  if (dim === '设定一致性') {
+    // 检查是否有同一专有名词出现拼写不一致的情况
+    const properNouns = text.match(/[一-鿿]{2,4}(?:族|国|城|门|派|教|帮|会|殿|山|岛|河|湖)/g) || [];
+    const nounSet = new Set(properNouns);
+    if (nounSet.size > 0) {
+      const uniqueRatio = nounSet.size / (properNouns.length || 1);
+      if (uniqueRatio < 0.3) score += 3; // 重复使用设定词说明一致性好
+    }
+    // 章节太短可能设定交代不清
+    if (len < 600) score -= 6;
+    // 检查是否有时间/地点描写的锚定
+    const timeAnchors = ['早上', '中午', '下午', '傍晚', '晚上', '凌晨', '深夜',
+      '第二天', '次日', '几天后', '一年后', '清晨', '黄昏',
+      'morning', 'noon', 'evening', 'night', 'dawn'];
+    const timeHits = timeAnchors.filter((t) => text.includes(t)).length;
+    if (timeHits >= 2) score += 3; // 有时间锚定增加设定一致性
+  }
+
   if (len > 500) score += 3;
   return Math.max(40, Math.min(95, Math.round(score)));
 }
@@ -94,7 +147,9 @@ export function scoreProjectHealth(projectId) {
   for (const ch of chapters.slice(-12)) {
     try {
       scores.push(scoreChapter(projectId, ch.filename));
-    } catch {}
+    } catch (e) {
+      console.error(`[quality] 评分章节 ${ch.filename} 失败:`, e.message);
+    }
   }
 
   const overall = scores.length

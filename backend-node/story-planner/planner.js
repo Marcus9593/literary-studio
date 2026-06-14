@@ -29,6 +29,13 @@ export function generateStoryOS(projectId, opts = {}) {
   }
 
   const ctx = buildPlannerContext(projectId, { horizon });
+  // Propagate act thresholds from preferences if configured
+  if (prefs.act1_threshold || prefs.act2_threshold) {
+    ctx.actThresholds = {
+      act1Threshold: prefs.act1_threshold || undefined,
+      act2Threshold: prefs.act2_threshold || undefined,
+    };
+  }
   const storyGoal = buildStoryGoal(ctx);
   saveStoryGoal(projectId, storyGoal);
 

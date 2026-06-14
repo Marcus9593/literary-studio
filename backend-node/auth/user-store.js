@@ -28,7 +28,6 @@ function publicUser(user) {
     role: user.role,
     created_at: user.created_at,
     updated_at: user.updated_at,
-    disabled: Boolean(user.disabled),
   };
 }
 
@@ -109,7 +108,7 @@ export function registerUser({ username, password, display_name }) {
   if (findUserByUsername(name)) throw new Error('用户名已存在');
 
   const user = insertUser({
-    id: crypto.randomUUID().slice(0, 12),
+    id: crypto.randomUUID(),
     username: name,
     display_name: String(display_name || name).trim() || name,
     role: ROLES.USER,

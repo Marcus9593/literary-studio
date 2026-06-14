@@ -125,8 +125,12 @@ export async function createProjectEpub({ projectId, outputPath }) {
   return outputPath;
 }
 
-/** 设定一致性：名称表与正文交叉核对 */
-export function checkSettingsConsistency(projectId) {
+/**
+ * 设定一致性：名称表与正文交叉核对
+ * @param {string} projectId
+ * @param {{ scanChapterCount?: number }} [opts] scanChapterCount 扫描最近 N 章，默认 0 表示全部
+ */
+export function checkSettingsConsistency(projectId, opts = {}) {
   const kb = loadKnowledgeBundle(projectId);
   const characters = (kb.characters?.items || []).map((c) => ({
     name: c.name,
@@ -135,8 +139,10 @@ export function checkSettingsConsistency(projectId) {
   })).filter((c) => c.name);
   const locations = (kb.locations?.items || []).map((l) => l.name).filter(Boolean);
   const chapters = listChapters(projectId);
+  const scanChapterCount = opts.scanChapterCount || 0;
+  const chaptersToScan = scanChapterCount > 0 ? chapters.slice(-scanChapterCount) : chapters;
   let fullText = '';
-  for (const ch of chapters.slice(-5)) {
+  for (const ch of chaptersToScan) {
     try {
       fullText += decodeBuffer(fs.readFileSync(resolveManuscriptPath(projectId, ch.filename)));
     } catch {}
@@ -171,7 +177,7 @@ export function checkSettingsConsistency(projectId) {
       issues.push({
         kind: 'character_missing',
         name: c.name,
-        message: `角色「${c.name}」及其别名在最近 5 章正文中未出现`,
+        message: `角色「${c.name}」及其别名在扫描范围内未出现`,
       });
     }
 
@@ -200,7 +206,7 @@ export function checkSettingsConsistency(projectId) {
       issues.push({
         kind: 'location_missing',
         name: loc,
-        message: `地点「${loc}」在最近 5 章正文中未出现`,
+        message: `地点「${loc}」在扫描范围内未出现`,
       });
     }
   }
@@ -210,7 +216,7 @@ export function checkSettingsConsistency(projectId) {
     project_id: projectId,
     characters_checked: characters.length,
     locations_checked: locations.length,
-    chapters_scanned: Math.min(5, chapters.length),
+    chapters_scanned: chaptersToScan.length,
     issues,
     name_counts: nameCounts,
     updated_at: new Date().toISOString(),

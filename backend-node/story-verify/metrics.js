@@ -83,11 +83,19 @@ export function mergeMetricChecks(verifyResult, metricComparison) {
 
   const checks = [...(verifyResult.checks || []), ...metricComparison.checks];
   let status = verifyResult.status;
-  const allPass = checks.every((c) => c.pass);
-  const anyPass = checks.some((c) => c.pass);
-  if (allPass) status = 'pass';
-  else if (anyPass) status = 'partial';
-  else status = 'fail';
+  // 原始 verify 已 pass 时，不允许 metric checks 降级状态
+  if (status === 'pass') {
+    const metricAllPass = metricComparison.checks.every((c) => c.pass);
+    if (!metricAllPass) {
+      // 保留 pass 状态，仅在 checks 中记录 metric 未全部通过
+    }
+  } else {
+    const allPass = checks.every((c) => c.pass);
+    const anyPass = checks.some((c) => c.pass);
+    if (allPass) status = 'pass';
+    else if (anyPass) status = 'partial';
+    else status = 'fail';
+  }
 
   return {
     ...verifyResult,

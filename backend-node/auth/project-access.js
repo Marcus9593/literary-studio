@@ -13,7 +13,10 @@ export function projectIdFromReq(req) {
 
 export function ensureProjectAccess(req, res, next) {
   const projectId = projectIdFromReq(req);
-  if (!projectId) return next();
+  if (!projectId) {
+    res.status(400).json({ error: '缺少 projectId' });
+    return;
+  }
 
   let meta;
   try {
@@ -41,6 +44,7 @@ export function ensureProjectAccess(req, res, next) {
 
 export function requireProjectWrite(req, res, next) {
   if (!req.projectMeta || !req.user) {
+    console.error('[auth] requireProjectWrite: 项目权限未初始化，缺少 projectMeta 或 user');
     res.status(500).json({ error: '项目权限未初始化' });
     return;
   }

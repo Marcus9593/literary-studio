@@ -51,7 +51,8 @@ export function decomposeTasksFromRoadmap(projectId, roadmap, storyGoal, ctx) {
   const items = [];
   const arcName = ctx.arcs?.[0]?.name;
 
-  for (const ch of roadmap.chapters || []) {
+  for (const original of roadmap.chapters || []) {
+    const ch = { ...original };
     const writeId = newTaskId();
     items.push({
       id: writeId,

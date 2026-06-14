@@ -24,13 +24,19 @@ export function exportMarkdown(projectId, { filename, chapter, title } = {}) {
 
 /**
  * MVP DOCX: plain text with .docx extension (matches AWR stub).
+ * NOTE: This is an MVP placeholder. The output is plain text wrapped with a
+ * .docx extension — it is NOT a real OOXML document. Most word processors will
+ * open it as plain text rather than a formatted document. A future iteration
+ * should use a library (e.g. docx, officegen) to produce a genuine .docx file.
  */
 export function exportDocx(projectId, options = {}) {
   const md = exportMarkdown(projectId, options);
+  const mvpNotice = '[MVP 限制] 当前 DOCX 导出为纯文本格式，尚未生成完整的 Word 文档。如需正式排版，请使用「导出 MD」后在 Word 中手动导入。\n\n';
   return {
     filename: md.filename.replace(/\.md$/, '.docx'),
-    content: md.content,
+    content: mvpNotice + md.content,
     mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    _mvp: true,
   };
 }
 

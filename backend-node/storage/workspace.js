@@ -245,8 +245,13 @@ export function deleteManuscriptFile(projectId, filename) {
   const filePath = resolveManuscriptPath(projectId, filename);
   if (!fs.existsSync(filePath)) throw new Error('文稿不存在');
   const safe = path.basename(filePath);
+  // 先清理关联会话，再删除文件，避免文件删除后会话清理失败导致孤立数据
+  try {
+    deleteSessionsForManuscript(projectId, safe);
+  } catch (e) {
+    console.error(`[storage] 清理关联会话失败 (${safe}):`, e.message);
+  }
   fs.unlinkSync(filePath);
-  deleteSessionsForManuscript(projectId, safe);
   touchProject(projectId);
   return {
     status: 'deleted',
@@ -263,7 +268,12 @@ export function createManuscriptFile(projectId, title, content = '') {
   fs.mkdirSync(dir, { recursive: true });
   const safeTitle = String(title || '未命名').trim().slice(0, 80) || '未命名';
   const existing = listMdFilesInDir(dir);
-  const num = existing.length + 1;
+  const maxNum = existing.reduce((max, f) => {
+    // listMdFilesInDir 返回对象数组，需要使用 f.filename
+    const m = (f.filename || f).match(/^第(\d+)章/);
+    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+  }, 0);
+  const num = maxNum + 1;
   const filename = `第${String(num).padStart(4, '0')}章-${safeTitle}.md`;
   const filePath = path.join(dir, filename);
   const body = content || `# ${safeTitle}\n\n`;

@@ -10,6 +10,79 @@ import {
 import StoryOsPage from '../../../components/StoryOsPage.jsx'
 import { useToast } from '../../../components/Toast.jsx'
 
+const IMPACT_LABEL = {
+  characters: '涉及角色',
+  chapters: '涉及章节',
+  foreshadows: '涉及伏笔',
+  relationships: '涉及关系',
+  timeline: '涉及时间线',
+  locations: '涉及地点',
+  summary: '摘要',
+  risk_level: '风险等级',
+  estimated_effort: '预估工作量',
+}
+
+const STEP_LABEL = {
+  type: '操作类型',
+  target: '目标',
+  description: '描述',
+  chapter: '章节',
+  action: '动作',
+  content: '内容',
+}
+
+function formatValue(key, val) {
+  if (Array.isArray(val)) {
+    return val.length === 0 ? '无' : val.map((v) => (typeof v === 'object' ? v.name || v.title || JSON.stringify(v) : String(v))).join('、')
+  }
+  if (typeof val === 'object' && val !== null) {
+    return val.name || val.title || val.label || JSON.stringify(val)
+  }
+  return String(val ?? '—')
+}
+
+function FormattedPlanDetail({ data, labelMap }) {
+  if (!data) return <p className="hint">暂无详细信息</p>
+
+  if (Array.isArray(data)) {
+    return (
+      <ol className="plan-steps-list">
+        {data.map((step, i) => (
+          <li key={i} className="plan-step-item">
+            {typeof step === 'object' ? (
+              <dl className="plan-step-fields">
+                {Object.entries(step).map(([k, v]) => (
+                  <div key={k} className="plan-step-field">
+                    <dt>{labelMap?.[k] || k}</dt>
+                    <dd>{formatValue(k, v)}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <span>{String(step)}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    )
+  }
+
+  if (typeof data === 'object') {
+    return (
+      <dl className="plan-impact-fields">
+        {Object.entries(data).map(([k, v]) => (
+          <div key={k} className="plan-impact-field">
+            <dt>{labelMap?.[k] || k}</dt>
+            <dd>{formatValue(k, v)}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+
+  return <p>{String(data)}</p>
+}
+
 const STATUS_LABEL = {
   pending_confirm: '待确认',
   executing: '执行中',
@@ -144,7 +217,10 @@ export default function StoryPlansPage() {
             <>
               <h3>{selected.type === 'story_diff' ? '修改影响分析' : '改稿计划'}</h3>
               <p>{selected.summary}</p>
-              <pre>{JSON.stringify(selected.impact || selected.steps, null, 2)}</pre>
+              <FormattedPlanDetail
+                data={selected.impact || selected.steps}
+                labelMap={selected.type === 'story_diff' ? IMPACT_LABEL : STEP_LABEL}
+              />
               <div className="btn-row">
                 {selected.status === 'pending_confirm' && (
                   <button type="button" className="btn btn-primary" disabled={busy} onClick={runConfirm}>

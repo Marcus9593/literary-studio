@@ -9,7 +9,9 @@ function now() {
 
 function readJson(filePath, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    let raw = fs.readFileSync(filePath, 'utf-8');
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+    return JSON.parse(raw);
   } catch {
     return fallback;
   }

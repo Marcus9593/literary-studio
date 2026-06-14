@@ -75,10 +75,11 @@ function refreshHealthSnapshot(projectId) {
 }
 
 export function recordVerify(projectId, verifyResult) {
+  const originalStatus = verifyResult.status;
   const enriched = enrichWithMetrics(projectId, verifyResult);
   const record = appendVerifyRecord(projectId, enriched);
 
-  const actionId = enriched.status !== 'pass'
+  const actionId = originalStatus !== 'pass'
     ? createActionFromVerify(projectId, record)?.id
     : null;
   if (actionId) {

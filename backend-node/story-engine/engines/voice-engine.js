@@ -21,7 +21,11 @@ function checkDialogueMatch(dialogue, character, dna) {
     issues.push(`${character.name} 使用非正式用语，但角色设定为正式口吻`);
   }
 
-  if ((voice.includes('casual') || formality === 'casual') && dialogue.split(/\s+/).length > 30) {
+  // Chinese text has no spaces, so use character count for length check
+  const isChineseText = (dialogue.match(/[一-鿿]/g) || []).length > dialogue.length * 0.3;
+  const dialogueLen = isChineseText ? dialogue.length : dialogue.split(/\s+/).length;
+  const lengthThreshold = isChineseText ? 200 : 30;
+  if ((voice.includes('casual') || formality === 'casual') && dialogueLen > lengthThreshold) {
     issues.push(`${character.name} 对白过长，与轻松口语人设不符`);
   }
 
@@ -82,8 +86,8 @@ export function checkVoiceConsistency(script, characters = [], dnaByCharId = {})
 
     for (const c of characters) {
       if (!c.name) continue;
-      const hasDialogue = trimmed.startsWith(`${c.name}:`) || trimmed.startsWith(`${c.name}：`)
-        || trimmed.includes(`${c.name}:`) || trimmed.includes(`${c.name}：`);
+      // 仅匹配行首的说话人标记，避免一行含多角色名时误命中
+      const hasDialogue = trimmed.startsWith(`${c.name}:`) || trimmed.startsWith(`${c.name}：`);
       if (!hasDialogue) continue;
 
       const dialogue = extractDialogue(trimmed);
@@ -139,6 +143,13 @@ export function trainVoiceDnaFromScript(script, characterName) {
     .slice(0, 10)
     .map(([w]) => w);
 
+  // 根据语言调整 formality 阈值：中文字符密度高，平均句长远低于英文
+  const dialogueText = dialogues.join('');
+  const chineseChars = (dialogueText.match(/[一-鿿]/g) || []).length;
+  const isChinese = chineseChars / Math.max(dialogueText.length, 1) > 0.3;
+  const formalThreshold = isChinese ? 15 : 25;
+  const casualThreshold = isChinese ? 7 : 12;
+
   return {
     avg_sentence: Math.round(avgSentence * 10) / 10,
     question_ratio: Math.round(questionRatio * 100) / 100,
@@ -147,6 +158,6 @@ export function trainVoiceDnaFromScript(script, characterName) {
     forbidden_words: [],
     sample_dialogue: dialogues[0]?.slice(0, 200) || '',
     tone: questionRatio > 0.4 ? 'inquisitive' : 'neutral',
-    formality: avgSentence > 25 ? 'formal' : avgSentence < 12 ? 'casual' : 'mixed',
+    formality: avgSentence > formalThreshold ? 'formal' : avgSentence < casualThreshold ? 'casual' : 'mixed',
   };
 }

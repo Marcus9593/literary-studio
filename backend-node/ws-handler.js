@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import * as store from './storage.js';
 import { verifyToken } from './auth/token.js';
+import { findUserById } from './auth/user-store.js';
 import { canReadProject, canWriteProject } from './auth/permissions.js';
 import { streamChat, streamWriteChapter, streamInlineEdit, buildProjectContext, invalidateProjectContext } from './ai-runtime/orchestrator.js';
 import { extractWritePlan } from './write-plan.js';
@@ -25,9 +26,14 @@ export function attachWebSocket(server) {
     let authed = false;
     let activeRunner = null;
     let cancelRequested = false;
+    let authTimerFired = false;
+    let connectionClosed = false;
 
     const authTimer = setTimeout(() => {
-      if (!authed) {
+      authTimerFired = true;
+      // Use strict mutual exclusion: only close if auth hasn't completed yet
+      if (!authed && !connectionClosed) {
+        connectionClosed = true;
         try {
           ws.send(JSON.stringify({ type: 'error', error: '认证超时' }));
         } catch { /* noop */ }
@@ -61,10 +67,33 @@ export function attachWebSocket(server) {
           ws.close(4401, 'Unauthorized');
           return;
         }
+        // 验证用户是否被禁用
+        const dbUser = findUserById(user.id);
+        if (!dbUser || dbUser.disabled) {
+          ws.send(JSON.stringify({ type: 'error', error: '账户已被禁用' }));
+          ws.close(4403, 'Forbidden');
+          return;
+        }
         authed = true;
         clearTimeout(authTimer);
+        if (authTimerFired) {
+          // Timer already fired — check if connection was already closed by timer
+          if (connectionClosed) return;
+          // Timer fired but didn't close yet (extremely narrow race); we won auth race, continue
+        }
+        connectionClosed = true;
         ws.send(JSON.stringify({ type: 'status', status: 'connected' }));
         return;
+      }
+
+      // 运行时检查：用户是否在会话期间被禁用
+      {
+        const freshUser = findUserById(user.id);
+        if (!freshUser || freshUser.disabled) {
+          ws.send(JSON.stringify({ type: 'error', error: '账户已被禁用' }));
+          ws.close(4403, 'Forbidden');
+          return;
+        }
       }
 
       if (msg.type === 'cancel') {
@@ -217,6 +246,7 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
   let error = null;
   let resumeFailed = false;
   let usedWorkflow = false;
+  const MAX_EMPTY_RETRIES = 1;
 
   const isRecoverableSessionError = (msg) => /no conversation found|invalid session/i.test(String(msg || ''));
 
@@ -322,18 +352,20 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
     usedWorkflow = !!resolveSkillWorkflow(binding?.valid ? binding : null);
     await runStream(false);
 
-    const shouldRetrySession = !fullText && (
+    const shouldRetrySession = !fullText && resumeFailed < MAX_EMPTY_RETRIES && (
       isRecoverableSessionError(error)
       || (session.claude_session_id && !error)
     );
-    if (shouldRetrySession && !resumeFailed) {
-      resumeFailed = true;
+    if (shouldRetrySession) {
+      resumeFailed += 1;
+      console.warn(`[ws-handler] 空回复重试 (${resumeFailed}/${MAX_EMPTY_RETRIES})，项目=${projectId}`);
       await runStream(true, true);
       if (fullText) error = null;
     }
   } catch (err) {
-    if (session.claude_session_id && !resumeFailed) {
-      resumeFailed = true;
+    if (session.claude_session_id && resumeFailed < MAX_EMPTY_RETRIES) {
+      resumeFailed += 1;
+      console.warn(`[ws-handler] 异常重试 (${resumeFailed}/${MAX_EMPTY_RETRIES})，项目=${projectId}，错误=${err.message}`);
       try {
         await runStream(true, true);
         error = null;

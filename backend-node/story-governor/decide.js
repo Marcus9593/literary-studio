@@ -40,6 +40,17 @@ export function decideGovernor(projectId, criticReport, unitIndex = 1) {
     };
   }
 
+  if (budget.used >= budget.max) {
+    return {
+      decision: 'REJECT',
+      reasoning: '修订需要 Override 预算，但本单元预算已用尽。',
+      revision_memo: `修复硬性维度：${hardDims.join('、')}`,
+      hard_dimensions: hardDims,
+      override_needed: true,
+      override_count: budget.used,
+    };
+  }
+
   const overrideResult = useOverride(projectId, unitIndex);
   if (!overrideResult.ok) {
     return {

@@ -7,10 +7,12 @@ import apiRouter from './routes.js';
 import { attachWebSocket } from './ws-handler.js';
 import { registerEventSubscribers } from './event-bus/subscribers.js';
 import { assertProductionSecurity } from './auth/security-check.js';
+import { checkSecurityConfig } from './auth/constants.js';
 import { getCorsOrigins, isProduction } from './auth/env.js';
 
 registerEventSubscribers();
 assertProductionSecurity();
+checkSecurityConfig();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');

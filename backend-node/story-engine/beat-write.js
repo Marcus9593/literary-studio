@@ -11,6 +11,10 @@ export function buildBeatWritePlan(projectId, unitIndex = 1) {
   if (!outline?.beats?.length) {
     throw new Error('请先添加至少一个节拍');
   }
+  const incomplete = outline.beats.filter((b) => !b.title || !b.description);
+  if (incomplete.length) {
+    throw new Error(`有 ${incomplete.length} 个节拍缺少标题或描述，请补全后再生成`);
+  }
 
   const chapters = storage.listChapters(projectId);
   const nextChapter = chapters.length

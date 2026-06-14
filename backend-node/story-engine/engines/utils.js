@@ -25,6 +25,13 @@ export function round1(n) {
   return Math.round(n * 10) / 10;
 }
 
+/**
+ * Count how many lines contain at least one of the given markers.
+ * Each line is counted at most once even if it matches multiple markers.
+ * @param {string[]} lines
+ * @param {string[]} markers
+ * @returns {number}
+ */
 export function countMarkers(lines, markers) {
   let count = 0;
   for (const line of lines) {
@@ -32,6 +39,7 @@ export function countMarkers(lines, markers) {
     for (const m of markers) {
       if (lower.includes(m.toLowerCase())) {
         count += 1;
+        break; // only count each line once
       }
     }
   }

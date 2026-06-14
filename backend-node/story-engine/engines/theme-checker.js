@@ -51,9 +51,15 @@ function calcDrift(bibleThemes, detected) {
 
   let matched = 0;
   for (const bt of bibleThemes) {
-    const btLower = bt.toLowerCase();
+    const btLower = bt.toLowerCase().trim();
+    if (!btLower) continue;
     for (const d of detected) {
-      if (d.theme.toLowerCase().includes(btLower) || btLower.includes(d.theme.toLowerCase())) {
+      const dLower = d.theme.toLowerCase();
+      // Require exact match or minimum 2-char substring match to avoid
+      // short themes like "爱" falsely matching "自由" etc.
+      if (dLower === btLower
+        || (btLower.length >= 2 && dLower.includes(btLower))
+        || (dLower.length >= 2 && btLower.includes(dLower))) {
         matched += 1;
         break;
       }

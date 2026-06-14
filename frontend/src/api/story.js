@@ -86,8 +86,8 @@ export const routeStoryRequest = (projectId, message) =>
 
 // ── Story Index 查询（后端已实现，前端补充） ──
 
-export const queryStoryCharacter = (projectId, name) =>
-  request(`/projects/${projectId}/story/index/character?name=${encodeURIComponent(name)}`)
+export const queryStoryCharacter = (projectId, q) =>
+  request(`/projects/${projectId}/story/index/character?q=${encodeURIComponent(q)}`)
 export const queryStoryRelationship = (projectId, q) =>
   request(`/projects/${projectId}/story/index/relationship?q=${encodeURIComponent(q)}`)
 export const queryStoryTimeline = (projectId, q) =>

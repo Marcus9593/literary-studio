@@ -10,16 +10,6 @@ const DIFF_PATTERNS = [
   { re: /男二|女主|配角|角色/, type: 'character_change' },
 ];
 
-function detectTargets(message, projectId) {
-  const kb = [];
-  const names = [...String(message).matchAll(/[\u4e00-\u9fa5]{2,4}/g)].map((m) => m[0]);
-  for (const n of names) {
-    const hits = findCharacter(projectId, n);
-    if (hits.length) kb.push(...hits);
-  }
-  return names;
-}
-
 export function analyzeStoryDiff(projectId, userRequest) {
   const msg = String(userRequest || '').trim();
   const meta = storage.getProject(projectId);

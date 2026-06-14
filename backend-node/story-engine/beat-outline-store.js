@@ -48,6 +48,9 @@ export function loadBeatOutline(projectId, unitIndex = 1) {
 }
 
 export function saveBeatOutline(projectId, unitIndex, outline) {
+  if (unitIndex == null || typeof unitIndex !== 'number' || !Number.isFinite(unitIndex)) {
+    throw new Error(`unitIndex 必须是有效数字，收到: ${unitIndex}`);
+  }
   const all = loadAll(projectId);
   const key = String(unitIndex);
   all.units = all.units || {};

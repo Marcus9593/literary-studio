@@ -12,6 +12,13 @@ import { PROJECTS_DIR, now, sqlAdapter } from './core.js';
 import { listChapters, listMdFilesInDir, ensureWorkspaceDirs } from './workspace.js';
 
 // ── Projects ──
+// 注意：以下存储层函数不包含权限检查。
+// 权限控制由路由层（routes.js）的中间件负责：
+//   - requireAuth: 验证用户身份
+//   - attachProjectParam: 验证项目读权限
+//   - requireProjectWrite: 验证项目写权限
+//   - requireProjectManage: 验证项目管理权限（仅 owner）
+// 调用方须自行确保已通过权限检查。
 
 export function listProjects() {
   if (!fs.existsSync(PROJECTS_DIR)) return [];
@@ -337,6 +344,13 @@ export function buildTakeoverReport(projectId) {
   };
 }
 
+/**
+ * 删除项目及其所有文件。
+ *
+ * ⚠️ 此函数不做权限检查！
+ * 路由层已通过 requireProjectManage 中间件保护。
+ * 任何直接调用此函数的代码必须自行确保权限。
+ */
 export function deleteProject(projectId) {
   fs.rmSync(projectDir(projectId), { recursive: true, force: true });
 }

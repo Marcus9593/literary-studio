@@ -28,6 +28,7 @@ export default function StoryHealthPage() {
   const [verifyDetail, setVerifyDetail] = useState(null)
   const [chapters, setChapters] = useState([])
   const [verifyBusy, setVerifyBusy] = useState(false)
+  const [selectedChapterIdx, setSelectedChapterIdx] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(() => {
@@ -57,12 +58,13 @@ export default function StoryHealthPage() {
       showToast('尚无章节可验收', 'error')
       return
     }
-    const latest = chapters[chapters.length - 1]
+    const idx = selectedChapterIdx != null ? selectedChapterIdx : chapters.length - 1
+    const target = chapters[idx]
     setVerifyBusy(true)
     try {
       const result = await runStoryVerify(projectId, {
-        chapter: latest.number ?? chapters.length,
-        filename: latest.filename,
+        chapter: target.number ?? (idx + 1),
+        filename: target.filename,
       })
       showToast(`验收完成：${STATUS_LABEL[result?.status] || result?.status || '已记录'}`, 'success')
       await load()
@@ -124,16 +126,32 @@ export default function StoryHealthPage() {
         <div className="page-header-row">
           <div>
             <h3>创作验收</h3>
-            <p className="hint">对最新章节运行验收，通过后自动同步结构化记忆</p>
+            <p className="hint">选择章节运行验收，通过后自动同步结构化记忆</p>
           </div>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            disabled={verifyBusy || !chapters.length}
-            onClick={onRunVerify}
-          >
-            {verifyBusy ? '验收中…' : '验收最新章节'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {chapters.length > 1 && (
+              <select
+                className="btn btn-ghost btn-sm"
+                value={selectedChapterIdx ?? chapters.length - 1}
+                onChange={(e) => setSelectedChapterIdx(Number(e.target.value))}
+                disabled={verifyBusy}
+              >
+                {chapters.map((ch, i) => (
+                  <option key={ch.filename || i} value={i}>
+                    {ch.filename || `第 ${i + 1} 章`}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={verifyBusy || !chapters.length}
+              onClick={onRunVerify}
+            >
+              {verifyBusy ? '验收中…' : '验收章节'}
+            </button>
+          </div>
         </div>
         {verifyDetail?.latest && (
           <p className="muted">
