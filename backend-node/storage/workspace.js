@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { decodeBuffer, decodeUploadFilename, looksLikeMojibake } from '../encoding.js';
-import { manuscriptDirForMode } from '../projectProfile.js';
+import { decodeBuffer, decodeUploadFilename, looksLikeMojibake } from '../lib/encoding.js';
+import { manuscriptDirForMode } from '../lib/projectProfile.js';
 import { sanitizeManuscriptForSave } from '../ai-runtime/output-sanitize.js';
 import { getProject, touchProject, workspacePath } from './projects.js';
 import { deleteSessionsForManuscript } from './sessions.js';

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { workspacePath, listChapters } from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 
 const SEARCH_DIRS = [
   { category: 'manuscript', subdir: '正文' },

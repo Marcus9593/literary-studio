@@ -9,26 +9,12 @@ export const getStoryConsistency = (projectId) =>
   request(`/projects/${projectId}/story/consistency`)
 export const rebuildStoryKnowledge = (projectId) =>
   request(`/projects/${projectId}/story/knowledge/rebuild`, { method: 'POST' })
-export const getStorySummaries = (projectId) =>
-  request(`/projects/${projectId}/story/summaries`)
-export const rebuildStorySummaries = (projectId) =>
-  request(`/projects/${projectId}/story/summaries/rebuild`, { method: 'POST' })
 export const queryStoryIndex = (projectId, q) =>
   request(`/projects/${projectId}/story/index/query?q=${encodeURIComponent(q)}`)
 export const listStoryPlans = (projectId, status = '') =>
   request(`/projects/${projectId}/story/plans${status ? `?status=${status}` : ''}`)
 export const getStoryPlan = (projectId, planId) =>
   request(`/projects/${projectId}/story/plans/${planId}`)
-export const createStoryDiffPlan = (projectId, message) =>
-  request(`/projects/${projectId}/story/plans/diff`, {
-    method: 'POST',
-    body: JSON.stringify({ message }),
-  })
-export const createRewritePlan = (projectId, message) =>
-  request(`/projects/${projectId}/story/plans/rewrite`, {
-    method: 'POST',
-    body: JSON.stringify({ message }),
-  })
 export const confirmStoryPlan = (projectId, planId) =>
   request(`/projects/${projectId}/story/plans/${planId}/confirm`, { method: 'POST' })
 export const completeStoryPlan = (projectId, planId) =>
@@ -57,8 +43,6 @@ export const generateStoryPlanner = (projectId, horizon = 5) =>
   })
 export const getPlannerBundle = (projectId) =>
   request(`/projects/${projectId}/story/planner/bundle`)
-export const getPlannerPreferences = (projectId) =>
-  request(`/projects/${projectId}/story/planner/preferences`)
 export const updatePlannerPreferences = (projectId, prefs) =>
   request(`/projects/${projectId}/story/planner/preferences`, {
     method: 'PUT',
@@ -70,18 +54,10 @@ export const startTask = (projectId, taskId) =>
   request(`/projects/${projectId}/story/tasks/${encodeURIComponent(taskId)}/start`, {
     method: 'POST',
   })
-export const startNextTask = (projectId) =>
-  request(`/projects/${projectId}/story/tasks/next`, { method: 'POST' })
 export const rebuildStoryTasks = (projectId, horizon) =>
   request(`/projects/${projectId}/story/tasks/rebuild`, {
     method: 'POST',
     body: JSON.stringify(horizon != null ? { horizon } : {}),
-  })
-
-export const routeStoryRequest = (projectId, message) =>
-  request(`/projects/${projectId}/story/route`, {
-    method: 'POST',
-    body: JSON.stringify({ message }),
   })
 
 // ── Story Index 查询（后端已实现，前端补充） ──
@@ -105,11 +81,6 @@ export const runStoryVerify = (projectId, body) =>
   request(`/projects/${projectId}/story/verify/run`, {
     method: 'POST',
     body: JSON.stringify(body || {}),
-  })
-export const runChapterReview = (projectId, filename) =>
-  request(`/projects/${projectId}/story/health/review`, {
-    method: 'POST',
-    body: JSON.stringify({ filename }),
   })
 
 // ── Story Engine（AWR 规则审稿 / 结构化记忆） ──
@@ -174,17 +145,6 @@ export const getEngineLatest = (projectId) =>
   request(`/projects/${projectId}/engine/critic/latest`)
 export const listEngineCriticReports = (projectId) =>
   request(`/projects/${projectId}/engine/critic-reports`)
-export const getEngineMemoryContext = (projectId, unitIndex = 1) =>
-  request(`/projects/${projectId}/engine/memory/context/${unitIndex}`)
-
-export const getNarrativeAnalysis = (projectId, params = {}) => {
-  const q = new URLSearchParams()
-  if (params.filename) q.set('filename', params.filename)
-  if (params.unit_index != null) q.set('unit_index', String(params.unit_index))
-  if (params.chapter != null) q.set('chapter', String(params.chapter))
-  const qs = q.toString()
-  return request(`/projects/${projectId}/engine/analysis${qs ? `?${qs}` : ''}`)
-}
 
 export const runNarrativeAnalysis = (projectId, body = {}) =>
   request(`/projects/${projectId}/engine/analysis`, {
@@ -205,9 +165,6 @@ export const extractSelfReview = (projectId, output) =>
 
 export const listVoiceDnas = (projectId) =>
   request(`/projects/${projectId}/engine/voice-dna`)
-
-export const getVoiceDna = (projectId, characterId) =>
-  request(`/projects/${projectId}/engine/voice-dna/${encodeURIComponent(characterId)}`)
 
 export const saveVoiceDna = (projectId, characterId, body) =>
   request(`/projects/${projectId}/engine/voice-dna/${encodeURIComponent(characterId)}`, {
@@ -241,9 +198,6 @@ export const deleteBibleSection = (projectId, sectionId) =>
     method: 'DELETE',
   })
 
-export const listBeatOutlines = (projectId) =>
-  request(`/projects/${projectId}/engine/beats`)
-
 export const getBeatOutline = (projectId, unitIndex) =>
   request(`/projects/${projectId}/engine/beats?unit_index=${unitIndex}`)
 
@@ -269,25 +223,7 @@ export const getPlannerGoal = (projectId) =>
 export const getPlannerRoadmap = (projectId) =>
   request(`/projects/${projectId}/story/planner/roadmap`)
 
-// ── Story Tasks 额外接口（后端已实现，前端补充） ──
-
-export const getAllTasks = (projectId) =>
-  request(`/projects/${projectId}/story/tasks`)
-export const createTaskPlan = (projectId, taskId) =>
-  request(`/projects/${projectId}/story/tasks/${encodeURIComponent(taskId)}/plan`, {
-    method: 'POST',
-  })
-export const completeTask = (projectId, taskId) =>
-  request(`/projects/${projectId}/story/tasks/${encodeURIComponent(taskId)}/complete`, {
-    method: 'POST',
-  })
-
 // ── 章节列表（后端已实现，前端补充） ──
 
 export const listChapters = (projectId) =>
   request(`/projects/${projectId}/chapters`)
-
-// ── 情感曲线（P0-3 Emotion Curve Visualization） ──
-
-export const getEmotionCurve = (projectId) =>
-  request(`/projects/${projectId}/story/understanding`).then((b) => b?.emotion_curve || null)

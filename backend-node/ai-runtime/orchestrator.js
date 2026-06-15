@@ -1,19 +1,19 @@
 import path from 'path';
 import fs from 'fs';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import {
   buildChatPromptContext,
   ensureClaudeSessionId,
   selectHistoryTurns,
-} from '../conversation-memory.js';
+} from '../lib/conversation-memory.js';
 import {
   buildSkillInstructionBlock,
   resolveSkillForMessage,
   describeDefaultSkill,
   resolveSkillWorkflow,
-} from '../skill-config.js';
-import { WORK_TYPES, CREATION_MODES, manuscriptDirForMode } from '../projectProfile.js';
+} from '../skill-adapter/skill-config.js';
+import { WORK_TYPES, CREATION_MODES, manuscriptDirForMode } from '../lib/projectProfile.js';
 import * as runtime from './runtime.js';
 import { usesHttpRuntime } from './model-resolver.js';
 import { buildHttpChatMessages, buildHttpChatMessagesSlim, loadHttpWorkspaceExcerpt } from './http-prompt.js';

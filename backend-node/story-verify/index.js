@@ -242,7 +242,6 @@ export {
   verifyWriteChapter,
   verifyPlanExecution,
   verifyTaskCompletion,
-  verifyStructureIntegrity,
   getLatestVerify,
   listRecentVerifies,
   captureExecutionBaseline,

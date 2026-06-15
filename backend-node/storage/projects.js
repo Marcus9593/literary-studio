@@ -5,9 +5,9 @@ import {
   normalizeWorkType,
   normalizeCreationMode,
   manuscriptDirForMode,
-} from '../projectProfile.js';
-import { resolveProjectCardSummary } from '../project-summary.js';
-import { normalizeProjectStatus } from '../project-meta-fields.js';
+} from '../lib/projectProfile.js';
+import { resolveProjectCardSummary } from '../lib/project-summary.js';
+import { normalizeProjectStatus } from '../lib/project-meta-fields.js';
 import { PROJECTS_DIR, now, sqlAdapter } from './core.js';
 import { listChapters, listMdFilesInDir, ensureWorkspaceDirs } from './workspace.js';
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import { loadKnowledgeBundle, saveKnowledgeFile } from './store.js';
 import { listCharacters } from './entity-resolver.js';
 import { rebuildStoryIndex } from '../story-index/build.js';

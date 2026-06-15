@@ -1,9 +1,5 @@
 import { request } from './client.js';
 
-export const getSettings = () => request('/models')
-export const saveSettings = (body) =>
-  request('/settings', { method: 'PUT', body: JSON.stringify(body) })
-
 export const listModels = () => request('/models')
 export const createModel = (body) =>
   request('/models', { method: 'POST', body: JSON.stringify(body) })

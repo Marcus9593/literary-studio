@@ -12,11 +12,6 @@ export const focusSession = (projectId, body) =>
   request(`/projects/${projectId}/sessions/focus`, { method: 'POST', body: JSON.stringify(body) })
 export const getSession = (projectId, sessionId) =>
   request(`/projects/${projectId}/sessions/${sessionId}`)
-export const renameSession = (projectId, sessionId, title) =>
-  request(`/projects/${projectId}/sessions/${sessionId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ title }),
-  })
 export const activateSession = (projectId, sessionId) =>
   request(`/projects/${projectId}/sessions/${sessionId}`, {
     method: 'PATCH',

@@ -4,7 +4,7 @@ import { EVENTS } from './bus.js';
 import { indexIfStale } from '../memory/retriever.js';
 import { runReview } from '../measurement/review-facade.js';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import { afterChapterWritten } from '../agents/chief-editor/index.js';
 import { runQuickSync, QUICK_CHAPTER_DEFAULT } from '../story-kb/rebuild.js';
 import { verifyAfterWrite } from '../story-verify/index.js';

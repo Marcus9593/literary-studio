@@ -45,22 +45,3 @@ export const saveProjectFile = (projectId, category, filename, content) =>
     method: 'PUT',
     body: JSON.stringify({ content }),
   })
-
-/** @deprecated 工作台已改用 WebSocket；保留供脚本/测试 */
-export const getChat = (projectId) => request(`/projects/${projectId}/chat`)
-/** @deprecated 工作台已改用 WebSocket */
-export const sendChat = (projectId, message) =>
-  request(`/projects/${projectId}/chat`, {
-    method: 'POST',
-    body: JSON.stringify({ message }),
-  })
-/** @deprecated 工作台已改用 WebSocket */
-export const clearChat = (projectId) =>
-  request(`/projects/${projectId}/chat`, { method: 'DELETE' })
-
-/** @deprecated 工作台已改用 WebSocket 写稿任务 */
-export const writeChapter = (projectId, body) =>
-  request(`/projects/${projectId}/write`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  })

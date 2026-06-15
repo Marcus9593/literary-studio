@@ -443,6 +443,6 @@ Story Assets   → 管（Knowledge，非 studio.assets）
 - [v2.8-legacy-inventory.md](./archive/v2.8/v2.8-legacy-inventory.md) — **Legacy Inventory（现实审计）**
 - [v2.8-migration-design.md](./archive/v2.8/v2.8-migration-design.md) — **Migration Design（Phase C / Dry Run 依据）**
 - [roadmap-v2.8-creative-center.md](./archive/v2.8/roadmap-v2.8-creative-center.md) — 分阶段实施路线图（归档）
-- [project-architecture.json](../project-architecture.json) — 模块与目录机器可读描述
+- [project-architecture.json](./project-architecture.json) — 模块与目录机器可读描述
 
 **维护：** 架构变更须更新本节「系统公约」、§十二 与版本路线图，而非仅在 PR 描述中口头约定。

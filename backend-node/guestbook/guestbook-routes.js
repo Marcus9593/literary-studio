@@ -55,6 +55,7 @@ router.post('/', upload.array('images', guestbook.MAX_IMAGES_PER_ENTRY), (req, r
       ...identity,
       content: req.body?.content,
       images,
+      tag: req.body?.tag,
     });
     res.status(201).json(post);
   } catch (e) {
@@ -82,6 +83,23 @@ router.post(
     }
   },
 );
+
+router.patch('/:postId', (req, res) => {
+  try {
+    const { content, tag, pinned } = req.body || {};
+    const updates = {};
+    if (content !== undefined) updates.content = content;
+    if (tag !== undefined) updates.tag = tag;
+    if (pinned !== undefined) updates.pinned = pinned;
+    const post = guestbook.updatePost(req.params.postId, updates, {
+      userId: req.user?.id,
+      isModerator: isSuperAdmin(req.user),
+    });
+    res.json(post);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
 
 router.delete('/:postId', requireAdmin, (req, res) => {
   try {

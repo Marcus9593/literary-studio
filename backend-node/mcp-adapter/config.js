@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { loadToolsConfig, saveToolsConfig } from '../tools-service.js';
+import { loadToolsConfig, saveToolsConfig } from '../skill-adapter/tools-service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');

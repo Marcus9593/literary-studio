@@ -3,6 +3,7 @@
   "private": true,
   "version": "2.6.0",
   "description": "文匠 Studio — cross-platform literary writing workspace",
+  "main": "electron/main.js",
   "engines": {
     "node": ">=22"
   },
@@ -13,6 +14,71 @@
     "backend": "npm run start --prefix backend-node",
     "frontend:dev": "npm run dev --prefix frontend",
     "docker:release": "node scripts/release-docker.mjs",
-    "docker:release:slim": "node scripts/release-docker.mjs --target runtime-slim --tags slim"
+    "docker:release:slim": "node scripts/release-docker.mjs --target runtime-slim --tags slim",
+    "electron:dev": "electron .",
+    "electron:build": "node scripts/build-electron.mjs",
+    "electron:build:arm64": "node scripts/build-electron.mjs --arm64",
+    "electron:build:x64": "node scripts/build-electron.mjs --x64",
+    "frontend:build": "npm run build --prefix frontend"
+  },
+  "build": {
+    "appId": "com.literary-studio.app",
+    "productName": "文匠 Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "backend-node/**/*",
+      "!backend-node/node_modules/.cache/**",
+      "!backend-node/data/**",
+      "frontend/dist/**/*",
+      "skills/**/*",
+      "backend/*.py",
+      "backend/requirements.txt",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/@lancedb/**/*",
+      "backend/*.py",
+      "backend/requirements.txt"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/icons/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "title": "文匠 Studio",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "electron": "^35.7.5",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.177"
   }
 }

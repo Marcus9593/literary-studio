@@ -67,6 +67,12 @@ logs/
 reports/
 feature-gap-analysis*.json
 
+# === Drafts (temporary documents, not for production) ===
+drafts/
+
 # === Misc ===
 *.tsbuildinfo
 .cache/
+
+# === Build releases ===
+release/

@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import { loadKnowledgeBundle } from '../story-kb/store.js';
-import { manuscriptDirForMode } from '../projectProfile.js';
+import { manuscriptDirForMode } from '../lib/projectProfile.js';
 
 const AI_PHRASES = [
   '不禁', '嘴角微微上扬', '心头一紧', '瞳孔微缩', '目光深邃',

@@ -3,7 +3,7 @@ import path from 'path';
 import archiver from 'archiver';
 import { loadKnowledgeBundle } from '../story-kb/store.js';
 import { listChapters, resolveManuscriptPath, getProject } from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 
 function escapeXml(s) {
   return String(s || '')

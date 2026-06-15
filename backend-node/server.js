@@ -3,7 +3,7 @@ import cors from 'cors';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import apiRouter from './routes.js';
+import apiRouter from './routes/index.js';
 import { attachWebSocket } from './ws-handler.js';
 import { registerEventSubscribers } from './event-bus/subscribers.js';
 import { assertProductionSecurity } from './auth/security-check.js';

@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
-import { manuscriptDirForMode } from '../projectProfile.js';
+import { decodeBuffer } from '../lib/encoding.js';
+import { manuscriptDirForMode } from '../lib/projectProfile.js';
 import { isPlausibleCharacterName } from './character-name-filter.js';
 
 /** 扫描 workspace 源文件，供快速同步 / 全书理解使用 */

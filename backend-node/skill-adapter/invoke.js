@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { resolveSkillById, getDefaultSkillBinding } from '../skill-config.js';
+import { resolveSkillById, getDefaultSkillBinding } from './skill-config.js';
 import { discoverSkillCapabilities } from './discover.js';
 import { runScript, tryParseJson } from './runner.js';
 

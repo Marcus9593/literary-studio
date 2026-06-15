@@ -6,7 +6,7 @@ import {
   MAX_SESSION_MESSAGES,
   buildHeuristicMemorySummary,
   shouldRefreshMemory,
-} from '../conversation-memory.js';
+} from '../lib/conversation-memory.js';
 import { workspacePath } from './projects.js';
 import { loadChatHistory } from './chat.js';
 import { now, readJSON, writeJSON, sqlAdapter } from './core.js';

@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { ensureSuperAdmin, migrateLegacyAdminRoles } from './user-store.js';
 import { SUPER_ADMIN_ID } from './constants.js';
-import { runStartupDataRepairs } from '../data-repair.js';
+import { runStartupDataRepairs } from '../lib/data-repair.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = process.env.LITERARY_STUDIO_DATA

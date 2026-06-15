@@ -4,11 +4,11 @@ import { verifyToken } from './auth/token.js';
 import { findUserById } from './auth/user-store.js';
 import { canReadProject, canWriteProject } from './auth/permissions.js';
 import { streamChat, streamWriteChapter, streamInlineEdit, buildProjectContext, invalidateProjectContext } from './ai-runtime/orchestrator.js';
-import { extractWritePlan } from './write-plan.js';
-import { ensureClaudeSessionId } from './conversation-memory.js';
-import { describeDefaultSkill, resolveSkillWorkflow } from './skill-config.js';
+import { extractWritePlan } from './workflow/write-plan.js';
+import { ensureClaudeSessionId } from './lib/conversation-memory.js';
+import { describeDefaultSkill, resolveSkillWorkflow } from './skill-adapter/skill-config.js';
 import { emit, EVENTS } from './event-bus/bus.js';
-import { resolveWrittenChapter } from './write-chapter-resolve.js';
+import { resolveWrittenChapter } from './workflow/write-chapter-resolve.js';
 import { formatModerationError, isContentModerationText } from './ai-runtime/http-client.js';
 import { stripModelToolArtifacts } from './ai-runtime/output-sanitize.js';
 

@@ -242,7 +242,7 @@ def test_webnovel_review_skill_uses_unified_reviewer_pipeline():
 
     assert "`reviewer`" in skill_text
     assert "Agent(" in skill_text
-    assert 'subagent_type: "webnovel-writer:reviewer"' in skill_text
+    assert 'subagent_type: "literary-writer:reviewer"' in skill_text
     assert "review-pipeline" in skill_text
     assert ".webnovel/tmp/review_results.json" in skill_text
     assert ".webnovel/tmp/review_metrics.json" in skill_text
@@ -278,7 +278,7 @@ def test_webnovel_write_skill_uses_explicit_agent_invocation_templates():
 
     assert "Agent" in fm.get("allowed-tools", "")
     for subagent in ("context-agent", "reviewer", "data-agent"):
-        assert f'subagent_type: "webnovel-writer:{subagent}"' in text
+        assert f'subagent_type: "literary-writer:{subagent}"' in text
         assert f'subagent_type: "{subagent}"' not in text
     assert "不得用主流程口头代替 subagent 输出" in text
 
@@ -349,7 +349,7 @@ def test_data_agent_is_described_as_extraction_only_not_direct_write_mainline():
 
 def test_webnovel_write_data_agent_prompt_requires_extraction_schema():
     text = (SKILLS_DIR / "webnovel-write" / "SKILL.md").read_text(encoding="utf-8")
-    assert "webnovel-writer:data-agent" in text
+    assert "literary-writer:data-agent" in text
     assert "fulfillment_result.json 必须顶层" in text
     assert "planned_nodes/covered_nodes/missed_nodes/extra_nodes" in text
     assert "disambiguation_result.json 必须顶层包含 pending" in text
@@ -460,7 +460,7 @@ def test_webnovel_init_deconstruction_wiring_keeps_confirmation_gate():
     """init may consume only confirmed, transformed reference patterns."""
     text = _read_text(SKILLS_DIR / "webnovel-init" / "SKILL.md")
 
-    assert 'subagent_type: "webnovel-writer:deconstruction-agent"' in text
+    assert 'subagent_type: "literary-writer:deconstruction-agent"' in text
     assert "Step 1.5：灵感来源询问" in text
     assert "进入故事核采集前" in text
     assert "不要默认拆书" in text

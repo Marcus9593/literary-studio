@@ -41,7 +41,7 @@ const NAV = [
   { to: '/assets', label: '素材中心', icon: '◧', end: true },
   { to: '/versions', label: '项目版本', icon: '⧉', end: true },
   { to: '/ai', label: 'AI 中心', icon: '◈', end: false },
-  { to: '/guestbook', label: '留言板', icon: '💬', end: true },
+  { to: '/guestbook', label: '创作备忘录', icon: '📝', end: true },
 ]
 
 function AppShell() {

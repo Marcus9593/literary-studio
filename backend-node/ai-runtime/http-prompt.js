@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { selectHistoryAsMessages } from '../conversation-memory.js';
+import { selectHistoryAsMessages } from '../lib/conversation-memory.js';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 
 const HTTP_HISTORY_MAX = 8;
 const HTTP_SYSTEM_MAX = 12000;

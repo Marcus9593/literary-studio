@@ -1,4 +1,5 @@
-import { request } from './client.js';
+import { API } from './client.js'
+import { authHeaders } from '../auth/token.js'
 
 async function guestbookRequest(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -16,15 +17,11 @@ export const listGuestbookPosts = (page = 1, limit = 20) =>
   guestbookRequest(`/guestbook?page=${page}&limit=${limit}`)
 export const createGuestbookPost = (formData) =>
   guestbookRequest('/guestbook', { method: 'POST', body: formData })
-export const createGuestbookReply = (postId, formData) =>
-  guestbookRequest(`/guestbook/${encodeURIComponent(postId)}/replies`, {
-    method: 'POST',
-    body: formData,
+export const updateGuestbookPost = (postId, data) =>
+  guestbookRequest(`/guestbook/${encodeURIComponent(postId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   })
 export const deleteGuestbookPost = (postId) =>
   guestbookRequest(`/guestbook/${encodeURIComponent(postId)}`, { method: 'DELETE' })
-export const deleteGuestbookReply = (postId, replyId) =>
-  guestbookRequest(
-    `/guestbook/${encodeURIComponent(postId)}/replies/${encodeURIComponent(replyId)}`,
-    { method: 'DELETE' },
-  )

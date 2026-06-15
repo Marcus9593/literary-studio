@@ -10,8 +10,27 @@ const providers = {
 
 const activeRunners = new Set();
 
-function resolveClaudeProvider() {
-  return providers.claude;
+// ── claude CLI 可用性检测（启动时检测一次，缓存结果）──
+let claudeAvailable = null;
+
+async function isClaudeAvailable() {
+  if (claudeAvailable !== null) return claudeAvailable;
+  try {
+    const health = await claude.checkHealth();
+    claudeAvailable = health.available === true;
+    if (!claudeAvailable) {
+      console.log('[runtime] claude CLI 不可用，将使用 HTTP 模型');
+    }
+  } catch {
+    claudeAvailable = false;
+    console.log('[runtime] claude CLI 检测失败，将使用 HTTP 模型');
+  }
+  return claudeAvailable;
+}
+
+function resolveProvider(preferClaude = true) {
+  if (preferClaude && claudeAvailable) return providers.claude;
+  return providers.http;
 }
 
 /**
@@ -32,7 +51,8 @@ export function getProviderIds() {
 
 export function getActiveInferenceMode() {
   const cfg = resolveActiveModelConfig();
-  const base = { mode: 'claude_cli' };
+  const mode = claudeAvailable ? 'claude_cli' : 'http';
+  const base = { mode };
   if (cfg) {
     return {
       ...base,
@@ -42,19 +62,23 @@ export function getActiveInferenceMode() {
       credentials: 'studio_settings',
     };
   }
-  return { ...base, credentials: 'cli_default' };
+  return { ...base, credentials: claudeAvailable ? 'cli_default' : 'none' };
 }
 
 export async function* stream(request) {
+  await isClaudeAvailable();
   const req = enrichStreamRequest(request);
-  for await (const evt of resolveClaudeProvider().stream(req)) {
+  const provider = resolveProvider(req.provider !== 'http');
+  for await (const evt of provider.stream(req)) {
     yield evt;
   }
 }
 
 export async function generate(request) {
+  await isClaudeAvailable();
   const req = enrichStreamRequest(request);
-  return resolveClaudeProvider().generate(req);
+  const provider = resolveProvider(req.provider !== 'http');
+  return provider.generate(req);
 }
 
 export async function checkHealth(providerId) {
@@ -62,7 +86,7 @@ export async function checkHealth(providerId) {
   if (providerId === 'http' && cfg) {
     return httpProvider.checkHealth(cfg);
   }
-  return providers.claude.checkHealth();
+  return claude.checkHealth();
 }
 
 export function cancelAll() {

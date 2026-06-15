@@ -49,8 +49,8 @@ export const BRAND = {
   },
 
   guestbook: {
-    title: '留言板',
-    intro: '给文匠 Studio 留下建议与想法，支持图文与多层回复，一起把平台做得更好。',
+    title: '创作备忘录',
+    intro: '记录灵感、待办事项和写作进度。支持图文、标签分类与置顶。',
   },
 
   /** @deprecated 已合并至 aiCenter */

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import {
   writeSummaryFile,
   readSummaryFile,

@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import * as storage from '../storage.js';
-import { decodeBuffer } from '../encoding.js';
+import { decodeBuffer } from '../lib/encoding.js';
 import { loadUnderstandingBundle } from '../story-understanding/store.js';
 import { getPlan } from '../story-plans/store.js';
-import { manuscriptDirForMode } from '../projectProfile.js';
+import { manuscriptDirForMode } from '../lib/projectProfile.js';
 
 const MIN_WRITE_WORDS = 800;
 const MIN_REWRITE_WORDS = 200;

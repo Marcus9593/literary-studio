@@ -3,8 +3,6 @@ import { API, request } from './client.js';
 
 export const getJob = (jobId) => request(`/jobs/${jobId}`)
 
-export const getUploadFormats = () => request('/upload/formats')
-
 /** 支持 zip / docx / pdf / md / txt 等，后端自动转为 Markdown */
 export async function uploadProjectFile(projectId, file, subdir = '正文') {
   const form = new FormData()
@@ -22,17 +20,6 @@ export async function uploadProjectFile(projectId, file, subdir = '正文') {
     throw new Error(msg)
   }
   return res.json()
-}
-
-/** @deprecated 使用 uploadProjectFile */
-export const uploadProjectZip = uploadProjectFile
-
-export function downloadProjectUrl(projectId, format = 'zip') {
-  return `${API}/projects/${projectId}/download?format=${encodeURIComponent(format)}`
-}
-
-export function downloadChapterUrl(projectId, filename, format = 'md') {
-  return `${API}/projects/${projectId}/chapters/${encodeURIComponent(filename)}/export?format=${encodeURIComponent(format)}`
 }
 
 export const getExportFormats = () => request('/export/formats')

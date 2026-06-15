@@ -9,10 +9,12 @@ const DATA_DIR = path.resolve(process.env.LITERARY_STUDIO_DATA || path.join(ROOT
 const GUESTBOOK_PATH = path.join(DATA_DIR, 'guestbook.json');
 const MEDIA_DIR = path.join(DATA_DIR, 'guestbook-media');
 
-export const MAX_CONTENT_LENGTH = 1000;
+export const MAX_CONTENT_LENGTH = 2000;
 export const MAX_AUTHOR_LENGTH = 32;
 export const ANONYMOUS_AUTHOR = '匿名用户';
 export const MAX_IMAGES_PER_ENTRY = 4;
+export const VALID_TAGS = ['灵感', '待办', '进度', '反馈', '其他'];
+export const DEFAULT_TAG = '其他';
 export const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -70,11 +72,17 @@ export function resolveGuestbookAuthor(user, { anonymous = false } = {}) {
 
 function validateContent(content) {
   const text = String(content || '').trim();
-  if (!text) throw new Error('留言内容不能为空');
+  if (!text) throw new Error('内容不能为空');
   if (text.length > MAX_CONTENT_LENGTH) {
-    throw new Error(`留言最多 ${MAX_CONTENT_LENGTH} 字`);
+    throw new Error(`内容最多 ${MAX_CONTENT_LENGTH} 字`);
   }
   return text;
+}
+
+function sanitizeTag(tag) {
+  const t = String(tag || '').trim();
+  if (!t || !VALID_TAGS.includes(t)) return DEFAULT_TAG;
+  return t;
 }
 
 function extFromMime(mime) {
@@ -123,9 +131,11 @@ export function resolveMediaPath(filename) {
 
 export function listPosts({ page = 1, limit = 20, forModerator = false } = {}) {
   const data = loadStore();
-  const sorted = [...data.posts].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  const sorted = [...data.posts].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
   const total = sorted.length;
   const p = Math.max(1, page);
   const lim = Math.min(Math.max(limit, 1), 50);
@@ -158,6 +168,8 @@ function formatPost(post, { forModerator = false } = {}) {
     images: post.images || [],
     created_at: post.created_at,
     anonymous: Boolean(post.anonymous),
+    tag: post.tag || DEFAULT_TAG,
+    pinned: Boolean(post.pinned),
     reply_count: post.replies?.length || 0,
     replies: [...(post.replies || [])].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
@@ -176,6 +188,7 @@ export function createPost({
   anonymous = false,
   user_id = '',
   author_username = '',
+  tag = DEFAULT_TAG,
 }) {
   const text = validateContent(content);
   const post = {
@@ -187,10 +200,32 @@ export function createPost({
     user_id: String(user_id || ''),
     author_username: String(author_username || author || ''),
     created_at: new Date().toISOString(),
+    tag: sanitizeTag(tag),
+    pinned: false,
     replies: [],
   };
   const data = loadStore();
   data.posts.push(post);
+  saveStore(data);
+  return formatPost(post);
+}
+
+export function updatePost(postId, { content, tag, pinned }, { userId, isModerator = false } = {}) {
+  const data = loadStore();
+  const post = data.posts.find((p) => p.id === postId);
+  if (!post) throw new Error('备忘不存在');
+  if (!isModerator && post.user_id && post.user_id !== userId) {
+    throw new Error('只能编辑自己的备忘');
+  }
+  if (content !== undefined) {
+    post.content = validateContent(content);
+  }
+  if (tag !== undefined) {
+    post.tag = sanitizeTag(tag);
+  }
+  if (pinned !== undefined) {
+    post.pinned = Boolean(pinned);
+  }
   saveStore(data);
   return formatPost(post);
 }

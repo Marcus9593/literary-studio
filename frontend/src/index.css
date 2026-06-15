@@ -6513,6 +6513,256 @@ select {
   margin-top: 20px;
 }
 
+/* ── 创作备忘录 (Journal) ── */
+
+.journal-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.journal-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.journal-tag-chip:hover {
+  border-color: var(--tag-color, #999);
+}
+
+.journal-tag-active {
+  font-weight: 600;
+}
+
+/* 便利贴墙 */
+.journal-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 4px;
+}
+
+@media (max-width: 640px) {
+  .journal-wall {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* 单张便利贴 */
+.journal-sticky {
+  position: relative;
+  background: var(--sticky-bg, #fff9e6);
+  border-radius: 2px 2px 4px 4px;
+  padding: 28px 16px 14px;
+  transform: rotate(var(--sticky-rotate, 0deg));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow:
+    2px 3px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-sticky:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow:
+    4px 6px 16px rgba(0, 0, 0, 0.12),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+}
+
+/* 顶部胶带 */
+.journal-sticky-tape {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 56px;
+  height: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.25)
+  );
+  border-radius: 1px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+  backdrop-filter: blur(1px);
+}
+
+/* 置顶标记 */
+.journal-sticky-pin {
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  font-size: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  pointer-events: none;
+}
+
+.journal-sticky-pinned {
+  border-bottom: 3px solid var(--sticky-accent, #e67e22);
+}
+
+/* 头部：标签 + 时间 */
+.journal-sticky-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.journal-sticky-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.journal-sticky-time {
+  font-size: 11px;
+  color: var(--ink-faint, #aaa);
+  white-space: nowrap;
+}
+
+/* 内容 */
+.journal-sticky-content {
+  flex: 1;
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink, #333);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 操作按钮 */
+.journal-sticky-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.journal-sticky:hover .journal-sticky-actions {
+  opacity: 1;
+}
+
+.journal-sticky-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink-muted, #888);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.journal-sticky-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink, #333);
+}
+
+.journal-sticky-btn-ghost {
+  background: transparent;
+}
+
+.journal-sticky-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.journal-sticky-btn-danger {
+  color: #c0392b;
+}
+
+.journal-sticky-btn-danger:hover {
+  background: #c0392b18;
+  color: #c0392b;
+}
+
+.journal-sticky-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 编辑表单 */
+.journal-edit-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-edit-form textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  flex: 1;
+}
+
+.journal-edit-form textarea:focus {
+  outline: none;
+  border-color: var(--sticky-accent, var(--accent));
+}
+
+/* 便利贴图片网格 */
+.journal-sticky .guestbook-images {
+  margin: 8px 0;
+  border-radius: 4px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.journal-sticky .guestbook-images img {
+  max-height: 140px;
+  border-radius: 4px;
+}
+
+/* 不同标签的便利贴底色 */
+.journal-sticky[style*="--sticky-accent: #e67e22"] {
+  background: #fef9f0;
+}
+.journal-sticky[style*="--sticky-accent: #e74c3c"] {
+  background: #fef5f5;
+}
+.journal-sticky[style*="--sticky-accent: #27ae60"] {
+  background: #f0faf4;
+}
+.journal-sticky[style*="--sticky-accent: #3498db"] {
+  background: #f0f7fe;
+}
+.journal-sticky[style*="--sticky-accent: #95a5a6"] {
+  background: #f5f7f8;
+}
+
 /* ── Login & Auth ── */
 
 .login-page {
