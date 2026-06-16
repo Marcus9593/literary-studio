@@ -64,6 +64,14 @@ if (!exists('node_modules/electron')) {
 console.log('\n━━━ 第 2 步: 构建前端 ━━━')
 run('npm run build --prefix frontend')
 
+// ── 第 2.5 步: 生成 Dock 安全区图标 ──
+console.log('\n━━━ 第 2.5 步: 生成应用图标（Dock 安全区） ━━━')
+if (exists('electron/icons/icon-source.png') || exists('electron/icons/icon.icns')) {
+  run('python3 scripts/build-app-icon.py')
+} else {
+  console.log('  ⚠️  跳过：未找到 icon-source.png')
+}
+
 // ── 第 3 步: 打包 Python 和 Claude CLI ──
 console.log('\n━━━ 第 3 步: 打包 Python 运行时和 Claude CLI ━━━')
 if (!exists('electron/vendor/python') || args.includes('--rebuild-deps')) {

@@ -17,6 +17,7 @@
     "docker:release:slim": "node scripts/release-docker.mjs --target runtime-slim --tags slim",
     "electron:dev": "electron .",
     "electron:bundle": "node scripts/bundle-deps.mjs",
+    "electron:icons": "python3 scripts/build-app-icon.py",
     "electron:build": "node scripts/build-electron.mjs",
     "electron:build:arm64": "node scripts/build-electron.mjs --arm64",
     "electron:build:x64": "node scripts/build-electron.mjs --x64",

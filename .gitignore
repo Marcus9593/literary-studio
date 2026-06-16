@@ -81,3 +81,5 @@ release/
 electron/vendor/claude/
 electron/vendor/python/
 electron/vendor/claude-tmp/
+electron/icons/*.iconset/
+electron/icons/icon-dock-preview.png
