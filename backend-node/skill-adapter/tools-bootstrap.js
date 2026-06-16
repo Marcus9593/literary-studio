@@ -1,36 +1,57 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  BUNDLED_LITERARY_WRITER,
-  BUNDLED_SKILLS_DIR,
   bundledLiteraryWriterAvailable,
+  resolveBundledLiteraryWriterPath,
+  resolveBundledSkillsDir,
 } from './literary-writer-paths.js';
-import { loadToolsConfig, saveToolsConfig } from './tools-service.js';
+import { loadToolsConfig, saveToolsConfig, scanInstalledSkills, isLiteraryWriterRoot } from './tools-service.js';
 
-/** 启动时将 tools.json 指向工程内嵌 skill，并加入 skill 扫描目录 */
+/** 启动时将 tools.json 指向内嵌 skill，并加入 skill 扫描目录 */
 export function bootstrapToolsConfig() {
-  if (!bundledLiteraryWriterAvailable()) return;
+  if (!bundledLiteraryWriterAvailable()) {
+    console.warn('  [tools] bundled literary-writer not found, skipping bootstrap');
+    return;
+  }
+
+  const bundledRoot = resolveBundledLiteraryWriterPath();
+  const bundledSkillsDir = resolveBundledSkillsDir();
+  if (!bundledRoot) return;
 
   const cfg = loadToolsConfig();
   let changed = false;
 
   const root = String(cfg.literary_writer_root || '').trim();
-  const rootValid = root && fs.existsSync(root) && fs.statSync(root).isDirectory();
-  if (!rootValid || root !== BUNDLED_LITERARY_WRITER) {
-    cfg.literary_writer_root = BUNDLED_LITERARY_WRITER;
-    process.env.LITERARY_WRITER_ROOT = BUNDLED_LITERARY_WRITER;
+  const rootValid = isLiteraryWriterRoot(root);
+  if (!rootValid || path.normalize(root) !== path.normalize(bundledRoot)) {
+    cfg.literary_writer_root = bundledRoot;
+    process.env.LITERARY_WRITER_ROOT = bundledRoot;
     changed = true;
   }
 
   const scanDirs = Array.isArray(cfg.skill_scan_dirs) ? cfg.skill_scan_dirs.map(String) : [];
   const normalized = scanDirs.map((d) => path.normalize(d));
-  if (!normalized.includes(path.normalize(BUNDLED_SKILLS_DIR))) {
-    cfg.skill_scan_dirs = [BUNDLED_SKILLS_DIR, ...scanDirs];
+  if (!normalized.includes(path.normalize(bundledSkillsDir))) {
+    cfg.skill_scan_dirs = [bundledSkillsDir, ...scanDirs];
     changed = true;
   }
 
   if (changed) {
     saveToolsConfig(cfg);
-    console.log(`  [tools] literary-writer → ${BUNDLED_LITERARY_WRITER}`);
+    changed = false;
+  }
+
+  if (!cfg.default_skill?.skill_id) {
+    const installed = scanInstalledSkills();
+    const lw = installed.find((s) => s.id === 'literary-writer' || s.is_literary_writer);
+    if (lw) {
+      cfg.default_skill = { skill_id: lw.id, sub_skill: null };
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    saveToolsConfig(cfg);
+    console.log(`  [tools] literary-writer → ${bundledRoot}`);
   }
 }

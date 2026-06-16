@@ -1,0 +1,11 @@
+{
+  "name": "electron-win",
+  "description": "Windows Electron 安装版（E:\\literary-studio）",
+  "host": "127.0.0.1",
+  "port": 7261,
+  "base_url": "http://127.0.0.1:7261",
+  "ws_url": "ws://127.0.0.1:7261/ws",
+  "admin_user": "admin",
+  "admin_password": "admin123",
+  "timeout": 60
+}

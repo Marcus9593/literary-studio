@@ -10,6 +10,7 @@ backend-node/dist/
 
 # === Data (user content, API keys, database) ===
 data/
+backend-node/data/
 *.db
 *.db-journal
 *.db-wal
@@ -76,6 +77,10 @@ drafts/
 
 # === Build releases ===
 release/
+dist-electron/
+dist-electron-v2/
+frontend/sidecar/
+frontend/src-tauri/
 
 # === Electron vendor runtimes (large binaries; maintain locally, see electron/vendor/README.md) ===
 electron/vendor/claude/

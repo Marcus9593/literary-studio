@@ -8,8 +8,8 @@ import * as sqlAdapter from '../storage/sqlite/adapter.js';
 import { discoverSkillCapabilities } from './discover.js';
 import {
   BUNDLED_LITERARY_WRITER,
-  BUNDLED_SKILLS_DIR,
-  bundledLiteraryWriterAvailable,
+  resolveBundledLiteraryWriterPath,
+  resolveBundledSkillsDir,
 } from './literary-writer-paths.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,8 +17,7 @@ const ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.resolve(process.env.LITERARY_STUDIO_DATA || path.join(ROOT, 'data'));
 const TOOLS_CONFIG_PATH = path.join(DATA_DIR, 'tools.json');
 
-const DEFAULT_SKILL_SCAN_DIRS = [
-  ...(bundledLiteraryWriterAvailable() ? [BUNDLED_SKILLS_DIR] : []),
+const USER_SKILL_SCAN_DIRS = [
   path.join(os.homedir(), '.claude', 'skills'),
   path.join(os.homedir(), '.cursor', 'skills'),
   path.join(os.homedir(), '.codex', 'skills'),
@@ -67,29 +66,38 @@ export function saveToolsConfig(data) {
   return data;
 }
 
+function isLiteraryWriterRoot(dir) {
+  try {
+    return Boolean(dir) && fs.existsSync(path.join(path.resolve(dir), 'SKILL.md'));
+  } catch {
+    return false;
+  }
+}
+
+export { isLiteraryWriterRoot };
+
 function resolveLiteraryWriterRoot() {
   const cfg = loadToolsConfig();
   const custom = String(cfg.literary_writer_root || '').trim();
   if (custom) {
     const p = path.resolve(custom.replace(/^~/, os.homedir()));
-    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) return p;
+    if (isLiteraryWriterRoot(p)) return p;
   }
   const env = process.env.LITERARY_WRITER_ROOT;
   if (env) {
     const p = path.resolve(env.replace(/^~/, os.homedir()));
-    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) return p;
+    if (isLiteraryWriterRoot(p)) return p;
   }
   const candidates = [
+    resolveBundledLiteraryWriterPath(),
     BUNDLED_LITERARY_WRITER,
     path.join(os.homedir(), '.claude', 'skills', 'literary-writer'),
     path.join(os.homedir(), '.cursor', 'skills', 'literary-writer'),
     path.join(ROOT, '..', 'skills', 'literary-writer'),
-  ];
+  ].filter(Boolean);
   for (const c of candidates) {
     const resolved = path.resolve(c);
-    if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
-      return resolved;
-    }
+    if (isLiteraryWriterRoot(resolved)) return resolved;
   }
   return path.resolve(candidates[0]);
 }
@@ -105,7 +113,14 @@ function getSkillScanDirs() {
   );
   const dirs = [];
   const seen = new Set();
-  for (const p of [...DEFAULT_SKILL_SCAN_DIRS, ...extra]) {
+  const bundledDir = resolveBundledSkillsDir();
+  const bundledDirs = (() => {
+    try {
+      if (fs.existsSync(bundledDir) && fs.statSync(bundledDir).isDirectory()) return [bundledDir];
+    } catch {}
+    return [];
+  })();
+  for (const p of [...bundledDirs, ...USER_SKILL_SCAN_DIRS, ...extra]) {
     try {
       if (!fs.existsSync(p) || !fs.statSync(p).isDirectory()) continue;
       const key = fs.realpathSync(p);

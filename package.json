@@ -18,9 +18,19 @@
     "electron:dev": "electron .",
     "electron:bundle": "node scripts/bundle-deps.mjs",
     "electron:icons": "python3 scripts/build-app-icon.py",
+    "electron:validate-vendor": "node scripts/validate-electron-vendor.mjs",
+    "electron:validate-packaged": "node scripts/validate-electron-packaged.mjs",
+    "clean:test-data": "node scripts/clean-test-data.mjs",
+    "clean:test-data:all": "node scripts/clean-test-data.mjs --appdata",
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "version:minor": "node scripts/bump-version.mjs minor",
+    "version:major": "node scripts/bump-version.mjs major",
     "electron:build": "node scripts/build-electron.mjs",
-    "electron:build:arm64": "node scripts/build-electron.mjs --arm64",
-    "electron:build:x64": "node scripts/build-electron.mjs --x64",
+    "electron:build:mac": "node scripts/build-electron.mjs --mac",
+    "electron:build:win": "node scripts/build-electron.mjs --win",
+    "electron:build:linux": "node scripts/build-electron.mjs --linux",
+    "electron:build:arm64": "node scripts/build-electron.mjs --mac --arm64",
+    "electron:build:x64": "node scripts/build-electron.mjs --mac --x64",
     "frontend:build": "npm run build --prefix frontend"
   },
   "build": {
@@ -34,19 +44,31 @@
       "!backend-node/node_modules/.cache/**",
       "!backend-node/data/**",
       "frontend/dist/**/*",
-      "skills/**/*",
-      "backend/*.py",
-      "backend/requirements.txt",
       "electron/**/*",
+      "!electron/vendor/**",
       "package.json"
     ],
     "asar": true,
     "asarUnpack": [
       "node_modules/@lancedb/**/*",
-      "backend-node/node_modules/**/*",
-      "backend/*.py",
-      "backend/requirements.txt",
-      "electron/vendor/**/*"
+      "backend-node/node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "skills",
+        "to": "skills",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "electron/vendor",
+        "to": "vendor",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
     ],
     "mac": {
       "target": [
@@ -89,9 +111,25 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "include": "electron/installer.nsh",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "文匠 Studio"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Office",
+      "synopsis": "文匠 Studio — AI 写作工作台",
+      "description": "编剧级 AI 创作工作台，面向网文、长篇叙事与剧本写作。",
+      "maintainer": "Literary Studio"
+    },
+    "rpm": {
+      "depends": []
     }
   },
   "devDependencies": {

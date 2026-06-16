@@ -1,11 +1,27 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { findPython } from '../export/python-runtime.js';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 function resolvePythonBin() {
-  return process.env.PYTHON || process.env.PYTHON_BIN || 'python3';
+  const fromEnv = process.env.PYTHON || process.env.PYTHON_BIN
+  if (fromEnv) {
+    const resolved = path.resolve(fromEnv)
+    if (resolved.includes('.asar')) {
+      throw new Error(`PYTHON 路径不能位于 app.asar 内（spawn 会 ENOENT）: ${resolved}`)
+    }
+    return resolved
+  }
+  return findPython()
+}
+
+function spawnOptionsFor(command, options = {}) {
+  const normalized = path.normalize(command)
+  const isExe = path.isAbsolute(normalized) || normalized.includes('/') || normalized.includes('\\')
+  const useShell = options.shell ?? (process.platform === 'win32' && isExe && normalized.includes(' '))
+  return { shell: useShell, ...options }
 }
 
 function resolveNodeBin() {
@@ -37,10 +53,12 @@ export function runProcess({
 }) {
   return new Promise((resolve, reject) => {
     const childEnv = { ...process.env, ...env };
+    const spawnOpts = spawnOptionsFor(command, {});
     const child = spawn(command, args, {
       cwd: cwd || process.cwd(),
       env: childEnv,
       stdio: ['pipe', 'pipe', 'pipe'],
+      ...spawnOpts,
     });
 
     let stdout = '';

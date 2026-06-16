@@ -70,6 +70,9 @@ function pythonRuns(cmd) {
 export function findPython() {
   if (cachedPython) return cachedPython;
   if (process.env.PYTHON) {
+    if (String(process.env.PYTHON).includes('.asar')) {
+      throw new Error(`PYTHON 路径不能位于 app.asar 内（spawn 会 ENOENT）: ${process.env.PYTHON}`);
+    }
     cachedPython = resolvePythonPath(process.env.PYTHON);
     return cachedPython;
   }

@@ -139,7 +139,6 @@ async function setupPython() {
     console.log('  ✅ Python 运行时准备完成')
 
   } else if (platform === 'win32') {
-    // Windows: 下载 embeddable Python
     const version = '3.11.9'
     const url = `https://www.python.org/ftp/python/${version}/python-${version}-embed-amd64.zip`
     const zipPath = path.join(VENDOR_DIR, 'python-embed.zip')
@@ -147,7 +146,10 @@ async function setupPython() {
     if (!fs.existsSync(pythonDir)) {
       fs.mkdirSync(pythonDir, { recursive: true })
       await download(url, zipPath)
-      run(`unzip -q "${zipPath}" -d "${pythonDir}"`)
+      execSync(
+        `powershell -NoProfile -Command "Expand-Archive -Path '${zipPath.replace(/'/g, "''")}' -DestinationPath '${pythonDir.replace(/'/g, "''")}' -Force"`,
+        { stdio: 'inherit' },
+      )
       fs.unlinkSync(zipPath)
 
       // 启用 pip

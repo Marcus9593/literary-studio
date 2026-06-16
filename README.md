@@ -14,6 +14,7 @@
 ![React](https://img.shields.io/badge/React-19-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-literarycraft%2Fstudio-2496ED?logo=docker&logoColor=white)
 ![Version](https://img.shields.io/badge/Version-2.6.0-orange.svg)
+[![Release](https://img.shields.io/github/v/release/Marcus9593/literary-studio?label=Download&style=flat-square)](https://github.com/Marcus9593/literary-studio/releases/latest)
 
 </div>
 
@@ -24,10 +25,12 @@
 ## 目录
 
 - [项目是什么](#项目是什么)
+- [v2.6.0 更新亮点](#v260-更新亮点)
 - [解决什么问题](#解决什么问题)
 - [核心功能](#核心功能)
 - [技术架构](#技术架构)
 - [快速开始](#快速开始)
+- [桌面版下载](#桌面版下载)
 - [安装与部署](#安装与部署)
 - [Docker 部署](#docker-部署)
 - [使用指南](#使用指南)
@@ -52,6 +55,38 @@
 - 支持剧本格式（AWR 规则）与 Fountain 导出
 
 > 产品定位：**编剧级创作台** — 为叙事创作者打磨每一稿。
+
+---
+
+## v2.6.0 更新亮点
+
+### 创作备忘录
+
+原「留言板」已改造为 **创作备忘录**，面向个人创作记录而非产品反馈：
+
+| 能力 | 说明 |
+|------|------|
+| **标签分类** | 灵感 / 待办 / 进度 / 反馈 / 其他，五色标签快速筛选 |
+| **图文记录** | 单条最多 2000 字、最多 4 张配图 |
+| **置顶与编辑** | 重要备忘可置顶，随时修改内容 |
+| **简化交互** | 移除匿名与多层回复，专注个人备忘流 |
+
+侧栏入口：**创作备忘录**。
+
+### 桌面客户端（Electron）
+
+- **Windows x64**：NSIS 安装包，内置 Python 运行时、Claude CLI 与 literary-writer Skill，开箱即用
+- **macOS**：支持 DMG 打包（`npm run electron:build:mac`）
+- 安装目录默认 `%LOCALAPPDATA%\Programs\literary-studio`（英文路径，避免中文路径问题）
+- 全新安装自动清空用户数据目录，保证纯净环境
+
+### 架构优化与稳定性
+
+- **后端目录重构**：路由、导出、工具库、Skill 适配、工作流分目录管理，根目录仅保留 4 个入口文件
+- **大规模代码清理**：移除废弃组件、API 与占位模块，降低维护成本
+- **戏剧学理论扩展**：补充鸿沟理论、价值转变、情感曲线、特鲁比 22 步、斯奈德类型等，理论覆盖度提升至 97%
+- **稳定性修复**：消除 `execSync` 阻塞、修复会话迁移与 Python 脚本路径；Docker / Electron / 本地启动统一配置 `PYTHON_SCRIPTS_DIR`
+- **用户手册**：新增 `docs/user-guide.md`，应用内可通过头像菜单打开
 
 ---
 
@@ -105,7 +140,7 @@
 | **项目版本** | 大改前创建快照，对比差异，一键回滚 |
 | **素材中心** | 跨项目角色卡、地点、灵感碎片备忘 |
 | **项目共享** | 多用户项目协作与权限控制（管理员可管理用户） |
-| **留言板** | 内置反馈系统，支持图文与多层回复 |
+| **创作备忘录** | 记录灵感、待办、进度；支持图文、五种标签、置顶与编辑 |
 
 ### 剧本引擎
 
@@ -214,7 +249,41 @@ npm start
 
 浏览器访问 **http://127.0.0.1:8765**，默认账号 `admin` / `admin123`。
 
+> 不想配置 Node/Python 环境？可直接下载 **[桌面版安装包](#桌面版下载)**。
+
 > 分平台安装步骤、生产部署、环境变量与故障排查，请参阅 **[`deploy/README.md`](deploy/README.md)**。
+
+---
+
+## 桌面版下载
+
+当前最新版本：**v2.6.0** · [查看全部 Release](https://github.com/Marcus9593/literary-studio/releases)
+
+### Windows（推荐）
+
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| [literary-studio-setup-2.6.0-win-x64.zip](https://github.com/Marcus9593/literary-studio/releases/download/v2.6.0/literary-studio-setup-2.6.0-win-x64.zip) | ~361 MB | 压缩包（推荐下载） |
+| [literary-studio-setup-2.6.0-win-x64.exe](https://github.com/Marcus9593/literary-studio/releases/download/v2.6.0/literary-studio-setup-2.6.0-win-x64.exe) | ~361 MB | NSIS 安装程序 |
+
+**安装步骤：**
+
+1. 下载 zip 并解压，或直接使用 `.exe`
+2. 双击安装程序，按向导完成安装（默认目录 `%LOCALAPPDATA%\Programs\literary-studio`）
+3. 启动「文匠 Studio」，使用默认账号 `admin` / `admin123` 登录
+
+安装包已内置 Python 文档转换运行时与 Claude CLI，无需单独安装 Node 或 Python。
+
+### macOS / Linux
+
+桌面版可从源码自行打包：
+
+```bash
+npm run electron:build:mac    # macOS DMG
+npm run electron:build:linux  # Linux RPM
+```
+
+详见 [`electron/vendor/README.md`](electron/vendor/README.md)（需本地维护 Python / Claude vendor 依赖）。
 
 ---
 
@@ -326,7 +395,7 @@ AI 侧栏对话（续写/润色/改写）→ 自动保存
 | **素材中心** | 跨项目灵感与角色备忘 |
 | **项目版本** | 快照管理与回滚 |
 | **AI 中心** | 模型 / 技能 / MCP 配置 |
-| **留言板** | 产品反馈 |
+| **创作备忘录** | 灵感、待办与写作进度备忘 |
 
 进入具体项目后，右侧导航可访问：工作台、今日建议、节拍、角色、圣经、悬念、知识库、规划、路线图、健康度、故事引擎等子模块。
 
@@ -393,6 +462,7 @@ literary-studio/
 │   └── requirements.txt
 ├── skills/                   # AI 技能包
 │   └── literary-writer/      # 网文/剧本创作技能（v7.0）
+├── electron/                 # Electron 桌面客户端（main.js、打包配置、vendor）
 ├── deploy/                   # 部署配置（systemd / launchd / Nginx / Docker）
 │   └── docker/               # Docker 构建与发布说明
 ├── test/                     # Python API 集成测试（pytest）
@@ -464,6 +534,24 @@ Unlike generic AI chat tools, Literary Studio is purpose-built for **long-form n
 | Format conversion headaches | Import DOCX/PDF/HTML; export ZIP/DOCX/EPUB/Fountain |
 | Data privacy concerns | All data stored locally in `data/`; API keys never leave your machine |
 
+### What's New in v2.6.0
+
+- **Creative Memo** — Guestbook redesigned as a personal memo board: 5 tags (inspiration, todo, progress, feedback, other), images, pin & edit, up to 2000 chars
+- **Desktop app (Electron)** — Windows x64 NSIS installer with bundled Python + Claude CLI + literary-writer Skill
+- **Backend refactor** — Routes, export, lib, skill-adapter, workflow reorganized; large dead-code cleanup
+- **Drama theory** — Gap theory, value shift, emotional curve, Truby 22 steps, Snyder genres (97% coverage)
+- **Stability** — Python path fixes for Docker/Electron, session migration, non-blocking I/O
+- **User manual** — `docs/user-guide.md` + in-app manual modal
+
+### Download (Windows Desktop)
+
+| File | Link |
+|------|------|
+| ZIP (recommended) | [literary-studio-setup-2.6.0-win-x64.zip](https://github.com/Marcus9593/literary-studio/releases/download/v2.6.0/literary-studio-setup-2.6.0-win-x64.zip) |
+| Installer | [literary-studio-setup-2.6.0-win-x64.exe](https://github.com/Marcus9593/literary-studio/releases/download/v2.6.0/literary-studio-setup-2.6.0-win-x64.exe) |
+
+All releases: [github.com/Marcus9593/literary-studio/releases](https://github.com/Marcus9593/literary-studio/releases)
+
 ### Key Features
 
 - **Smart Writing Workspace** — Markdown editor + AI sidebar, focus mode, auto-save
@@ -477,7 +565,7 @@ Unlike generic AI chat tools, Literary Studio is purpose-built for **long-form n
 - **Version Control** — Snapshots with diff and rollback
 - **Review Center** — Cross-project review with rule engine and heuristic analysis
 - **AI Center** — Multi-model support, literary-writer skills, MCP servers
-- **Guestbook** — Built-in feedback with image upload
+- **Creative Memo** — Personal memo board with tags, images, pin & edit
 
 ### Architecture
 
