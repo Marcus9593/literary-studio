@@ -7,7 +7,7 @@ import {
   listWorkspaceFiles,
   workspacePath,
 } from '../storage.js';
-import { listStudioAssets } from './legacy-assets-service.js';
+import { loadKnowledgeBundle } from '../story-kb/store.js';
 
 const AI_PHRASES = [
   '不禁', '嘴角微微上扬', '心头一紧', '瞳孔微缩', '目光深邃',
@@ -40,8 +40,9 @@ export function computeProjectReview(projectId) {
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim());
   const avgPara = paragraphs.length ? Math.round(words / paragraphs.length) : 0;
   const dialogueLines = (text.match(/[「『""]/g) || []).length;
-  const assets = listStudioAssets(projectId);
-  const roleAssets = assets.filter((a) => a.type === '角色');
+  // 使用 Knowledge 中的角色数据替代 legacy assets
+  const kb = loadKnowledgeBundle(projectId);
+  const roleAssets = (kb.characters?.items || []).filter((it) => it.name);
   const roleHits = roleAssets.filter((a) => a.name && text.includes(a.name.split('·').pop())).length;
   const outlineCount = listWorkspaceFiles(projectId, 'outline').length;
   const settingsCount = listWorkspaceFiles(projectId, 'settings').length;

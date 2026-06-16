@@ -10,6 +10,11 @@ import './index.css'
 import './styles/ui-polish.css'
 import './features/screenplay/screenplay.css'
 
+// 检测是否在 Electron 环境中运行
+if (typeof window !== 'undefined' && window.navigator.userAgent.includes('Electron')) {
+  document.body.setAttribute('data-electron', 'true')
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

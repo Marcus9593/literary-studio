@@ -4,8 +4,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import * as studio from '../studio-service.js';
-import { pendingReviewChecks } from '../creative-center/studio-state.js';
+import { computeStudioReview } from '../creative-center/review-compute.js';
+import { getStudioReview, pendingReviewChecks } from '../creative-center/studio-state.js';
 import { reviewLatestPath } from './paths.js';
 import { normalizeReviewLatest } from './schemas.js';
 
@@ -35,13 +35,13 @@ export function getReviewLatest(projectId = '') {
     return normalizeReviewLatest({ ...fromMeasurement, project_id: projectId });
   }
 
-  const legacy = studio.getStudioReview(projectId);
+  const legacy = getStudioReview(projectId);
   if (legacy?.updated_at) {
     return normalizeReviewLatest({ ...legacy, project_id: projectId });
   }
 
   try {
-    const computed = studio.computeStudioReview(projectId);
+    const computed = computeStudioReview(projectId);
     if (computed.manuscript_words > 0) {
       const normalized = normalizeReviewLatest({
         schema: 'measurement_review_latest',
@@ -68,7 +68,7 @@ export function getReviewLatest(projectId = '') {
 /** 仅写 measurement；不再写 studio.review_by_project（Cleanup A） */
 export function runReview(projectId) {
   if (!projectId) throw new Error('project_id 不能为空');
-  const result = studio.computeStudioReview(projectId);
+  const result = computeStudioReview(projectId);
   const normalized = normalizeReviewLatest({
     schema: 'measurement_review_latest',
     project_id: projectId,

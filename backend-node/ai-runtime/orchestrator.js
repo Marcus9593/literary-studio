@@ -779,13 +779,28 @@ ${contextAfter ? `\n【后文上下文】\n${contextAfter.slice(0, 500)}` : ''}
   } catch {}
 }
 
-export async function checkHealth() {
+/**
+ * @param {{ skipRemoteProbe?: boolean }} options
+ *   skipRemoteProbe: 状态页用本地配置判断，不探测远端 API（避免 /health 阻塞 UI）
+ */
+export async function checkHealth({ skipRemoteProbe = false } = {}) {
   const inference = runtime.getActiveInferenceMode();
   const claude = await runtime.providers.claude.checkHealth();
   let api = null;
   const cfg = runtime.resolveActiveModelConfig();
   if (cfg) {
-    api = await runtime.checkHealth('http');
+    if (skipRemoteProbe) {
+      api = {
+        available: true,
+        provider: 'http',
+        model: cfg.model,
+        name: cfg.name,
+        protocol: cfg.protocol,
+        configured: true,
+      };
+    } else {
+      api = await runtime.checkHealth('http');
+    }
   }
   return { inference, claude_code: claude, api_model: api };
 }

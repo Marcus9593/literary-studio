@@ -8,7 +8,7 @@ import {
   shouldRefreshMemory,
 } from '../lib/conversation-memory.js';
 import { workspacePath } from './projects.js';
-import { loadChatHistory } from './chat.js';
+import { loadChatHistory, chatPath } from './chat.js';
 import { now, readJSON, writeJSON, sqlAdapter } from './core.js';
 
 // ── Sessions ──

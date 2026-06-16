@@ -1,0 +1,11 @@
+{
+  "name": "dmg",
+  "description": "文匠 Studio DMG 桌面版内置后端（Electron 随机端口，重启后需更新）",
+  "host": "127.0.0.1",
+  "port": 61315,
+  "base_url": "http://127.0.0.1:61315",
+  "ws_url": "ws://127.0.0.1:61315/ws",
+  "admin_user": "admin",
+  "admin_password": "admin123",
+  "timeout": 600
+}

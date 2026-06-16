@@ -171,6 +171,26 @@ export default function ProjectPage() {
     if (projectId) recordRecentOpen(projectId)
   }, [projectId])
 
+  useEffect(() => {
+    setProject(null)
+    setChapters([])
+    setSelected(null)
+    setSelectedMeta(null)
+    setContent('')
+    setSavedContent('')
+    setContentSource('manuscript')
+    setContentLoading(false)
+    setError('')
+    setSessions([])
+    setActiveSessionId('')
+    setShowTakeover(false)
+    setResourcePanel(null)
+    resourceInitRef.current = false
+    takeoverCheckedRef.current = false
+    sessionFocusRef.current = ''
+    setAutoSaveHint('')
+  }, [projectId])
+
   const refreshSessions = useCallback(() => {
     listSessions(projectId)
       .then((index) => {

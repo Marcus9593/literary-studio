@@ -1,4 +1,4 @@
-import { resolveActiveModelConfig, usesHttpRuntime } from '../ai-runtime/model-resolver.js';
+import { resolveActiveModelConfig, hasConfiguredHttpModel } from '../ai-runtime/model-resolver.js';
 import * as httpProvider from '../ai-runtime/providers/http-provider.js';
 import { loadCriticContext } from './content-loader.js';
 
@@ -31,7 +31,7 @@ export async function runLlmCritic(projectId, { filename, unitIndex } = {}) {
   if (!content) throw new Error('尚无正文可语义审稿');
 
   const cfg = resolveActiveModelConfig();
-  if (!cfg?.api_key || !usesHttpRuntime(cfg)) {
+  if (!hasConfiguredHttpModel(cfg)) {
     return {
       skipped: true,
       reason: '语义审稿需要先在 AI 中心配置并激活 HTTP API 模型',

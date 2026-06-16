@@ -9,8 +9,7 @@ import AiMcpPanel from './features/ai-center/panels/AiMcpPanel.jsx'
 import ProjectPage from './pages/ProjectPage.jsx'
 import { CockpitPage } from './features/cockpit/index.js'
 import { VersionsPage } from './features/versions/index.js'
-import { ReviewPage } from './features/review/index.js'
-import { AssetsPage } from './features/assets/index.js'
+// ReviewPage 和 AssetsPage 已废弃，功能迁入项目 Health 和 Knowledge
 import {
   StorySuggestionsPage,
   StoryKnowledgePage,
@@ -37,8 +36,6 @@ import ProjectRightNav from './components/ProjectRightNav.jsx'
 const NAV = [
   { to: '/', label: '创作看板', icon: '◉', end: true },
   { to: '/projects', label: '项目库', icon: '◫', end: true },
-  { to: '/review', label: '审稿中心', icon: '◑', end: true },
-  { to: '/assets', label: '素材中心', icon: '◧', end: true },
   { to: '/versions', label: '项目版本', icon: '⧉', end: true },
   { to: '/ai', label: 'AI 中心', icon: '◈', end: false },
   { to: '/guestbook', label: '创作备忘录', icon: '📝', end: true },
@@ -126,8 +123,9 @@ function AppShell() {
           <Route path="/cockpit" element={<Navigate to="/" replace />} />
           <Route path="/versions" element={<VersionsPage />} />
           <Route path="/guestbook" element={<GuestbookPage />} />
-          <Route path="/review" element={<ReviewPage />} />
-          <Route path="/assets" element={<AssetsPage />} />
+          {/* V2.8 收敛：审稿中心 → 项目 Health，素材中心 → 项目 Knowledge */}
+          <Route path="/review" element={<Navigate to="/projects" replace />} />
+          <Route path="/assets" element={<Navigate to="/projects" replace />} />
           <Route path="/studio" element={<Navigate to="/" replace />} />
           <Route path="/studio/versions" element={<Navigate to="/versions" replace />} />
           <Route path="/studio/*" element={<Navigate to="/" replace />} />

@@ -54,6 +54,14 @@ export function emptyGaps() {
   return { version: 2, schema: 'gaps', updated_at: null, source: null, items: [] };
 }
 
+export function emptyForeshadows() {
+  return { version: 2, schema: 'foreshadows', updated_at: null, source: null, items: [] };
+}
+
+export function emptyTurningPoints() {
+  return { version: 2, schema: 'turning_points', updated_at: null, source: null, items: [] };
+}
+
 export const UNDERSTANDING_FILE_MAP = {
   arcs: 'character_arcs.json',
   conflicts: 'conflicts.json',
@@ -61,4 +69,6 @@ export const UNDERSTANDING_FILE_MAP = {
   value_shifts: 'value_shifts.json',
   emotion_curve: 'emotion_curve.json',
   gaps: 'gaps.json',
+  foreshadows: 'foreshadows.json',
+  turning_points: 'turning_points.json',
 };

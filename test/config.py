@@ -1,14 +1,52 @@
 """Test configuration for Literary Studio API tests."""
+from __future__ import annotations
+
+import json
 import os
+from pathlib import Path
 
-BASE_URL = os.environ.get("STUDIO_BASE_URL", "http://127.0.0.1:8765").rstrip("/")
+_ROOT = Path(__file__).resolve().parent
+_TARGETS_DIR = _ROOT / "targets"
+
+
+def _load_target(name: str) -> dict:
+    path = _TARGETS_DIR / f"{name}.json"
+    if not path.is_file():
+        return {}
+    try:
+        with path.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _target_default_base(target: dict) -> str:
+    if target.get("base_url"):
+        return str(target["base_url"]).rstrip("/")
+    host = str(target.get("host", "127.0.0.1"))
+    port = target.get("port")
+    if port:
+        return f"http://{host}:{port}"
+    return "http://127.0.0.1:8765"
+
+
+_TARGET_NAME = os.environ.get("STUDIO_TARGET", "local")
+_TARGET = _load_target(_TARGET_NAME)
+_DEFAULT_BASE = _target_default_base(_TARGET)
+
+BASE_URL = os.environ.get("STUDIO_BASE_URL", _DEFAULT_BASE).rstrip("/")
 API_PREFIX = "/api"
-WS_URL = os.environ.get("STUDIO_WS_URL", BASE_URL.replace("http://", "ws://").replace("https://", "wss://") + "/ws")
 
-ADMIN_USERNAME = os.environ.get("STUDIO_ADMIN_USER", "admin")
-ADMIN_PASSWORD = os.environ.get("STUDIO_ADMIN_PASSWORD", "admin123")
+_default_ws = _TARGET.get("ws_url")
+if os.environ.get("STUDIO_BASE_URL") or not _default_ws:
+    _default_ws = BASE_URL.replace("http://", "ws://").replace("https://", "wss://") + "/ws"
+WS_URL = os.environ.get("STUDIO_WS_URL", str(_default_ws))
 
-REQUEST_TIMEOUT = float(os.environ.get("STUDIO_TEST_TIMEOUT", "30"))
+ADMIN_USERNAME = os.environ.get("STUDIO_ADMIN_USER", _TARGET.get("admin_user", "admin"))
+ADMIN_PASSWORD = os.environ.get("STUDIO_ADMIN_PASSWORD", _TARGET.get("admin_password", "admin123"))
+
+REQUEST_TIMEOUT = float(os.environ.get("STUDIO_TEST_TIMEOUT", _TARGET.get("timeout", 30)))
 
 FAKE_PROJECT_ID = "00000000-000-fake-project-id"
 FAKE_USER_ID = "00000000-000-fake-user-id"

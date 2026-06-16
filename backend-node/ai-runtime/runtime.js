@@ -106,5 +106,10 @@ export function trackRunner(runner) {
   };
 }
 
-export { resolveActiveModelConfig, usesHttpRuntime, buildClaudeChildEnv } from './model-resolver.js';
+export {
+  resolveActiveModelConfig,
+  usesHttpRuntime,
+  hasConfiguredHttpModel,
+  buildClaudeChildEnv,
+} from './model-resolver.js';
 export { providers };

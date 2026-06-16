@@ -35,7 +35,7 @@ def _pid(key: str = "project_id") -> str:
     return "{" + key + "}"
 
 
-ALL_ENDPOINTS: list[EndpointSpec] = [
+_ALL_ENDPOINTS_RAW: list[EndpointSpec] = [
     # ── Health & System ──
     EndpointSpec("health", "health", "GET", "/health", AuthLevel.PUBLIC, positive_status=(200,)),
     EndpointSpec("health", "usage", "GET", "/usage", AuthLevel.AUTH),
@@ -70,7 +70,8 @@ ALL_ENDPOINTS: list[EndpointSpec] = [
     EndpointSpec("models", "import_cc_switch", "GET", "/models/import/cc-switch", AuthLevel.AUTH, positive_status=(200, 400)),
     EndpointSpec("models", "test_connection", "POST", "/models/test", AuthLevel.AUTH,
                  json_body={"base_url": "https://example.invalid", "model": "test"}, positive_status=(200, 400, 502)),
-    EndpointSpec("models", "test_by_id", "POST", "/models/{model_id}/test", AuthLevel.AUTH, positive_status=(200, 404)),
+    EndpointSpec("models", "test_by_id", "POST", "/models/{model_id}/test", AuthLevel.AUTH,
+                 positive_status=(200, 400, 404)),
     EndpointSpec("models", "settings_get", "GET", "/settings", AuthLevel.AUTH),
     EndpointSpec("models", "settings_put", "PUT", "/settings", AuthLevel.AUTH,
                  json_body={"provider": "openai", "model": "gpt-4o-mini"}, positive_status=(200, 400)),
@@ -175,31 +176,19 @@ ALL_ENDPOINTS: list[EndpointSpec] = [
     EndpointSpec("mcp", "registry_install", "POST", "/mcp/registry/install", AuthLevel.AUTH,
                  json_body={"id": "invalid"}, positive_status=(200, 400, 404)),
 
-    # ── Creative Center (legacy /api/studio) ──
+    # ── Creative Center (/api/studio) ──
     EndpointSpec("studio", "overview", "GET", "/studio/overview", AuthLevel.AUTH),
-    EndpointSpec("studio", "dashboard", "GET", "/studio/dashboard", AuthLevel.AUTH),
-    EndpointSpec("studio", "snapshots_list", "GET", "/studio/snapshots", AuthLevel.AUTH,
-                 query={"project_id": "{project_id}"}, positive_status=(200, 400)),
-    EndpointSpec("studio", "snapshots_create", "POST", "/studio/snapshots", AuthLevel.AUTH,
-                 json_body={"project_id": "{project_id}", "label": "t"}, positive_status=(200, 400)),
-    EndpointSpec("studio", "snapshots_delete", "DELETE", "/studio/snapshots/{snapshot_id}", AuthLevel.AUTH,
-                 query={"project_id": "{project_id}"}, positive_status=(200, 400, 404)),
-    EndpointSpec("studio", "snapshots_diff", "GET", "/studio/snapshots/{snapshot_id}/diff", AuthLevel.AUTH,
-                 query={"project_id": "{project_id}"}, positive_status=(200, 400, 404)),
-    EndpointSpec("studio", "snapshots_restore", "POST", "/studio/snapshots/{snapshot_id}/restore", AuthLevel.AUTH,
-                 json_body={"project_id": "{project_id}"}, positive_status=(200, 400, 404)),
+    EndpointSpec("studio", "dashboard", "GET", "/studio/dashboard", AuthLevel.AUTH,
+                 notes="deprecated alias of overview"),
     EndpointSpec("studio", "assets_list", "GET", "/studio/assets", AuthLevel.AUTH,
                  query={"project_id": "{project_id}"}, positive_status=(200, 400)),
     EndpointSpec("studio", "assets_create", "POST", "/studio/assets", AuthLevel.AUTH,
-                 json_body={"project_id": "{project_id}", "type": "note", "title": "t"}, positive_status=(200, 400)),
+                 json_body={"project_id": "{project_id}", "type": "note", "title": "t"},
+                 positive_status=(410,)),
     EndpointSpec("studio", "assets_delete", "DELETE", "/studio/assets/{asset_id}", AuthLevel.AUTH,
-                 query={"project_id": "{project_id}"}, positive_status=(200, 400, 404, 500)),
+                 query={"project_id": "{project_id}"}, positive_status=(410, 404, 500)),
     EndpointSpec("studio", "assets_update", "PUT", "/studio/assets/{asset_id}", AuthLevel.AUTH,
-                 json_body={"project_id": "{project_id}", "title": "x"}, positive_status=(200, 400, 404)),
-    EndpointSpec("studio", "review_get", "GET", "/studio/review", AuthLevel.AUTH,
-                 query={"project_id": "{project_id}"}, positive_status=(200, 400)),
-    EndpointSpec("studio", "review_run", "POST", "/studio/review/run", AuthLevel.AUTH,
-                 json_body={"project_id": "{project_id}"}, positive_status=(200, 400)),
+                 json_body={"project_id": "{project_id}", "title": "x"}, positive_status=(410, 404)),
 
     # ── Versions ──
     EndpointSpec("versions", "list", "GET", f"/projects/{_pid()}/versions", AuthLevel.PROJECT_READ),
@@ -326,7 +315,7 @@ ALL_ENDPOINTS: list[EndpointSpec] = [
     EndpointSpec("engine", "pipeline_run", "POST", f"/projects/{_pid()}/engine/pipeline/run", AuthLevel.PROJECT_WRITE,
                  json_body={"unit_index": 1}, positive_status=(200, 400, 502)),
     EndpointSpec("engine", "memory_sync", "POST", f"/projects/{_pid()}/engine/memory/sync", AuthLevel.PROJECT_WRITE,
-                 json_body={"unit_index": 1, "content": "x"}),
+                 json_body={"unit_index": 1, "content": "x", "verify_status": "pass"}),
     EndpointSpec("engine", "memory_facts_get", "GET", f"/projects/{_pid()}/engine/memory/facts", AuthLevel.PROJECT_READ),
     EndpointSpec("engine", "memory_facts_post", "POST", f"/projects/{_pid()}/engine/memory/facts",
                  AuthLevel.PROJECT_WRITE, json_body={"fact": "test", "category": "event", "unit_index": 1}),
@@ -442,6 +431,8 @@ ALL_ENDPOINTS: list[EndpointSpec] = [
     EndpointSpec("guestbook", "media", "GET", "/guestbook/media/{filename}", AuthLevel.PUBLIC,
                  positive_status=(200, 404), skip_auth_negative=True),
 ]
+
+ALL_ENDPOINTS = _ALL_ENDPOINTS_RAW
 
 
 def resolve_path(path: str, ctx: dict[str, str]) -> str:

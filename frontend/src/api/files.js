@@ -32,6 +32,10 @@ export async function triggerDownload(apiPath, suggestedFilename = '') {
   } catch (err) {
     const msg = String(err?.message || '')
     if (err instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) {
+      const host = typeof window !== 'undefined' ? window.location.hostname : ''
+      if (host === '127.0.0.1' || host === 'localhost') {
+        throw new Error('无法连接应用后端，请完全退出并重新打开文匠 Studio')
+      }
       throw new Error('无法连接服务器，请确认已运行 ./start.sh')
     }
     throw err

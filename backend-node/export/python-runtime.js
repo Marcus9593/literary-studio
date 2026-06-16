@@ -1,10 +1,12 @@
-import { spawnSync } from 'child_process';
+import { execFile, spawnSync } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
+const execFileAsync = promisify(execFile);
 
 let cachedPython = null;
 
@@ -108,19 +110,55 @@ export function isPythonRuntimeAvailable(cliPath) {
   return ok;
 }
 
-/** Whether mammoth + pymupdf are installed for docx/pdf conversion. */
+let docConvertLibsCache = null;
+let docConvertLibsProbe = null;
+
+/** Cached result; false until async probe completes. */
 export function isDocConvertLibsAvailable() {
+  return docConvertLibsCache ?? false;
+}
+
+export async function probeDocConvertLibsAvailable() {
+  if (docConvertLibsCache !== null) return docConvertLibsCache;
+  if (!docConvertLibsProbe) {
+    docConvertLibsProbe = (async () => {
+      const probe = await spawnPythonAsync([
+        '-c',
+        'import mammoth; import fitz; import markdownify',
+      ], { timeout: 8000 });
+      docConvertLibsCache = probe.status === 0;
+      return docConvertLibsCache;
+    })();
+  }
+  return docConvertLibsProbe;
+}
+
+/**
+ * Async Python subprocess — does not block the Node event loop.
+ * @returns {{ status: number, stdout: string, stderr: string }}
+ */
+export async function spawnPythonAsync(args, options = {}) {
+  const py = findPython();
+  const useShell = options.shell ?? (!isExecutablePath(py) && process.platform === 'win32');
+  const opts = {
+    encoding: options.encoding ?? 'utf-8',
+    shell: useShell,
+    timeout: options.timeout ?? 120000,
+    maxBuffer: options.maxBuffer ?? 50 * 1024 * 1024,
+  };
   try {
-    const probe = spawnPythonCmd(findPython(), [
-      '-c',
-      'import mammoth; import fitz; import markdownify',
-    ], { timeout: 8000 });
-    return probe.status === 0;
-  } catch {
-    return false;
+    const { stdout, stderr } = await execFileAsync(py, args, opts);
+    return { status: 0, stdout: stdout ?? '', stderr: stderr ?? '' };
+  } catch (err) {
+    return {
+      status: typeof err.code === 'number' ? err.code : 1,
+      stdout: err.stdout ?? '',
+      stderr: err.stderr ?? err.message ?? '',
+    };
   }
 }
 
+/** @deprecated Prefer spawnPythonAsync — blocks event loop if used synchronously */
 export function spawnPython(args, options = {}) {
   const py = findPython();
   const useShell = options.shell ?? (!isExecutablePath(py) && process.platform === 'win32');

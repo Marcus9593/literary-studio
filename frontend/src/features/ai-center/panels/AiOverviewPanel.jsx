@@ -18,15 +18,15 @@ export default function AiOverviewPanel() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [h, o, m, u] = await Promise.all([
-        getHealth().catch(() => null),
-        getToolsOverview().catch(() => null),
-        listModels().catch(() => ({ active_id: '', models: [] })),
-        getAiUsage().catch(() => null),
-      ])
+      const [h, o, m, u] = await Promise.allSettled([
+        getHealth(),
+        getToolsOverview(),
+        listModels(),
+        getAiUsage(),
+      ]).then((results) => results.map((r) => (r.status === 'fulfilled' ? r.value : null)))
       setHealth(h)
       setOverview(o)
-      setModels(m)
+      setModels(m || { active_id: '', models: [] })
       setUsage(u)
     } finally {
       setLoading(false)

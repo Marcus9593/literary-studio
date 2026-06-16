@@ -169,19 +169,6 @@ def _prepare_smoke_context(client: ApiClient, spec: EndpointSpec, ctx: dict[str,
                 )
                 if r2.status_code == 201:
                     prepared["reply_id"] = r2.json().get("id", prepared["reply_id"])
-    elif spec.module == "studio" and spec.name in ("snapshots_create", "snapshots_delete", "snapshots_diff", "snapshots_restore"):
-        pid = prepared["project_id"]
-        resp = client.post("/studio/snapshots", json_body={"project_id": pid, "label": "tmp"})
-        if resp.status_code == 200:
-            prepared["snapshot_id"] = resp.json().get("id") or prepared["snapshot_id"]
-    elif spec.module == "studio" and spec.name in ("assets_create", "assets_delete", "assets_update"):
-        pid = prepared["project_id"]
-        resp = client.post(
-            "/studio/assets",
-            json_body={"project_id": pid, "type": "note", "title": "tmp asset"},
-        )
-        if resp.status_code == 200:
-            prepared["asset_id"] = resp.json().get("id") or prepared["asset_id"]
     return prepared
 
 

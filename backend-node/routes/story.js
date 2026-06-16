@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { loadKnowledgeBundle, patchKnowledge } from '../story-kb/store.js';
+import { loadStudioState } from '../creative-center/studio-state.js';
 import { bootstrapFromWorkspace } from '../story-kb/sync.js';
 import { loadSummaryHierarchy } from '../story-summaries/store.js';
 import { rebuildAllSummaries } from '../story-summaries/cascade.js';
@@ -72,7 +73,17 @@ router.use(base, (req, res, next) => {
 
 router.get(`${base}/knowledge`, (req, res) => {
   try {
-    res.json(loadKnowledgeBundle(pid(req)));
+    const bundle = loadKnowledgeBundle(pid(req));
+    // 兼容：如果 studio.json 中仍有未迁移的 legacy assets，附加到响应
+    try {
+      const studio = loadStudioState();
+      const legacyAssets = studio.assets?.[pid(req)] || [];
+      if (legacyAssets.length > 0) {
+        bundle._legacy_assets = legacyAssets;
+        bundle._legacy_assets_note = '素材已迁入 Knowledge，此字段仅为兼容过渡';
+      }
+    } catch { /* studio.json 不存在或读取失败，忽略 */ }
+    res.json(bundle);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }

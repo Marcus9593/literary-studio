@@ -12,6 +12,8 @@ import {
   emptyValueShifts,
   emptyEmotionCurve,
   emptyGaps,
+  emptyForeshadows,
+  emptyTurningPoints,
   UNDERSTANDING_FILE_MAP,
 } from './defaults.js';
 
@@ -22,6 +24,8 @@ const DEFAULTS = {
   value_shifts: emptyValueShifts,
   emotion_curve: emptyEmotionCurve,
   gaps: emptyGaps,
+  foreshadows: emptyForeshadows,
+  turning_points: emptyTurningPoints,
 };
 
 function now() {

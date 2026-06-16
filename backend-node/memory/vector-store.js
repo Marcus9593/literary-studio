@@ -16,25 +16,34 @@ let fallbackRows = [];
 async function initLance() {
   if (lanceTable !== null) return lanceAvailable;
   try {
-    const lancedb = await import('@lancedb/lancedb');
-    fs.mkdirSync(LANCE_DIR, { recursive: true });
-    const db = await lancedb.connect(LANCE_DIR);
-    const names = await db.tableNames();
-    if (names.includes('chunks')) {
-      lanceTable = await db.openTable('chunks');
-    } else {
-      lanceTable = await db.createTable('chunks', [{
-        id: '__init__',
-        project_id: '',
-        source: '',
-        path: '',
-        text: '',
-        vector: embedText('init'),
-      }]);
-      await lanceTable.delete('id = "__init__"');
-    }
-    lanceAvailable = true;
-  } catch {
+    // 添加超时保护，防止 LanceDB 初始化挂起
+    const initPromise = (async () => {
+      const lancedb = await import('@lancedb/lancedb');
+      fs.mkdirSync(LANCE_DIR, { recursive: true });
+      const db = await lancedb.connect(LANCE_DIR);
+      const names = await db.tableNames();
+      if (names.includes('chunks')) {
+        lanceTable = await db.openTable('chunks');
+      } else {
+        lanceTable = await db.createTable('chunks', [{
+          id: '__init__',
+          project_id: '',
+          source: '',
+          path: '',
+          text: '',
+          vector: embedText('init'),
+        }]);
+        await lanceTable.delete('id = "__init__"');
+      }
+      lanceAvailable = true;
+    })();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('LanceDB 初始化超时')), 10000)
+    );
+
+    await Promise.race([initPromise, timeoutPromise]);
+  } catch (err) {
     lanceAvailable = false;
     lanceTable = null;
     loadFallback();

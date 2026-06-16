@@ -193,6 +193,13 @@ async function main() {
   const port = parseInt(process.env.PORT || '8765', 10);
   await freePort(port);
 
+  // Python 文档/zip 转换脚本目录（与 Electron 打包、Docker 一致）
+  process.env.PYTHON_SCRIPTS_DIR = process.env.PYTHON_SCRIPTS_DIR || path.join(ROOT, 'backend');
+  const vendorPython = path.join(ROOT, 'electron', 'vendor', 'python', 'bin', 'python3');
+  if (!process.env.PYTHON && fs.existsSync(vendorPython)) {
+    process.env.PYTHON = vendorPython;
+  }
+
   log('');
   log(`文匠 Studio → http://127.0.0.1:${port}`);
   log('Starting backend (restart after code changes)...');

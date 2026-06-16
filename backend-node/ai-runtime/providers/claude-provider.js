@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import fs from 'fs';
 import { buildClaudeChildEnv } from '../model-resolver.js';
 import { getRuntimeMcpConfigPath } from '../../mcp-adapter/config.js';
 
@@ -191,8 +192,23 @@ export async function generate(request) {
 
 export async function checkHealth() {
   return new Promise((resolve) => {
+    if (!CLAUDE_BIN || (CLAUDE_BIN !== 'claude' && !fs.existsSync(CLAUDE_BIN))) {
+      resolve({ available: false, error: 'claude CLI 未找到', provider: id });
+      return;
+    }
+
     const childEnv = { ...process.env };
     delete childEnv.CLAUDECODE;
+
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        try { child.kill('SIGTERM'); } catch {}
+        resolve({ available: false, error: 'claude CLI 检测超时', provider: id });
+      }
+    }, 3000);
+
     const child = spawn(CLAUDE_BIN, ['--version'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: childEnv,
@@ -200,6 +216,9 @@ export async function checkHealth() {
     let stdout = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });
     child.on('close', (code) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
       if (code === 0 && stdout.trim()) {
         resolve({ available: true, version: stdout.trim(), cli: CLAUDE_BIN, provider: id });
       } else {
@@ -207,6 +226,9 @@ export async function checkHealth() {
       }
     });
     child.on('error', () => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
       resolve({ available: false, error: 'claude CLI 未找到', provider: id });
     });
   });

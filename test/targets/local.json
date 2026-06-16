@@ -1,0 +1,11 @@
+{
+  "name": "local",
+  "description": "本地开发后端（npm start）",
+  "host": "127.0.0.1",
+  "port": 8765,
+  "base_url": "http://127.0.0.1:8765",
+  "ws_url": "ws://127.0.0.1:8765/ws",
+  "admin_user": "admin",
+  "admin_password": "admin123",
+  "timeout": 30
+}

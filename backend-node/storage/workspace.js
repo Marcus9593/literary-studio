@@ -296,7 +296,8 @@ export function writeWorkspaceFile(projectId, category, filename, content) {
   const ws = workspacePath(projectId);
   const safe = path.basename(filename);
   const filePath = path.join(ws, sub, safe);
-  if (!fs.existsSync(filePath)) throw new Error('文件不存在');
+  // Upsert: 文件不存在时自动创建
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const text = String(content ?? '');
   fs.writeFileSync(filePath, text, 'utf-8');
   touchProject(projectId);

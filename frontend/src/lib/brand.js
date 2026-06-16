@@ -26,15 +26,16 @@ export const BRAND = {
     intro: '为大改前创建快照，对比差异并一键回滚到历史版本。',
   },
 
+  /** @deprecated V2.8 — 审稿已迁入项目 Health 页 */
   review: {
     title: '审稿中心',
-    intro: '跨项目选稿审稿：规则引擎 + Governor 决策，以及启发式正文分析。',
+    intro: '此入口已废弃，请进入项目 → 健康度 查看审稿结果。',
   },
 
+  /** @deprecated V2.8 — 素材已迁入项目 Knowledge 页 */
   assets: {
     title: '素材中心',
-    intro:
-      '跨项目素材备忘：角色卡、地点与灵感碎片。单部作品的结构化设定与知识图谱请进入项目 → 作品知识。',
+    intro: '此入口已废弃，请进入项目 → 知识库 管理素材。',
   },
 
   /** @deprecated 创作中心已拆分为独立功能模块 */

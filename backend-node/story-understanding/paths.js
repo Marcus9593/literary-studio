@@ -12,6 +12,8 @@ export const UNDERSTANDING_FILES = {
   value_shifts: 'value_shifts.json',
   emotion_curve: 'emotion_curve.json',
   gaps: 'gaps.json',
+  foreshadows: 'foreshadows.json',
+  turning_points: 'turning_points.json',
 };
 
 export function understandingDir(projectId) {

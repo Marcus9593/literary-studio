@@ -26,6 +26,11 @@ function exists(p) {
   return fs.existsSync(path.join(ROOT, p))
 }
 
+function claudeBundled() {
+  if (process.platform === 'win32') return exists('electron/vendor/claude/claude.exe')
+  return exists('electron/vendor/claude/claude')
+}
+
 // ── 解析参数 ──
 const args = process.argv.slice(2)
 let arch = process.arch === 'arm64' ? 'arm64' : 'x64'
@@ -59,12 +64,23 @@ if (!exists('node_modules/electron')) {
 console.log('\n━━━ 第 2 步: 构建前端 ━━━')
 run('npm run build --prefix frontend')
 
-// ── 第 3 步: 重编译原生模块 ──
-console.log('\n━━━ 第 3 步: 重编译原生模块 (匹配 Electron Node ABI) ━━━')
+// ── 第 3 步: 打包 Python 和 Claude CLI ──
+console.log('\n━━━ 第 3 步: 打包 Python 运行时和 Claude CLI ━━━')
+if (!exists('electron/vendor/python') || args.includes('--rebuild-deps')) {
+  run('node scripts/bundle-deps.mjs')
+} else if (!claudeBundled()) {
+  console.log('  Claude CLI 未打包，尝试补装…')
+  run('node scripts/bundle-deps.mjs --claude-only')
+} else {
+  console.log('  ⏭ 依赖已存在，跳过（使用 --rebuild-deps 强制重新打包）')
+}
+
+// ── 第 4 步: 重编译原生模块 ──
+console.log('\n━━━ 第 4 步: 重编译原生模块 (匹配 Electron Node ABI) ━━━')
 run('npx electron-rebuild')
 
-// ── 第 4 步: 构建 DMG ──
-console.log('\n━━━ 第 4 步: 构建 DMG ━━━')
+// ── 第 5 步: 构建 DMG ──
+console.log('\n━━━ 第 5 步: 构建 DMG ━━━')
 const archFlag = arch === 'universal' ? '' : `--${arch}`
 run(`npx electron-builder --mac dmg ${archFlag}`)
 

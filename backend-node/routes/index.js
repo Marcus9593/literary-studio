@@ -26,8 +26,8 @@ import {
 import {
   createChaptersDocxZip,
   getExportFormatsHint,
-  isDocxExportAvailable,
   markdownToDocxFile,
+  probeDocxExportAvailable,
 } from '../export/document-export.js';
 import { createProjectEpub } from '../export/epub-export.js';
 import { getUsageSummary } from '../ai-runtime/token-usage.js';
@@ -52,6 +52,7 @@ import { bootstrapToolsConfig } from '../skill-adapter/tools-bootstrap.js';
 import { requireAuth, requireAdmin } from '../auth/middleware.js';
 import {
   enrichMetaForResponse,
+  ensureProjectAccess,
   requireProjectManage,
   requireProjectWrite,
 } from '../auth/project-access.js';
@@ -157,37 +158,50 @@ async function testModelConnection(cfg) {
 
 // ── Health & Auth ──
 
-router.get('/health', async (_req, res) => {
-  if (isProduction()) {
-    const aiHealth = await checkHealth();
-    res.json({
+// 带超时的健康检查
+async function healthCheckWithTimeout(timeoutMs = 5000) {
+  return Promise.race([
+    (async () => {
+      const aiHealth = await checkHealth({ skipRemoteProbe: true });
+      let memory = {};
+      try {
+        const { getStoreInfo } = await import('../memory/vector-store.js');
+        memory = await getStoreInfo();
+      } catch {}
+      let runtime_providers = [];
+      try {
+        runtime_providers = (await import('../ai-runtime/runtime.js')).getProviderIds();
+      } catch {}
+      return {
+        status: 'ok',
+        version: '2.6.0',
+        inference: aiHealth.inference,
+        claude_code: aiHealth.claude_code,
+        api_model: aiHealth.api_model,
+        memory,
+        runtime_providers,
+      };
+    })(),
+    new Promise((resolve) => setTimeout(() => resolve({
       status: 'ok',
-      inference: aiHealth.inference,
-      claude_code: {
-        available: aiHealth.claude_code?.available === true,
-        version: aiHealth.claude_code?.version || '',
-      },
-      api_model: aiHealth.api_model
-        ? { available: aiHealth.api_model.available === true, error: aiHealth.api_model.error || '' }
-        : null,
-    });
-    return;
-  }
-  const aiHealth = await checkHealth();
-  let memory = {};
+      version: '2.6.0',
+      inference: { mode: 'unknown' },
+      claude_code: { available: false },
+      api_model: null,
+      memory: {},
+      runtime_providers: [],
+      _partial: true,
+    }), timeoutMs)),
+  ]);
+}
+
+router.get('/health', async (_req, res) => {
   try {
-    const { getStoreInfo } = await import('./memory/vector-store.js');
-    memory = await getStoreInfo();
-  } catch {}
-  res.json({
-    status: 'ok',
-    version: '2.6.0',
-    inference: aiHealth.inference,
-    claude_code: aiHealth.claude_code,
-    api_model: aiHealth.api_model,
-    memory,
-    runtime_providers: (await import('./ai-runtime/runtime.js')).getProviderIds(),
-  });
+    const result = await healthCheckWithTimeout(5000);
+    res.json(result);
+  } catch (err) {
+    res.json({ status: 'ok', version: '2.6.0', error: err.message });
+  }
 });
 
 router.use('/auth', authRouter);
@@ -299,6 +313,11 @@ router.post('/projects', (req, res) => {
     bootstrapFromWorkspace(project.id);
   } catch {}
   res.json(enrichMetaForResponse(req.user, project));
+});
+
+/** @deprecated REST 写章已弃用，请使用 WebSocket */
+router.post('/projects/:id/write', ensureProjectAccess, (_req, res) => {
+  res.status(400).json({ error: '写章已迁移至 WebSocket，请通过创作助手对话写章' });
 });
 
 router.get('/projects/:id/shares', requireProjectManage, (req, res) => {
@@ -416,14 +435,18 @@ function safeExportBasename(meta, fallback = 'project') {
   return String(meta?.title || fallback).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 80);
 }
 
-router.get('/export/formats', (_req, res) => {
-  res.json({
-    docx_export_available: isDocxExportAvailable(),
-    hints: getExportFormatsHint(),
-  });
+router.get('/export/formats', async (_req, res) => {
+  try {
+    res.json({
+      docx_export_available: await probeDocxExportAvailable(),
+      hints: getExportFormatsHint(),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-router.get('/projects/:id/chapters/:filename/export', (req, res) => {
+router.get('/projects/:id/chapters/:filename/export', async (req, res) => {
   try {
     store.getProject(req.params.id);
     const format = String(req.query.format || 'md').toLowerCase();
@@ -444,7 +467,7 @@ router.get('/projects/:id/chapters/:filename/export', (req, res) => {
       fs.mkdirSync(exportDir, { recursive: true });
       const docxPath = path.join(exportDir, `${base}.docx`);
       try { fs.unlinkSync(docxPath); } catch {}
-      markdownToDocxFile(content, { title, outputPath: docxPath });
+      await markdownToDocxFile(content, { title, outputPath: docxPath });
       return res.download(docxPath, `${base}.docx`);
     }
 
@@ -663,7 +686,7 @@ router.post('/projects/:id/upload', requireProjectWrite, upload.single('file'), 
     let converted = [];
 
     if (needsPythonConversion(ext)) {
-      const result = convertUpload(ws, originalName, req.file.buffer, subdir);
+      const result = await convertUpload(ws, originalName, req.file.buffer, subdir);
       uploadType = result.upload_type || (ext === '.zip' ? 'zip' : 'document');
       converted = result.converted || [];
       if (uploadType === 'zip') {
@@ -762,7 +785,7 @@ router.get('/projects/:id/download', async (req, res) => {
       const merged = parts.join('\n\n---\n\n');
       const docxPath = path.join(exportDir, `${safeTitle}.docx`);
       try { fs.unlinkSync(docxPath); } catch {}
-      markdownToDocxFile(merged, { title: meta.title, outputPath: docxPath });
+      await markdownToDocxFile(merged, { title: meta.title, outputPath: docxPath });
       return res.download(docxPath, `${safeTitle}.docx`);
     }
 
@@ -792,7 +815,7 @@ router.get('/projects/:id/download', async (req, res) => {
 
     return res.status(400).json({
       error: 'format 须为 zip、docx、zip_docx 或 epub',
-      docx_export_available: isDocxExportAvailable(),
+      docx_export_available: await probeDocxExportAvailable(),
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -867,17 +890,17 @@ router.get('/tools/skills/search', (req, res) => {
   }
 });
 
-router.post('/tools/skills/install', requireAdmin, (req, res) => {
+router.post('/tools/skills/install', requireAdmin, async (req, res) => {
   try {
-    res.json(tools.installSkill(req.body || {}));
+    res.json(await tools.installSkill(req.body || {}));
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
 
-router.post('/tools/skills/catalogue/update', requireAdmin, (_req, res) => {
+router.post('/tools/skills/catalogue/update', requireAdmin, async (_req, res) => {
   try {
-    res.json(tools.updateCatalogue());
+    res.json(await tools.updateCatalogue());
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -1123,8 +1146,12 @@ router.use(versionsRouter);
 
 // ── Upload formats ──
 
-router.get('/upload/formats', (_req, res) => {
-  res.json(getSupportedFormats());
+router.get('/upload/formats', async (_req, res) => {
+  try {
+    res.json(await getSupportedFormats());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.use(storyRouter);

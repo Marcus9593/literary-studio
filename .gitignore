@@ -76,3 +76,8 @@ drafts/
 
 # === Build releases ===
 release/
+
+# === Electron vendor runtimes (large binaries; maintain locally, see electron/vendor/README.md) ===
+electron/vendor/claude/
+electron/vendor/python/
+electron/vendor/claude-tmp/

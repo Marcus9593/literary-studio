@@ -44,6 +44,10 @@ export function loadStudioState() {
   return raw;
 }
 
+/**
+ * @deprecated V2.8 — studio.json 写入已被 legacy-write-guard 保护
+ * 仅保留用于向后兼容，新代码不应写入 studio.json
+ */
 export function saveStudioState(state) {
   assertLegacyStudioWriteAllowed();
   writeJSON(STUDIO_PATH, state);
@@ -58,4 +62,23 @@ export function pendingReviewChecks() {
     score: null,
     updated_at: null,
   }));
+}
+
+/** 从 studio.json 读取已缓存的审稿结果 */
+export function getStudioReview(projectId = '') {
+  const state = loadStudioState();
+  if (!projectId) {
+    return { checks: pendingReviewChecks(), hints: [], project_id: '' };
+  }
+  const cached = state.review_by_project[projectId];
+  if (!cached) {
+    return { checks: pendingReviewChecks(), hints: [], project_id: projectId };
+  }
+  return {
+    project_id: projectId,
+    checks: cached.checks || pendingReviewChecks(),
+    hints: cached.hints || [],
+    manuscript_words: cached.manuscript_words || 0,
+    updated_at: cached.updated_at || null,
+  };
 }

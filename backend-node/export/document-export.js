@@ -1,39 +1,44 @@
-import { spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createWorkspaceZip } from './zip-export.js';
-import { findPython } from './python-runtime.js';
+import { findPython, spawnPythonAsync } from './python-runtime.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..');
-const BACKEND_DIR = process.env.PYTHON_SCRIPTS_DIR || path.join(ROOT, 'backend');
+const STUDIO_ROOT = path.join(__dirname, '..', '..');
+const BACKEND_DIR = process.env.PYTHON_SCRIPTS_DIR || path.join(STUDIO_ROOT, 'backend');
 const EXPORT_CLI = path.join(BACKEND_DIR, 'export_cli.py');
 
 let docxExportAvailableCache = null;
+let docxExportProbe = null;
 
 export function isDocxExportAvailable() {
+  return docxExportAvailableCache ?? false;
+}
+
+export async function probeDocxExportAvailable() {
   if (docxExportAvailableCache !== null) return docxExportAvailableCache;
-  const py = findPython();
-  if (!fs.existsSync(EXPORT_CLI)) {
-    docxExportAvailableCache = false;
-    return false;
+  if (!docxExportProbe) {
+    docxExportProbe = (async () => {
+      const py = findPython();
+      if (!fs.existsSync(EXPORT_CLI)) {
+        docxExportAvailableCache = false;
+        return false;
+      }
+      try {
+        const probe = await spawnPythonAsync([EXPORT_CLI, '--mode', 'check'], { timeout: 10000 });
+        if (probe.status === 0) {
+          const data = JSON.parse(probe.stdout?.trim() || '{}');
+          docxExportAvailableCache = !!data.available;
+          return docxExportAvailableCache;
+        }
+      } catch {}
+      docxExportAvailableCache = false;
+      return false;
+    })();
   }
-  try {
-    const probe = spawnSync(py, [EXPORT_CLI, '--mode', 'check'], {
-      encoding: 'utf-8',
-      shell: process.platform === 'win32',
-      timeout: 10000,
-    });
-    if (probe.status === 0) {
-      const data = JSON.parse(probe.stdout?.trim() || '{}');
-      docxExportAvailableCache = !!data.available;
-      return docxExportAvailableCache;
-    }
-  } catch {}
-  docxExportAvailableCache = false;
-  return false;
+  return docxExportProbe;
 }
 
 export function getExportFormatsHint() {
@@ -50,21 +55,19 @@ export function getExportFormatsHint() {
 /**
  * Convert markdown string to .docx bytes via Python CLI.
  */
-export function markdownToDocxFile(markdown, { title = '', outputPath } = {}) {
-  if (!isDocxExportAvailable()) {
+export async function markdownToDocxFile(markdown, { title = '', outputPath } = {}) {
+  if (!(await probeDocxExportAvailable())) {
     throw new Error(
       'Word 导出需要 Python 环境。请运行：pip install -r backend/requirements.txt',
     );
   }
-  const py = findPython();
   const tmpMd = path.join(
     os.tmpdir(),
     `ls-export-${Date.now()}-${Math.random().toString(36).slice(2)}.md`,
   );
   fs.writeFileSync(tmpMd, markdown, 'utf-8');
   try {
-    const result = spawnSync(
-      py,
+    const result = await spawnPythonAsync(
       [
         EXPORT_CLI,
         '--mode', 'md_to_docx',
@@ -72,7 +75,7 @@ export function markdownToDocxFile(markdown, { title = '', outputPath } = {}) {
         '--output', outputPath,
         '--title', title || '',
       ],
-      { encoding: 'utf-8', timeout: 120000, maxBuffer: 50 * 1024 * 1024 },
+      { timeout: 120000, maxBuffer: 50 * 1024 * 1024 },
     );
     const stderr = result.stderr?.trim() || '';
     const stdout = result.stdout?.trim() || '';
@@ -96,7 +99,7 @@ export function markdownToDocxFile(markdown, { title = '', outputPath } = {}) {
  * Build a zip of per-chapter docx files under exportDir.
  */
 export async function createChaptersDocxZip(chapters, { readChapter, exportDir, zipBasename }) {
-  if (!isDocxExportAvailable()) {
+  if (!(await probeDocxExportAvailable())) {
     throw new Error(
       'Word 导出需要 Python 环境。请运行：pip install -r backend/requirements.txt',
     );
@@ -109,7 +112,7 @@ export async function createChaptersDocxZip(chapters, { readChapter, exportDir, 
     const base = String(ch.title || ch.filename).replace(/\.md$/i, '');
     const safe = base.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 80) || 'chapter';
     const outDocx = path.join(workDir, `${safe}.docx`);
-    markdownToDocxFile(content, { title: ch.title || safe, outputPath: outDocx });
+    await markdownToDocxFile(content, { title: ch.title || safe, outputPath: outDocx });
     written.push(outDocx);
   }
   if (!written.length) {

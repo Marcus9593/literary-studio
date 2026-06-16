@@ -13,7 +13,6 @@ import {
   updateStoryKnowledge,
 } from '../../../api.js'
 import StoryOsPage from '../../../components/StoryOsPage.jsx'
-import AssetsPanel from '../../assets/AssetsPanel.jsx'
 import ForeshadowBoard from '../../../components/ForeshadowBoard.jsx'
 import CharacterCards from '../../../components/CharacterCards.jsx'
 import { useToast } from '../../../components/Toast.jsx'
@@ -144,11 +143,7 @@ export default function StoryKnowledgePage() {
         />
       </section>
 
-      <section className="card story-kb-assets-embed">
-        <h3>创作素材</h3>
-        <p className="hint">角色、地点与设定备忘（结构化卡片，可编辑）</p>
-        <AssetsPanel projectId={projectId} showToast={showToast} />
-      </section>
+      {/* V2.8 收敛：素材已迁入 Knowledge，CharacterCards 和 ForeshadowBoard 已覆盖 */}
 
       <form className="story-query-bar" onSubmit={onSearch}>
         <select

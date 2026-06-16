@@ -3,21 +3,22 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  findPython,
   isDocConvertLibsAvailable,
   isPythonRuntimeAvailable,
-  spawnPython,
+  probeDocConvertLibsAvailable,
+  spawnPythonAsync,
 } from './python-runtime.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..');
-const BACKEND_DIR = process.env.PYTHON_SCRIPTS_DIR || path.join(ROOT, 'backend');
+const STUDIO_ROOT = path.join(__dirname, '..', '..');
+const BACKEND_DIR = process.env.PYTHON_SCRIPTS_DIR || path.join(STUDIO_ROOT, 'backend');
 const CONVERT_CLI = path.join(BACKEND_DIR, 'convert_cli.py');
 
 const CONVERT_EXTENSIONS = new Set(['.docx', '.pdf', '.html', '.htm', '.zip']);
 const TEXT_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
 
 let convertAvailableCache = null;
+let convertAvailableProbe = null;
 
 export function needsPythonConversion(ext) {
   return CONVERT_EXTENSIONS.has(String(ext || '').toLowerCase());
@@ -28,20 +29,31 @@ export function isTextExtension(ext) {
 }
 
 export function isConvertAvailable() {
+  return convertAvailableCache ?? false;
+}
+
+export async function probeConvertAvailable() {
   if (convertAvailableCache !== null) return convertAvailableCache;
-  convertAvailableCache = isPythonRuntimeAvailable(CONVERT_CLI) && isDocConvertLibsAvailable();
-  return convertAvailableCache;
+  if (!convertAvailableProbe) {
+    convertAvailableProbe = (async () => {
+      const ok = isPythonRuntimeAvailable(CONVERT_CLI) && await probeDocConvertLibsAvailable();
+      convertAvailableCache = ok;
+      return ok;
+    })();
+  }
+  return convertAvailableProbe;
 }
 
 export function isZipUploadAvailable() {
   return isPythonRuntimeAvailable(CONVERT_CLI);
 }
 
-export function getSupportedFormats() {
+export async function getSupportedFormats() {
+  const converterAvailable = await probeConvertAvailable();
   const base = {
     documents: ['.md', '.markdown', '.txt', '.docx', '.pdf', '.html', '.htm'],
     archives: ['.zip'],
-    converter_available: isConvertAvailable(),
+    converter_available: converterAvailable,
     zip_available: isZipUploadAvailable(),
     hints: {
       docx: 'Word 2007+ 文档，保留标题与段落结构',
@@ -52,7 +64,7 @@ export function getSupportedFormats() {
   };
   if (!isZipUploadAvailable()) {
     base.hints.setup = 'zip/docx/pdf 需要 Python 3。zip 仅需 Python；docx/pdf 另需：pip install -r backend/requirements.txt';
-  } else if (!isConvertAvailable()) {
+  } else if (!converterAvailable && !isDocConvertLibsAvailable()) {
     base.hints.setup = 'docx/pdf 转换需安装依赖：pip install -r backend/requirements.txt（zip 与 md/txt 可直接导入）';
   }
   return base;
@@ -61,13 +73,13 @@ export function getSupportedFormats() {
 /**
  * Convert an uploaded file via Python CLI. Returns { upload_type, converted, result }.
  */
-export function convertUpload(workspace, filename, buffer, subdir = '正文') {
+export async function convertUpload(workspace, filename, buffer, subdir = '正文') {
   const ext = path.extname(filename).toLowerCase();
   if (ext === '.zip') {
     if (!isZipUploadAvailable()) {
       throw new Error('zip 解压需要 Python 3。请安装 Python 并确保 python 在 PATH 中。');
     }
-  } else if (!isConvertAvailable()) {
+  } else if (!(await probeConvertAvailable())) {
     throw new Error(
       'docx/pdf 转换需要 Python 依赖。请运行：pip install -r backend/requirements.txt',
     );
@@ -80,7 +92,7 @@ export function convertUpload(workspace, filename, buffer, subdir = '正文') {
   fs.writeFileSync(tmpFile, buffer);
 
   try {
-    const result = spawnPython(
+    const result = await spawnPythonAsync(
       [
         CONVERT_CLI,
         '--workspace', workspace,

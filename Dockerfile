@@ -39,7 +39,8 @@ ENV NODE_ENV=production \
     PORT=8765 \
     STUDIO_HOST=0.0.0.0 \
     LITERARY_STUDIO_DATA=/app/data \
-    LITERARY_WRITER_ROOT=/app/skills/literary-writer
+    LITERARY_WRITER_ROOT=/app/skills/literary-writer \
+    PYTHON_SCRIPTS_DIR=/app/backend
 
 EXPOSE 8765
 VOLUME ["/app/data"]

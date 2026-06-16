@@ -28,11 +28,21 @@ export function resolveActiveModelConfig() {
 }
 
 /**
- * Studio agents always run through Claude Code CLI.
- * HTTP provider is reserved for settings "test connection" only.
+ * Studio chat/write agents prefer Claude Code CLI when available.
+ * Returns false so orchestrator keeps CLI routing; not used for direct HTTP calls.
  */
 export function usesHttpRuntime() {
   return false;
+}
+
+/** Whether AI 中心 has a complete HTTP model profile (semantic critic, health checks). */
+export function hasConfiguredHttpModel(modelConfig = resolveActiveModelConfig()) {
+  if (!modelConfig) return false;
+  return Boolean(
+    String(modelConfig.api_key || '').trim()
+    && String(modelConfig.base_url || '').trim()
+    && String(modelConfig.model || '').trim(),
+  );
 }
 
 /**

@@ -4,7 +4,7 @@ import { workspacePath } from './projects.js';
 
 // ── Chat History ──
 
-function chatPath(projectId) {
+export function chatPath(projectId) {
   return path.join(workspacePath(projectId), '.webnovel', 'chat.json');
 }
 

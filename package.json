@@ -16,6 +16,7 @@
     "docker:release": "node scripts/release-docker.mjs",
     "docker:release:slim": "node scripts/release-docker.mjs --target runtime-slim --tags slim",
     "electron:dev": "electron .",
+    "electron:bundle": "node scripts/bundle-deps.mjs",
     "electron:build": "node scripts/build-electron.mjs",
     "electron:build:arm64": "node scripts/build-electron.mjs --arm64",
     "electron:build:x64": "node scripts/build-electron.mjs --x64",
@@ -41,8 +42,10 @@
     "asar": true,
     "asarUnpack": [
       "node_modules/@lancedb/**/*",
+      "backend-node/node_modules/**/*",
       "backend/*.py",
-      "backend/requirements.txt"
+      "backend/requirements.txt",
+      "electron/vendor/**/*"
     ],
     "mac": {
       "target": [
@@ -71,14 +74,29 @@
           "path": "/Applications"
         }
       ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "文匠 Studio"
     }
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
-    "electron": "^35.7.5",
+    "electron": "35.7.5",
     "electron-builder": "^26.15.3"
   },
-  "dependencies": {
-    "@anthropic-ai/claude-code": "^2.1.177"
-  }
+  "dependencies": {}
 }

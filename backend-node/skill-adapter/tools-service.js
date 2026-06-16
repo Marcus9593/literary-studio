@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import * as sqlAdapter from '../storage/sqlite/adapter.js';
 import { discoverSkillCapabilities } from './discover.js';
 import {
@@ -29,6 +30,16 @@ const FIND_SKILL_ROOT = path.resolve(
 const FIND_SKILL_CATALOGUE = path.join(FIND_SKILL_ROOT, 'cache', 'catalogue.json');
 const FIND_SKILL_INSTALL_SCRIPT = path.join(FIND_SKILL_ROOT, 'scripts', 'install-skill.sh');
 const FIND_SKILL_UPDATE_SCRIPT = path.join(FIND_SKILL_ROOT, 'update-skills-catalogue.sh');
+const execFileAsync = promisify(execFile);
+
+async function runBashScript(scriptPath, args = [], timeoutMs = 300000) {
+  const { stdout } = await execFileAsync('bash', [scriptPath, ...args], {
+    encoding: 'utf-8',
+    timeout: timeoutMs,
+    maxBuffer: 4 * 1024 * 1024,
+  });
+  return stdout;
+}
 
 export function loadToolsConfig() {
   try {
@@ -181,6 +192,60 @@ export function scanInstalledSkills() {
   return items;
 }
 
+/**
+ * Fast counter used by overview/status endpoints.
+ * Limits traversal work to avoid blocking packaged (DMG) builds on large local skill trees.
+ */
+function countInstalledSkillsFast({ maxMs = 1500, maxDirs = 5000 } = {}) {
+  const deadline = Date.now() + maxMs;
+  const seenFolders = new Set();
+  let count = 0;
+  let visitedDirs = 0;
+  let truncated = false;
+
+  const walk = (dir) => {
+    if (Date.now() > deadline || visitedDirs > maxDirs) {
+      truncated = true;
+      return;
+    }
+    visitedDirs += 1;
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      if (Date.now() > deadline || visitedDirs > maxDirs) {
+        truncated = true;
+        return;
+      }
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (ent.name !== 'SKILL.md' || full.includes(`${path.sep}cache${path.sep}`)) continue;
+      let folder;
+      try {
+        folder = fs.realpathSync(path.dirname(full));
+      } catch {
+        continue;
+      }
+      if (seenFolders.has(folder)) continue;
+      seenFolders.add(folder);
+      count += 1;
+    }
+  };
+
+  for (const scanRoot of getSkillScanDirs()) {
+    walk(scanRoot);
+    if (truncated) break;
+  }
+
+  return { count, truncated };
+}
+
 function walkSkillMd(dir, scanRoot, onFile) {
   let entries;
   try {
@@ -225,7 +290,7 @@ function catalogueMeta() {
 export function getToolsOverview() {
   const skillsRoot = resolveLiteraryWriterRoot();
   const webnovel = webnovelPyPath(skillsRoot);
-  const installed = scanInstalledSkills();
+  const installed = countInstalledSkillsFast();
   return {
     literary_writer: {
       path: skillsRoot,
@@ -239,7 +304,8 @@ export function getToolsOverview() {
       install_script: fs.existsSync(FIND_SKILL_INSTALL_SCRIPT),
       ...catalogueMeta(),
     },
-    installed_skills_count: installed.length,
+    installed_skills_count: installed.count,
+    installed_skills_count_partial: installed.truncated,
     skill_scan_dirs: getSkillScanDirs(),
     config: loadToolsConfig(),
   };
@@ -291,25 +357,40 @@ export function searchCatalogue(query = '', { limit = 20, page = 1, agent = 'any
   return { items, total, page, limit, query };
 }
 
-export function installSkill({ source, target = 'claude', force = false }) {
+let catalogueUpdateInFlight = null;
+let installSkillInFlight = null;
+
+export async function installSkill({ source, target = 'claude', force = false }) {
   if (!fs.existsSync(FIND_SKILL_INSTALL_SCRIPT)) {
     throw new Error(`未找到安装脚本: ${FIND_SKILL_INSTALL_SCRIPT}`);
   }
-  const cmd = ['bash', FIND_SKILL_INSTALL_SCRIPT, source, '--target', target];
-  if (force) cmd.push('--force');
-  const out = execSync(cmd.join(' '), { encoding: 'utf-8', timeout: 300000, maxBuffer: 4 * 1024 * 1024 });
-  return { ok: true, source, target, output: out.slice(-2000) };
+  if (installSkillInFlight) return installSkillInFlight;
+  installSkillInFlight = (async () => {
+    try {
+      const args = [source, '--target', target];
+      if (force) args.push('--force');
+      const out = await runBashScript(FIND_SKILL_INSTALL_SCRIPT, args, 300000);
+      return { ok: true, source, target, output: out.slice(-2000) };
+    } finally {
+      installSkillInFlight = null;
+    }
+  })();
+  return installSkillInFlight;
 }
 
-export function updateCatalogue() {
+export async function updateCatalogue() {
   if (!fs.existsSync(FIND_SKILL_UPDATE_SCRIPT)) {
     throw new Error(`未找到更新脚本: ${FIND_SKILL_UPDATE_SCRIPT}`);
   }
-  const out = execSync(`bash "${FIND_SKILL_UPDATE_SCRIPT}"`, {
-    encoding: 'utf-8',
-    timeout: 600000,
-    maxBuffer: 4 * 1024 * 1024,
-  });
-  return { ok: true, meta: catalogueMeta(), output: out.slice(-1500) };
+  if (catalogueUpdateInFlight) return catalogueUpdateInFlight;
+  catalogueUpdateInFlight = (async () => {
+    try {
+      const out = await runBashScript(FIND_SKILL_UPDATE_SCRIPT, [], 600000);
+      return { ok: true, meta: catalogueMeta(), output: out.slice(-1500) };
+    } finally {
+      catalogueUpdateInFlight = null;
+    }
+  })();
+  return catalogueUpdateInFlight;
 }
 
