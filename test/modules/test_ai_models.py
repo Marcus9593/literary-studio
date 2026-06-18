@@ -44,9 +44,11 @@ class TestModelCRUD:
         assert resp.status_code == 200
 
     def test_activate_model(self, admin_client):
-        """TC-MOD-05: 设为活跃模型"""
+        """TC-MOD-05: 设为活跃模型（须为 Claude CLI 兼容协议）"""
         resp = admin_client.post("/models", json_body={
-            "name": "活跃测试", "model": "gpt-4", "base_url": "https://api.openai.com/v1", "api_key": "sk-test"
+            "name": "活跃测试", "model": "deepseek-chat",
+            "base_url": "https://api.deepseek.com/anthropic", "api_key": "sk-test",
+            "protocol": "anthropic",
         })
         mid = resp.json()["id"]
 

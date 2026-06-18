@@ -18,6 +18,11 @@ import {
 import * as mcpAdapter from '../mcp-adapter/index.js';
 import { decodeBuffer, isTextFile, decodeUploadFilename } from '../lib/encoding.js';
 import {
+  getWorkspaceSummary,
+  normalizeStrayWorkspaceFiles,
+  readWorkspaceFileByMeta,
+} from '../lib/workspace-sync.js';
+import {
   convertUpload,
   getSupportedFormats,
   isTextExtension,
@@ -44,8 +49,11 @@ import {
   formatModelTestError,
   validateModelProtocol,
   postWithAuth,
+  buildAnthropicTestPayload,
+  extractAnthropicResponseText,
 } from '../ai-runtime/http-client.js';
-import { assessClaudeCliCompatibility } from '../../shared/cli-model-compat.js';
+import { assessClaudeCliCompatibility, getCcSwitchPresetCatalogMeta, listCcSwitchClaudePresets, listCliPresetTemplates } from '../../shared/cli-model-compat.js';
+import { syncClaudeSettingsFromActiveModel } from '../ai-runtime/runtime.js';
 import guestbookRouter from '../guestbook/guestbook-routes.js';
 import authRouter from '../auth/auth-routes.js';
 import { bootstrapAuth } from '../auth/bootstrap.js';
@@ -126,19 +134,21 @@ async function testModelConnection(cfg) {
     if (protocol === 'anthropic') {
       const { res, data } = await postWithAuth(
         buildUrl(baseUrl, '/v1/messages'),
-        {
-          model,
-          max_tokens: 64,
-          messages: [{ role: 'user', content: '回复 OK' }],
-          system: '你是助手。',
-        },
+        buildAnthropicTestPayload(model, baseUrl),
         apiKey,
         protocol,
         controller.signal,
       );
       if (!res.ok) throw new Error(formatModelTestError(null, data, res));
-      const text = (data?.content || []).map((c) => c?.text || '').join('').trim();
-      return { ok: true, reply_preview: text.slice(0, 80) || '（模型已响应，但未返回文本内容）' };
+      const text = extractAnthropicResponseText(data);
+      if (!text) {
+        return {
+          ok: false,
+          reply_preview: '',
+          warning: '模型 API 已响应 HTTP 200，但未返回可见文本。DeepSeek V4 默认开启 Thinking 模式，Claude Code 对话可能因此无输出；请确认账户已开通 V4、有余额，或尝试 deepseek-v4-flash / 关闭 thinking。',
+        };
+      }
+      return { ok: true, reply_preview: text.slice(0, 80) };
     }
 
     const { res, data } = await postWithAuth(
@@ -196,7 +206,7 @@ async function healthCheckWithTimeout(timeoutMs = 5000) {
       } catch {}
       return {
         status: 'ok',
-        version: '2.6.0',
+        version: '2.7.0',
         inference: aiHealth.inference,
         claude_code: aiHealth.claude_code,
         api_model: aiHealth.api_model,
@@ -207,7 +217,7 @@ async function healthCheckWithTimeout(timeoutMs = 5000) {
     })(),
     new Promise((resolve) => setTimeout(() => resolve({
       status: 'ok',
-      version: '2.6.0',
+      version: '2.7.0',
       inference: { mode: 'unknown' },
       claude_code: { available: false },
       api_model: null,
@@ -223,7 +233,7 @@ router.get('/health', async (_req, res) => {
     const result = await healthCheckWithTimeout(5000);
     res.json(result);
   } catch (err) {
-    res.json({ status: 'ok', version: '2.6.0', error: err.message });
+    res.json({ status: 'ok', version: '2.7.0', error: err.message });
   }
 });
 
@@ -254,6 +264,14 @@ router.get('/models', (_req, res) => {
   res.json(store.listModelsPublic());
 });
 
+router.get('/models/presets/cc-switch', (_req, res) => {
+  res.json({
+    ...getCcSwitchPresetCatalogMeta(),
+    presets: listCcSwitchClaudePresets(),
+    templates: listCliPresetTemplates(),
+  });
+});
+
 router.post('/models', (req, res) => {
   try {
     const created = store.createModel(req.body);
@@ -271,12 +289,28 @@ router.put('/models/:modelId', (req, res) => {
 });
 
 router.delete('/models/:modelId', (req, res) => {
-  try { res.json(store.deleteModel(req.params.modelId)); }
-  catch (e) { res.status(404).json({ error: e.message }); }
+  try {
+    const result = store.deleteModel(req.params.modelId);
+    const sync = trySyncClaudeSettings();
+    res.json({ ...result, claude_settings_sync: sync });
+  } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
 router.post('/models/:modelId/activate', (req, res) => {
   try {
+    const raw = store.getModelById(req.params.modelId);
+    const compat = assessClaudeCliCompatibility({
+      name: raw.name,
+      protocol: raw.protocol || (String(raw.base_url || '').includes('/anthropic') ? 'anthropic' : 'openai'),
+      base_url: raw.base_url,
+      model: raw.model,
+    });
+    if (!compat.cli_ready) {
+      return res.status(400).json({
+        error: compat.title || '该模型无法用于 Claude Code CLI 注入',
+        cli_compat: compat,
+      });
+    }
     const result = store.setActiveModel(req.params.modelId);
     const sync = trySyncClaudeSettings();
     res.json({ ...result, claude_settings_sync: sync });
@@ -430,6 +464,39 @@ router.get('/projects/:id/chapters', (req, res) => {
   catch (e) { res.status(404).json({ error: e.message }); }
 });
 
+router.post('/projects/:id/workspace/refresh', requireProjectWrite, (req, res) => {
+  try {
+    const moved = normalizeStrayWorkspaceFiles(req.params.id);
+    invalidateProjectContext(req.params.id);
+    store.touchProject(req.params.id);
+    res.json({
+      ok: true,
+      moved,
+      summary: getWorkspaceSummary(req.params.id),
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.get('/projects/:id/workspace/file', (req, res) => {
+  try {
+    const relPath = String(req.query.rel_path || '').trim();
+    if (relPath) {
+      const data = readWorkspaceFileByMeta(req.params.id, { rel_path: relPath });
+      return res.json(data);
+    }
+    const category = String(req.query.category || '').trim();
+    const filename = String(req.query.filename || '').trim();
+    if (category && filename) {
+      return res.json(store.readWorkspaceFile(req.params.id, category, filename));
+    }
+    return res.status(400).json({ error: '缺少 rel_path 或 category+filename' });
+  } catch (e) {
+    res.status(404).json({ error: e.message });
+  }
+});
+
 router.get('/projects/:id/chapters/:filename', (req, res) => {
   try {
     const filePath = store.resolveManuscriptPath(req.params.id, req.params.filename);
@@ -449,9 +516,9 @@ router.put('/projects/:id/chapters/:filename', requireProjectWrite, (req, res) =
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.delete('/projects/:id/chapters/:filename', requireProjectWrite, (req, res) => {
+router.delete('/projects/:id/chapters/:filename', requireProjectWrite, async (req, res) => {
   try {
-    const result = store.deleteManuscriptFile(req.params.id, req.params.filename);
+    const result = await store.deleteManuscriptFile(req.params.id, req.params.filename);
     invalidateProjectContext(req.params.id);
     notifyProjectContentChanged(req.params.id, { kind: 'manuscript_delete', filename: req.params.filename });
     res.json(result);
@@ -626,23 +693,23 @@ router.get('/projects/:id/sessions', (req, res) => {
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.post('/projects/:id/sessions', requireProjectWrite, (req, res) => {
+router.post('/projects/:id/sessions', requireProjectWrite, async (req, res) => {
   try {
     store.getProject(req.params.id);
-    const session = store.createSession(req.params.id, req.body?.title, {
+    const session = await store.createSession(req.params.id, req.body?.title, {
       bound_filename: req.body?.bound_filename ?? null,
     });
     res.json(session);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/projects/:id/sessions/focus', requireProjectWrite, (req, res) => {
+router.post('/projects/:id/sessions/focus', requireProjectWrite, async (req, res) => {
   try {
     store.getProject(req.params.id);
     const { scope, filename, title } = req.body || {};
     const result = scope === 'chapter' && filename
-      ? store.focusChapterSession(req.params.id, filename, title)
-      : store.focusProjectSession(req.params.id);
+      ? await store.focusChapterSession(req.params.id, filename, title)
+      : await store.focusProjectSession(req.params.id);
     res.json(result);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
@@ -655,14 +722,14 @@ router.get('/projects/:id/sessions/:sid', (req, res) => {
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.patch('/projects/:id/sessions/:sid', requireProjectWrite, (req, res) => {
+router.patch('/projects/:id/sessions/:sid', requireProjectWrite, async (req, res) => {
   try {
     store.getProject(req.params.id);
     if (req.body?.active === true) {
-      const index = store.setActiveSession(req.params.id, req.params.sid);
+      const index = await store.setActiveSession(req.params.id, req.params.sid);
       return res.json(index);
     }
-    const session = store.renameSession(req.params.id, req.params.sid, req.body?.title || '未命名');
+    const session = await store.renameSession(req.params.id, req.params.sid, req.body?.title || '未命名');
     res.json(session);
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
@@ -682,18 +749,18 @@ router.get('/projects/:id/sessions/:sid/memory', (req, res) => {
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.delete('/projects/:id/sessions/:sid', requireProjectWrite, (req, res) => {
+router.delete('/projects/:id/sessions/:sid', requireProjectWrite, async (req, res) => {
   try {
     store.getProject(req.params.id);
-    const index = store.deleteSession(req.params.id, req.params.sid);
+    const index = await store.deleteSession(req.params.id, req.params.sid);
     res.json(index);
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.delete('/projects/:id/sessions/:sid/messages', requireProjectWrite, (req, res) => {
+router.delete('/projects/:id/sessions/:sid/messages', requireProjectWrite, async (req, res) => {
   try {
     store.getProject(req.params.id);
-    const session = store.clearSessionMessages(req.params.id, req.params.sid);
+    const session = await store.clearSessionMessages(req.params.id, req.params.sid);
     res.json(session);
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
@@ -864,21 +931,26 @@ router.get('/settings', (_req, res) => { res.json(store.listModelsPublic()); });
 router.put('/settings', (req, res) => {
   try {
     const active = store.getActiveModel();
+    const protocol = req.body.protocol || req.body.provider;
     if (active) {
       const payload = {};
       if (req.body.base_url) payload.base_url = req.body.base_url;
       if (req.body.model) payload.model = req.body.model;
       if (req.body.api_key) payload.api_key = req.body.api_key;
-      if (req.body.provider) payload.protocol = req.body.provider;
-      res.json(store.updateModel(active.id, payload));
+      if (protocol) payload.protocol = protocol;
+      const updated = store.updateModel(active.id, payload);
+      const sync = trySyncClaudeSettings();
+      res.json({ ...updated, claude_settings_sync: sync });
     } else {
-      res.json(store.createModel({
+      const created = store.createModel({
         name: req.body.model || '默认模型',
-        protocol: req.body.provider || 'openai',
+        protocol: protocol || 'openai',
         base_url: req.body.base_url || '',
         model: req.body.model || '',
         api_key: req.body.api_key || '',
-      }));
+      });
+      const sync = trySyncClaudeSettings();
+      res.json({ ...created, claude_settings_sync: sync });
     }
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

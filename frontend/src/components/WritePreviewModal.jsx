@@ -8,11 +8,48 @@ export default function WritePreviewModal({
   onOpenNew,
   onReplace,
   onApplyInline,
+  previewOnly: previewOnlyProp = false,
+  onOpenInPanel,
 }) {
   if (!open || !preview) return null
 
-  const { title, filename, oldContent, newContent, isSameFile, inline } = preview
+  const previewOnly = previewOnlyProp || preview.previewOnly
+  const { title, filename, oldContent, newContent, isSameFile, inline, displayPath } = preview
   const hasOld = Boolean(oldContent?.trim())
+
+  if (previewOnly) {
+    return (
+      <Modal
+        open={open}
+        onClose={onClose}
+        title="文件预览"
+        footer={(
+          <>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              关闭
+            </button>
+            {onOpenInPanel ? (
+              <button type="button" className="btn btn-secondary" onClick={onOpenInPanel}>
+                在侧栏打开
+              </button>
+            ) : null}
+          </>
+        )}
+      >
+        <p className="write-preview-meta">
+          <strong>{title || filename}</strong>
+          {displayPath ? <span className="muted"> · {displayPath}</span> : null}
+          <span className="muted">
+            {' '}· 约 {newContent.replace(/\s/g, '').length} 字
+          </span>
+        </p>
+        <p className="muted write-preview-hint">
+          此为只读预览，不会自动打开编辑器；确认内容后可从侧栏打开编辑。
+        </p>
+        <pre className="write-preview-readonly">{newContent}</pre>
+      </Modal>
+    )
+  }
 
   if (inline) {
     return (

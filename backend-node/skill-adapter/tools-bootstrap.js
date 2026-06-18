@@ -9,14 +9,15 @@ import { loadToolsConfig, saveToolsConfig, scanInstalledSkills, isLiteraryWriter
 
 /** 启动时将 tools.json 指向内嵌 skill，并加入 skill 扫描目录 */
 export function bootstrapToolsConfig() {
-  if (!bundledLiteraryWriterAvailable()) {
-    console.warn('  [tools] bundled literary-writer not found, skipping bootstrap');
+  const bundledRoot = resolveBundledLiteraryWriterPath();
+  if (!bundledRoot) {
+    if (!bundledLiteraryWriterAvailable()) {
+      console.warn('  [tools] bundled literary-writer not found, skipping bootstrap');
+    }
     return;
   }
 
-  const bundledRoot = resolveBundledLiteraryWriterPath();
   const bundledSkillsDir = resolveBundledSkillsDir();
-  if (!bundledRoot) return;
 
   const cfg = loadToolsConfig();
   let changed = false;

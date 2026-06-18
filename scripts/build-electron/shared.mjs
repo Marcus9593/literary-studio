@@ -52,6 +52,15 @@ export function claudeBundled() {
   return exists('electron/vendor/claude/claude')
 }
 
+export function runPrepackChecklist(platform) {
+  console.log('\n━━━ 第 0 步: 打包前自检 ━━━')
+  const platformFlag = platform === 'win' ? '--platform win32'
+    : platform === 'mac' ? '--platform darwin'
+      : platform === 'linux' ? '--platform linux'
+        : ''
+  run(`node scripts/prepack-checklist.mjs ${platformFlag}`.trim())
+}
+
 export function installDependencies() {
   console.log('\n━━━ 第 1 步: 安装依赖 ━━━')
   if (!exists('backend-node/node_modules')) {

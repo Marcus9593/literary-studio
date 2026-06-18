@@ -26,7 +26,9 @@ import {
   getChapter,
   getProject,
   getProjectFile,
+  getWorkspaceFile,
   listSessions,
+  refreshProjectWorkspace,
   saveChapter,
   saveProjectFile,
   updateProject,
@@ -87,6 +89,9 @@ export default function ProjectPage() {
   const [exportScope, setExportScope] = useState('project')
   const [exportChapter, setExportChapter] = useState(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [outlineAvailableHint, setOutlineAvailableHint] = useState(false)
+  const [workspaceSummary, setWorkspaceSummary] = useState(null)
+  const [refreshingWorkspace, setRefreshingWorkspace] = useState(false)
   const pendingNavRef = useRef(null)
   const selectionRef = useRef(null)
   const takeoverCheckedRef = useRef(false)
@@ -307,15 +312,18 @@ export default function ProjectPage() {
 
   useEffect(() => {
     refresh().then(refreshSessions).catch(() => {})
-  }, [refresh, refreshSessions])
+    refreshProjectWorkspace(projectId)
+      .then((data) => {
+        setWorkspaceSummary(data.summary || null)
+        if ((data.summary?.outline_count ?? 0) > 0) {
+          setOutlineAvailableHint(true)
+        }
+      })
+      .catch(() => {})
+  }, [projectId, refresh, refreshSessions])
 
   useEffect(() => {
-    if (chapters.length === 0) {
-      setResourcePanel(null)
-      resourceInitRef.current = false
-      return
-    }
-    if (!resourceInitRef.current) {
+    if (chapters.length > 0 && !resourceInitRef.current) {
       setResourcePanel('manuscripts')
       resourceInitRef.current = true
     }
@@ -527,30 +535,80 @@ export default function ProjectPage() {
   }, [])
 
   const onWriteResult = useCallback(async (result) => {
-    if (!result?.filename) {
-      refresh()
-      return
+    await refresh()
+    if (result?.filename) {
+      showToast(`文稿已更新：${result.title || result.filename}`, 'info')
     }
+  }, [refresh, showToast])
+
+  const handleRefreshWorkspace = useCallback(async ({ manual = false } = {}) => {
+    setRefreshingWorkspace(true)
     try {
-      const file = await getChapter(projectId, result.filename)
-      const isSameFile = selected === result.filename
-      setWritePreview({
-        filename: result.filename,
-        title: result.title || result.filename,
-        words: result.words,
-        oldContent: isSameFile ? savedContent : '',
-        newContent: file.content,
-        isSameFile,
-      })
-      await refresh()
+      const data = await refreshProjectWorkspace(projectId)
+      const p = await refresh()
+      setChapters(p.chapters || [])
+      setWorkspaceSummary(data.summary || null)
+      if ((data.summary?.outline_count ?? 0) > 0 && (p.chapters?.length ?? 0) === 0) {
+        setOutlineAvailableHint(true)
+      }
+      showToast(manual ? '已刷新项目文件列表' : '项目文件已同步', 'success')
     } catch (e) {
       showToast(e.message, 'error')
-      loadManuscript(
-        { filename: result.filename, title: result.title, words: result.words },
-        { force: true },
-      )
+    } finally {
+      setRefreshingWorkspace(false)
     }
-  }, [projectId, selected, savedContent, refresh, loadManuscript, showToast])
+  }, [projectId, refresh, showToast])
+
+  const handleWorkspaceChanged = useCallback(async (msg) => {
+    if (msg?.manual) {
+      await handleRefreshWorkspace({ manual: true })
+      return
+    }
+    const p = await refresh()
+    setChapters(p.chapters || [])
+    if (msg?.summary) setWorkspaceSummary(msg.summary)
+    const changes = msg?.changes || []
+    if (changes.length) {
+      if ((msg.summary?.outline_count ?? 0) > 0 && (p.chapters?.length ?? 0) === 0) {
+        setOutlineAvailableHint(true)
+      }
+      showToast(`AI 更新了 ${changes.length} 个文件，可在对话中点「预览」查看`, 'info')
+    }
+  }, [refresh, showToast, handleRefreshWorkspace])
+
+  const handlePreviewWorkspaceFile = useCallback(async (fileMeta) => {
+    try {
+      const data = fileMeta?.rel_path
+        ? await getWorkspaceFile(projectId, { rel_path: fileMeta.rel_path })
+        : await getProjectFile(projectId, fileMeta.category, fileMeta.filename)
+      setWritePreview({
+        previewOnly: true,
+        title: fileMeta.title || fileMeta.filename,
+        filename: fileMeta.filename,
+        displayPath: fileMeta.display_path,
+        category: fileMeta.category,
+        panel: fileMeta.panel,
+        rel_path: fileMeta.rel_path,
+        newContent: data.content,
+        oldContent: '',
+      })
+    } catch (e) {
+      showToast(e.message, 'error')
+    }
+  }, [projectId, showToast])
+
+  const handlePreviewOpenInPanel = useCallback(() => {
+    if (!writePreview) return
+    const { panel, filename, category, title, words } = writePreview
+    setWritePreview(null)
+    if (panel === 'manuscripts' || category === 'manuscript') {
+      setResourcePanel('manuscripts')
+      loadManuscript({ filename, title, words }, { force: true })
+    } else if (panel) {
+      setResourcePanel(panel)
+      loadFile(panel, { filename, title }, { force: true })
+    }
+  }, [writePreview, loadManuscript, loadFile])
 
   const handleWritePreviewOpen = () => {
     if (!writePreview) return
@@ -635,6 +693,11 @@ export default function ProjectPage() {
     }
     showToast(`已打开 ${hit.title}（第 ${hit.line} 行附近）`, 'info')
   }, [loadManuscript, loadFile, showToast])
+
+  const handleOpenOutlinePanel = useCallback(() => {
+    setResourcePanel('outline')
+    setMobileTab('edit')
+  }, [])
 
   const focusChat = useCallback(() => {
     setMobileTab('chat')
@@ -927,6 +990,7 @@ export default function ProjectPage() {
         onOpenNew={handleWritePreviewOpen}
         onReplace={handleWritePreviewReplace}
         onApplyInline={handleApplyInlineEdit}
+        onOpenInPanel={writePreview?.previewOnly ? handlePreviewOpenInPanel : undefined}
       />
 
       <GlobalSearchModal
@@ -973,6 +1037,8 @@ export default function ProjectPage() {
         onImport={() => setUploadOpen(true)}
         onFocusChat={focusChat}
         onShowDiagnosis={() => setShowTakeover(true)}
+        outlineCount={workspaceSummary?.outline_count ?? 0}
+        onOpenOutline={handleOpenOutlinePanel}
       />
 
       <div className="reader-center">
@@ -986,6 +1052,9 @@ export default function ProjectPage() {
           onOpenUpload={() => setUploadOpen(true)}
           onOpenShortcuts={() => setShortcutsOpen(true)}
           onShowTakeover={() => setShowTakeover(true)}
+          onRefreshWorkspace={() => handleRefreshWorkspace({ manual: true })}
+          refreshingWorkspace={refreshingWorkspace}
+          workspaceSummary={workspaceSummary}
           onExportProject={() => {
             setExportScope('project')
             setExportChapter(null)
@@ -1066,6 +1135,10 @@ export default function ProjectPage() {
           onApplyWritePlan={onApplyWritePlan}
           onWriteResult={onWriteResult}
           onError={setError}
+          onWorkspaceChanged={handleWorkspaceChanged}
+          onPreviewFile={handlePreviewWorkspaceFile}
+          outlineAvailableHint={outlineAvailableHint}
+          onOpenOutlinePanel={handleOpenOutlinePanel}
           pendingPlanExecution={pendingPlanExecution}
           planExecReady={planExecReady}
           onPendingPlanExecutionConsumed={() => setPendingPlanExecution(null)}

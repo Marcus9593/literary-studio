@@ -45,3 +45,16 @@ export const saveProjectFile = (projectId, category, filename, content) =>
     method: 'PUT',
     body: JSON.stringify({ content }),
   })
+
+export const refreshProjectWorkspace = (projectId) =>
+  request(`/projects/${projectId}/workspace/refresh`, { method: 'POST' })
+
+export const getWorkspaceFile = (projectId, { rel_path, category, filename } = {}) => {
+  const params = new URLSearchParams()
+  if (rel_path) params.set('rel_path', rel_path)
+  else if (category && filename) {
+    params.set('category', category)
+    params.set('filename', filename)
+  }
+  return request(`/projects/${projectId}/workspace/file?${params.toString()}`)
+}

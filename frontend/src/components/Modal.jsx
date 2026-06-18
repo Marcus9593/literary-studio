@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export default function Modal({ open, onClose, title, children, footer, panelClassName = '' }) {
+export default function Modal({ open, onClose, title, children, footer, panelClassName = '', overlayClassName = '' }) {
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -15,7 +15,7 @@ export default function Modal({ open, onClose, title, children, footer, panelCla
   if (!open) return null
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="presentation">
+    <div className={`modal-overlay ${overlayClassName}`.trim()} onClick={onClose} role="presentation">
       <div
         className={`modal-panel ${panelClassName}`.trim()}
         onClick={(e) => e.stopPropagation()}

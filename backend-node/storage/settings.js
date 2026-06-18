@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import {
   assessClaudeCliCompatibility,
   normalizeModelForStorage,
+  resolveProviderIconForModel,
 } from '../../shared/cli-model-compat.js';
 import { SETTINGS_PATH, now, readJSON, writeJSON, sqlAdapter } from './core.js';
 
@@ -62,9 +63,8 @@ export function getActiveModel() {
   return models.find(m => m.id === activeId) || models[0];
 }
 
-export function listModelsPublic() {
-  const data = loadSettingsRaw();
-  const models = (data.models || []).map(m => ({
+function toModelPublic(m) {
+  const publicEntry = {
     id: m.id,
     name: m.name || m.model || '未命名',
     protocol: m.protocol || inferProtocol(m.base_url),
@@ -74,7 +74,15 @@ export function listModelsPublic() {
     api_key_preview: maskKey(m.api_key),
     created_at: m.created_at,
     updated_at: m.updated_at,
-  }));
+  };
+  publicEntry.cli_compat = assessClaudeCliCompatibility(publicEntry);
+  publicEntry.icon = resolveProviderIconForModel(publicEntry);
+  return publicEntry;
+}
+
+export function listModelsPublic() {
+  const data = loadSettingsRaw();
+  const models = (data.models || []).map(toModelPublic);
   let activeId = String(data.active_id || '');
   if (models.length && !models.find(m => m.id === activeId)) {
     activeId = models[0].id;
@@ -194,15 +202,5 @@ export function readCcSwitchConfig() {
 }
 
 function modelPublic(entry) {
-  const key = String(entry.api_key || '');
-  const publicEntry = {
-    id: entry.id, name: entry.name || entry.model || '未命名',
-    protocol: entry.protocol || inferProtocol(entry.base_url),
-    base_url: entry.base_url || '', model: entry.model || '',
-    api_key_set: Boolean(key.trim()),
-    api_key_preview: maskKey(key),
-    created_at: entry.created_at, updated_at: entry.updated_at,
-  };
-  publicEntry.cli_compat = assessClaudeCliCompatibility(publicEntry);
-  return publicEntry;
+  return toModelPublic(entry);
 }

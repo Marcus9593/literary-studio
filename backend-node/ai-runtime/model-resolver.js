@@ -32,11 +32,25 @@ export function resolveActiveModelConfig() {
   };
 }
 
+function isOfficialAnthropicEndpoint(baseUrl) {
+  return String(baseUrl || '').toLowerCase().includes('api.anthropic.com');
+}
+
 /**
- * Studio chat/write agents prefer Claude Code CLI when available.
- * Returns false so orchestrator keeps CLI routing; not used for direct HTTP calls.
+ * 第三方模型是否可用 HTTP 兜底（测试连接同路径）。
+ * 对话/写稿默认仍走 Claude Code CLI 以保留 Read/Edit/Write 改 md 能力。
  */
-export function usesHttpRuntime() {
+export function supportsHttpFallback(modelConfig) {
+  const cfg = modelConfig === undefined ? resolveActiveModelConfig() : modelConfig;
+  if (!hasConfiguredHttpModel(cfg)) return false;
+  if (cfg.protocol === 'anthropic' && isOfficialAnthropicEndpoint(cfg.base_url)) {
+    return false;
+  }
+  return true;
+}
+
+/** @deprecated 仅保留兼容；项目对话默认不走 HTTP 主路径 */
+export function usesHttpRuntime(modelConfig) {
   return false;
 }
 

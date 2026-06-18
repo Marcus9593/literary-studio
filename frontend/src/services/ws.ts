@@ -14,6 +14,8 @@ export type WsHandlers = {
   onStoryTasksToday?: (msg: Record<string, unknown>) => void
   onPlannerResult?: (msg: Record<string, unknown>) => void
   onInlineEditResult?: (msg: Record<string, unknown>) => void
+  onToolActivity?: (msg: Record<string, unknown>) => void
+  onWorkspaceChanged?: (msg: Record<string, unknown>) => void
 }
 
 export type WebSocketClient = {
@@ -86,6 +88,12 @@ export function createWebSocket(projectId: string, handlers: WsHandlers = {}): W
           break
         case 'inline_edit_result':
           handlers.onInlineEditResult?.(msg)
+          break
+        case 'tool_activity':
+          handlers.onToolActivity?.(msg)
+          break
+        case 'workspace_changed':
+          handlers.onWorkspaceChanged?.(msg)
           break
         default:
           break

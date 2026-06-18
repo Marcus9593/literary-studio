@@ -139,6 +139,35 @@ export function formatModelTestError(err, data, res) {
   return msg || '模型连接测试失败';
 }
 
+export function isDeepSeekAnthropicUrl(baseUrl) {
+  return /deepseek\.com/i.test(String(baseUrl || ''));
+}
+
+/** Anthropic Messages 响应：含 text / thinking 块 */
+export function extractAnthropicResponseText(data) {
+  const parts = [];
+  for (const block of data?.content || []) {
+    if (!block || typeof block !== 'object') continue;
+    if (block.type === 'text' && block.text) parts.push(String(block.text));
+    else if (block.type === 'thinking' && block.thinking) parts.push(String(block.thinking));
+  }
+  return parts.join('\n').trim();
+}
+
+/** 连接测试请求体：DeepSeek V4 默认 thinking 会吞掉短 max_tokens，需显式关闭 */
+export function buildAnthropicTestPayload(model, baseUrl) {
+  const payload = {
+    model,
+    max_tokens: 512,
+    messages: [{ role: 'user', content: '请只回复两个字符：OK' }],
+    system: '你是助手。请直接给出最终回答，不要调用工具。',
+  };
+  if (isDeepSeekAnthropicUrl(baseUrl)) {
+    payload.thinking = { type: 'disabled' };
+  }
+  return payload;
+}
+
 export async function postWithAuth(url, payload, apiKey, protocol, signal) {
   let last = { res: null, data: {} };
   for (const headers of authHeaderVariants(apiKey, protocol)) {

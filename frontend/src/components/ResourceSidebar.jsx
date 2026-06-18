@@ -24,6 +24,8 @@ export default function ResourceSidebar({
   onImport,
   onFocusChat,
   onShowDiagnosis,
+  outlineCount = 0,
+  onOpenOutline,
 }) {
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
@@ -94,6 +96,8 @@ export default function ResourceSidebar({
             onNewManuscript={onNewManuscript}
             onFocusChat={onFocusChat}
             onShowDiagnosis={onShowDiagnosis}
+            outlineCount={outlineCount}
+            onOpenOutline={onOpenOutline}
           />
         ) : filtered.length ? (
           <ul className="chapter-list">

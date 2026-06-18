@@ -4,6 +4,8 @@ export default function WorkspaceOnboarding({
   onNewManuscript,
   onFocusChat,
   onShowDiagnosis,
+  outlineCount = 0,
+  onOpenOutline,
   compact = false,
 }) {
   return (
@@ -21,6 +23,14 @@ export default function WorkspaceOnboarding({
           ? '导入已有稿件，或新建一章开始写作'
           : '导入 docx 可快速起步；从零写可先和右侧 AI 聊清方向再落笔'}
       </p>
+      {outlineCount > 0 && onOpenOutline && (
+        <p className="workspace-onboarding-outline-hint">
+          大纲目录已有 {outlineCount} 个文件（AI 可能已写入）。
+          <button type="button" className="chat-inline-link" onClick={onOpenOutline}>
+            打开大纲
+          </button>
+        </p>
+      )}
       <div className="workspace-onboarding-actions">
         <button type="button" className="btn btn-primary" onClick={onImport}>
           导入 docx

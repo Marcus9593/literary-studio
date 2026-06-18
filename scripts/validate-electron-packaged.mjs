@@ -107,6 +107,24 @@ requireFile(path.join(backend, 'export_cli.py'), 'export_cli.py')
 requireFile(path.join(skills, 'literary-writer', 'SKILL.md'), 'literary-writer Skill')
 requireFile(path.join(skills, 'literary-writer', 'scripts', 'webnovel.py'), 'webnovel.py')
 
+const asarPath = path.join(resources, 'app.asar')
+if (fs.existsSync(asarPath)) {
+  const list = spawnSync(process.execPath, [
+    path.join(ROOT, 'node_modules', '@electron', 'asar', 'bin', 'asar.js'),
+    'list',
+    asarPath,
+  ], { encoding: 'utf-8', cwd: ROOT })
+  const out = (list.stdout || '').replace(/\\/g, '/')
+  for (const rel of [
+    'shared/cli-model-compat.js',
+    'shared/cc-switch-claude-presets.json',
+  ]) {
+    if (!out.includes(rel)) {
+      errors.push(`app.asar 缺少后端依赖: ${rel}`)
+    }
+  }
+}
+
 for (const p of [python, claude, path.join(backend, 'export_cli.py')]) {
   if (p) forbidAsar(p, '可执行资源')
 }

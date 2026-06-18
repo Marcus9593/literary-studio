@@ -1,5 +1,6 @@
 import {
   assessClaudeCliCompatibility,
+  CLAUDE_CLI_OAUTH_GUIDE,
   normalizeModelForStorage,
   OPENAI_PROTOCOL_CLI_WARNING,
 } from '@shared/cli-model-compat.js'
@@ -76,6 +77,19 @@ export default function CliCompatNotice({
                   <li key={s}>{s}</li>
                 ))}
               </ul>
+              {(compat.severity === 'error' || model?.protocol === 'openai') && (
+                <div className="cli-compat-oauth-hint">
+                  <p className="cli-compat-oauth-hint-title">{CLAUDE_CLI_OAUTH_GUIDE.title}</p>
+                  <ol>
+                    {CLAUDE_CLI_OAUTH_GUIDE.steps.map((step) => (
+                      <li key={step.title}>
+                        <strong>{step.title}</strong>
+                        <span>{step.desc}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </details>
           )}
         </div>

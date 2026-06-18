@@ -1,6 +1,6 @@
 import * as claude from './providers/claude-provider.js';
 import * as httpProvider from './providers/http-provider.js';
-import { resolveActiveModelConfig } from './model-resolver.js';
+import { resolveActiveModelConfig, supportsHttpFallback } from './model-resolver.js';
 import { DEFAULT_PROVIDER } from './types.js';
 
 const providers = {
@@ -19,11 +19,11 @@ async function isClaudeAvailable() {
     const health = await claude.checkHealth();
     claudeAvailable = health.available === true;
     if (!claudeAvailable) {
-      console.log('[runtime] claude CLI 不可用，将使用 HTTP 模型');
+      console.log('[runtime] claude CLI 不可用，项目对话与写稿暂不可用');
     }
   } catch {
     claudeAvailable = false;
-    console.log('[runtime] claude CLI 检测失败，将使用 HTTP 模型');
+    console.log('[runtime] claude CLI 检测失败，项目对话与写稿暂不可用');
   }
   return claudeAvailable;
 }
@@ -51,7 +51,7 @@ export function getProviderIds() {
 
 export function getActiveInferenceMode() {
   const cfg = resolveActiveModelConfig();
-  const mode = claudeAvailable ? 'claude_cli' : 'http';
+  const mode = claudeAvailable ? 'claude_cli' : 'cli_unavailable';
   const base = { mode };
   if (cfg) {
     return {
@@ -60,6 +60,7 @@ export function getActiveInferenceMode() {
       name: cfg.name,
       protocol: cfg.protocol,
       credentials: 'studio_settings',
+      http_fallback: supportsHttpFallback(cfg),
     };
   }
   return { ...base, credentials: claudeAvailable ? 'cli_default' : 'none' };
@@ -109,6 +110,7 @@ export function trackRunner(runner) {
 export {
   resolveActiveModelConfig,
   usesHttpRuntime,
+  supportsHttpFallback,
   hasConfiguredHttpModel,
   buildClaudeChildEnv,
   claudeEnvFromModelConfig,

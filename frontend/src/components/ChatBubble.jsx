@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ChatMessageBody from './ChatMessageBody.jsx'
 import ChatPlanExecutionCard from './ChatPlanExecutionCard.jsx'
+import ChatFileChangesCard from './ChatFileChangesCard.jsx'
 
 export default function ChatBubble({
   message,
@@ -9,6 +10,7 @@ export default function ChatBubble({
   onRetry,
   onRegenerate,
   onApplyWritePlan,
+  onPreviewFile,
   stripContent,
 }) {
   const [copied, setCopied] = useState(false)
@@ -84,6 +86,12 @@ export default function ChatBubble({
               采用并生成文稿
             </button>
           </div>
+        )}
+        {message.file_changes?.length > 0 && (
+          <ChatFileChangesCard
+            files={message.file_changes}
+            onPreview={onPreviewFile}
+          />
         )}
       </div>
     </div>

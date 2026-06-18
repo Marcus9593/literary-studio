@@ -15,7 +15,7 @@ import {
 } from '../skill-adapter/skill-config.js';
 import { WORK_TYPES, CREATION_MODES, manuscriptDirForMode } from '../lib/projectProfile.js';
 import * as runtime from './runtime.js';
-import { usesHttpRuntime } from './model-resolver.js';
+import { supportsHttpFallback } from './model-resolver.js';
 import { buildHttpChatMessages, buildHttpChatMessagesSlim, loadHttpWorkspaceExcerpt } from './http-prompt.js';
 import { stripModelToolArtifacts } from './output-sanitize.js';
 import { isContentModerationText } from './http-client.js';
@@ -25,6 +25,7 @@ import { routeRequest, buildStoryContextBlocks, resolvePlanExecuteRoute } from '
 import {
   recordTokenUsage,
 } from './token-usage.js';
+import { buildWorkspacePathRules } from '../lib/workspace-sync.js';
 
 const contextCache = new Map();
 
@@ -87,6 +88,16 @@ export function buildSystemPrompt(projectContext, skillBlock = '', modelConfig =
 - 写完后简要说明写了什么、字数、需要注意的地方${modelConfig?.name ? `
 
 当前推理后端：${modelConfig.name}（${modelConfig.model}）。作者询问模型身份时，如实说明此后端名称，不要自称 Anthropic Claude。` : ''}${skillBlock}`;
+}
+
+export function buildSystemPromptWithWorkspace(projectId, projectContext, skillBlock = '', modelConfig = null) {
+  const base = buildSystemPrompt(projectContext, skillBlock, modelConfig);
+  try {
+    const rules = buildWorkspacePathRules(projectId);
+    return `${base}\n\n${rules}`;
+  } catch {
+    return base;
+  }
 }
 
 function getContextCacheKey(projectId) {
@@ -294,49 +305,85 @@ async function* streamPrompt(prompt, ws, options = {}) {
     options.onRunner(runnerWrapper);
   }
 
-  const makeReq = (extra = {}) => runtime.enrichStreamRequest({
-    prompt: extra.messages ? undefined : prompt,
-    messages: extra.messages,
+  const attachRunner = (runner) => {
+    runnerWrapper.abort = () => runner.abort();
+    runtime.trackRunner(runner);
+    options.onRunner?.(runner);
+  };
+
+  const makeCliReq = () => runtime.enrichStreamRequest({
+    prompt,
     cwd: ws,
     allowedTools: options.allowedTools || ['Read', 'Edit', 'Write', 'Bash', 'Glob', 'Grep'],
     sessionId: options.claudeSessionId,
     resume: options.resume,
     modelConfig: options.modelConfig,
-    onRunner: (runner) => {
-      runnerWrapper.abort = () => runner.abort();
-      runtime.trackRunner(runner);
-      options.onRunner?.(runner);
-    },
+    onRunner: attachRunner,
   });
 
-  async function* run(req) {
-    for await (const evt of runtime.stream(req)) {
+  const makeHttpReq = (messages) => runtime.enrichStreamRequest({
+    prompt: undefined,
+    messages,
+    provider: 'http',
+    cwd: ws,
+    modelConfig: options.modelConfig,
+    onRunner: attachRunner,
+  });
+
+  async function* runHttp(messages) {
+    for await (const evt of runtime.stream(makeHttpReq(messages))) {
       yield evt;
     }
   }
 
-  const primary = makeReq({ messages: options.messages });
-  let hadContent = false;
-  let moderationError = null;
-
-  for await (const evt of run(primary)) {
-    if (evt.type === 'content' && evt.text) hadContent = true;
-    if (evt.type === 'error') {
-      if (evt.moderation || isContentModerationText(evt.error)) {
-        moderationError = evt.error;
-        if (options.retryOnModeration && options.slimMessages && !hadContent) {
-          break;
+  async function* runHttpWithModerationRetry(messages) {
+    let hadContent = false;
+    let moderationError = null;
+    for await (const evt of runHttp(messages)) {
+      if (evt.type === 'content' && evt.text) hadContent = true;
+      if (evt.type === 'error') {
+        if (evt.moderation || isContentModerationText(evt.error)) {
+          moderationError = evt.error;
+          if (options.retryOnModeration && options.slimMessages && !hadContent) break;
         }
       }
-    }
-    yield evt;
-  }
-
-  if (moderationError && !hadContent && options.retryOnModeration && options.slimMessages) {
-    for await (const evt of run(makeReq({ messages: options.slimMessages }))) {
       yield evt;
     }
+    if (moderationError && !hadContent && options.retryOnModeration && options.slimMessages) {
+      for await (const evt of runHttp(options.slimMessages)) {
+        yield evt;
+      }
+    }
   }
+
+  if (!options.forceHttp) {
+    let hadContent = false;
+    let moderationError = null;
+    for await (const evt of runtime.stream(makeCliReq())) {
+      if (evt.type === 'content' && evt.text) hadContent = true;
+      if (evt.type === 'error') {
+        if (evt.moderation || isContentModerationText(evt.error)) {
+          moderationError = evt.error;
+        }
+      }
+      yield evt;
+    }
+    if (!hadContent && options.httpFallbackMessages) {
+      yield {
+        type: 'inference_meta',
+        mode: 'http_fallback',
+        model: options.modelConfig?.model,
+        name: options.modelConfig?.name,
+      };
+      yield* runHttpWithModerationRetry(options.httpFallbackMessages);
+    }
+    return;
+  }
+
+  const messages = options.httpFallbackMessages
+    ?? options.messages
+    ?? [{ role: 'user', content: prompt }];
+  yield* runHttpWithModerationRetry(messages);
 }
 
 export async function* streamChat(projectId, message, session = {}, options = {}) {
@@ -345,12 +392,12 @@ export async function* streamChat(projectId, message, session = {}, options = {}
   const regenerate = options.regenerate ?? false;
 
   const modelConfig = runtime.resolveActiveModelConfig();
-  const httpMode = usesHttpRuntime(modelConfig);
+  const httpFallback = supportsHttpFallback(modelConfig);
 
   let chiefRoute = options.chiefRoute;
   if (!chiefRoute && options.planId) {
     try {
-      chiefRoute = resolvePlanExecuteRoute(projectId, options.planId, message, { httpMode });
+      chiefRoute = resolvePlanExecuteRoute(projectId, options.planId, message, { httpMode: false });
     } catch {}
   }
   if (!chiefRoute && !options.skipChiefRoute) {
@@ -359,14 +406,15 @@ export async function* streamChat(projectId, message, session = {}, options = {}
     } catch {}
   }
 
-  if (chiefRoute?.intent === 'plan_execute' && chiefRoute?.planId && httpMode) {
+  if (chiefRoute?.intent === 'plan_execute' && chiefRoute?.planId && httpFallback) {
     try {
-      chiefRoute = resolvePlanExecuteRoute(
+      const httpRoute = resolvePlanExecuteRoute(
         projectId,
         chiefRoute.planId,
         chiefRoute.user_message || message,
         { httpMode: true },
       );
+      chiefRoute.httpUserPrefix = httpRoute.httpUserPrefix;
     } catch {}
   }
 
@@ -482,7 +530,7 @@ export async function* streamChat(projectId, message, session = {}, options = {}
     ? buildSkillInstructionBlock(binding, { override: isOverride })
     : '';
 
-  const systemPrompt = buildSystemPrompt(context, skillBlock, modelConfig);
+  const systemPrompt = buildSystemPromptWithWorkspace(projectId, context, skillBlock, modelConfig);
   const excludeTail = computeExcludeTail(session, effectiveMessage, regenerate);
   const promptCtx = buildChatPromptContext(session, effectiveMessage, { regenerate });
   const { memoryBlock } = promptCtx;
@@ -491,14 +539,14 @@ export async function* streamChat(projectId, message, session = {}, options = {}
   let claudeSessionId = session.claude_session_id || ensureClaudeSessionId(session);
   let claudeSessionReset = false;
   const hasAssistantTurns = (session.messages || []).some((m) => m.role === 'assistant');
-  if (!httpMode && currentModelId) {
+  if (currentModelId) {
     const claudeBoundModelId = String(session.claude_bound_model_id || '').trim();
     const needsModelRebind = claudeBoundModelId !== currentModelId;
     if (needsModelRebind) {
       claudeSessionReset = true;
       claudeSessionId = ensureClaudeSessionId({});
       if (session.id) {
-        storage.updateSessionFields(projectId, session.id, {
+        await storage.updateSessionFields(projectId, session.id, {
           claude_session_id: claudeSessionId,
           inference_model_id: currentModelId,
           claude_bound_model_id: currentModelId,
@@ -509,8 +557,7 @@ export async function* streamChat(projectId, message, session = {}, options = {}
       }
     }
   }
-  const useResume = !httpMode
-    && !!session.claude_session_id
+  const useResume = !!session.claude_session_id
     && hasAssistantTurns
     && String(session.claude_bound_model_id || '') === currentModelId
     && !options.forceFullHistory
@@ -539,7 +586,7 @@ export async function* streamChat(projectId, message, session = {}, options = {}
   let httpMessages;
   let slimMessages;
 
-  if (httpMode) {
+  if (httpFallback) {
     const compactContext = {
       title: context.title,
       genre: context.genre,
@@ -572,8 +619,9 @@ export async function* streamChat(projectId, message, session = {}, options = {}
       systemPrompt: buildSystemPrompt(context, skillBlock, modelConfig),
       userMessage: httpUserMessage,
     });
-    fullPrompt = effectiveMessage;
-  } else if (useResume) {
+  }
+
+  if (useResume) {
     const focusBlock = buildFocusChapterBlock(projectId, session);
     fullPrompt = `${skillBlock}${storyContext}${buildContextRefreshBlock(context)}${focusBlock}${memoryBlock}${ragBlock}${userContextBlock}
 
@@ -594,16 +642,7 @@ ${JSON.stringify(context, null, 2)}${storyContext}${focusBlock}${memoryBlock}${h
 用户消息：${effectiveMessage}`;
   }
 
-  if (!httpMode) {
-    yield { type: 'session_meta', claude_session_id: claudeSessionId };
-  } else {
-    yield {
-      type: 'inference_meta',
-      mode: 'http',
-      model: modelConfig.model,
-      name: modelConfig.name,
-    };
-  }
+  yield { type: 'session_meta', claude_session_id: claudeSessionId };
 
   if (isPlanExecute) {
     yield {
@@ -620,9 +659,9 @@ ${JSON.stringify(context, null, 2)}${storyContext}${focusBlock}${memoryBlock}${h
     claudeSessionId,
     resume: useResume,
     modelConfig,
-    messages: httpMessages,
+    httpFallbackMessages: httpMessages,
     slimMessages,
-    retryOnModeration: httpMode,
+    retryOnModeration: httpFallback,
   })) {
     if (evt.type === 'content' && evt.text) responseText += evt.text;
     yield evt;
@@ -631,9 +670,7 @@ ${JSON.stringify(context, null, 2)}${storyContext}${focusBlock}${memoryBlock}${h
     recordTokenUsage({
       projectId,
       kind: isPlanExecute ? 'plan_execute' : 'chat',
-      promptText: httpMode && httpMessages
-        ? httpMessages.map((m) => m.content).join('\n')
-        : fullPrompt,
+      promptText: fullPrompt,
       responseText,
     });
   } catch {}
@@ -644,7 +681,7 @@ export async function* streamWriteChapter(projectId, chapter, title, outline, op
   const context = buildProjectContext(projectId);
   const saveDir = context.manuscript_dir || '正文';
   const modelConfig = runtime.resolveActiveModelConfig();
-  const httpMode = usesHttpRuntime(modelConfig);
+  const httpFallback = supportsHttpFallback(modelConfig);
 
   const defaultDesc = describeDefaultSkill();
   let skillBlock = '';
@@ -667,9 +704,22 @@ export async function* streamWriteChapter(projectId, chapter, title, outline, op
 
   const storyContext = buildStoryContextBlocks(projectId).join('');
 
-  const httpWriteHint = httpMode
-    ? `\n\n【输出要求】请直接输出本章完整正文（Markdown），不要解释步骤，不要用工具。文首可用一级标题。`
-    : '';
+  const httpWritePrompt = `${skillBlock}${storyContext}
+
+你是文学创作引擎。请直接输出本章完整正文（Markdown），不要解释步骤，不要用工具。文首可用一级标题。
+
+项目：${context.title}（${context.genre}，${context.work_type_label}）
+创作模式：${context.creation_mode_label}
+已写：${context.chapter_count} ${context.unit_label}
+${context.latest_chapter_title ? `最新稿：${context.latest_chapter_title}` : ''}
+${context.rewrite_note ? `重写说明：${context.rewrite_note}` : ''}
+
+${context.outline_excerpt ? `大纲摘要：\n${context.outline_excerpt.slice(0, 2000)}` : ''}
+${context.latest_chapter_excerpt ? `\n最近文稿节选：\n${context.latest_chapter_excerpt}` : ''}
+
+任务：第${chapter}${context.unit_label.replace(/章|篇|场|集|稿/, '') || '章'} · ${title}
+目标：${outline || '推进主线，段末/场末留悬念或情绪点'}
+要求：${lengthHint}；${formatHint}；减少 AI 味套话。`;
 
   const prompt = `${skillBlock}${storyContext}
 
@@ -690,23 +740,37 @@ ${context.latest_chapter_excerpt ? `\n最近文稿节选：\n${context.latest_ch
 - 目标：${outline || '推进主线，段末/场末留悬念或情绪点'}
 
 要求：
-1. ${httpMode ? '结合上文大纲与最近文稿续写' : '先读取 大纲/ 了解故事方向'}
-2. ${httpMode ? '保持人物与设定一致' : '读取最近 1-2 个已有文稿了解进度（正文或试验稿）'}
+1. 先读取 大纲/ 了解故事方向
+2. 读取最近 1-2 个已有文稿了解进度（正文或试验稿）
 3. ${lengthHint}
 4. ${formatHint}
 5. 减少 AI 味套话
-6. ${httpMode ? '只输出正文内容' : `写完后保存到 ${saveDir}/第${String(chapter).padStart(4, '0')}章-${title}.md（勿覆盖 archive 内旧稿）`}
-7. ${httpMode ? '' : '如存在 .webnovel/state.json 可更新进度字段'}${httpWriteHint}
+6. 写完后保存到 ${saveDir}/第${String(chapter).padStart(4, '0')}章-${title}.md（勿覆盖 archive 内旧稿）
+7. 如存在 .webnovel/state.json 可更新进度字段
 
 直接执行，不要询问确认。`;
 
+  const httpFallbackMessages = httpFallback
+    ? buildHttpChatMessagesSlim({
+      systemPrompt: buildSystemPrompt(context, skillBlock, modelConfig),
+      userMessage: httpWritePrompt,
+    })
+    : undefined;
+
   let fullText = '';
-  for await (const evt of streamPrompt(prompt, ws, { ...options, modelConfig })) {
+  let usedHttpFallback = false;
+  for await (const evt of streamPrompt(prompt, ws, {
+    ...options,
+    modelConfig,
+    httpFallbackMessages,
+    retryOnModeration: httpFallback,
+  })) {
+    if (evt.type === 'inference_meta' && evt.mode === 'http_fallback') usedHttpFallback = true;
     if (evt.type === 'content') fullText += evt.text;
     yield evt;
   }
 
-  if (httpMode && fullText.trim()) {
+  if (usedHttpFallback && fullText.trim()) {
     const saved = storage.saveChapterByNumber(projectId, chapter, title || '未命名', fullText.trim());
     yield { type: 'write_saved', filename: saved.filename, title: saved.title, words: saved.words };
   }

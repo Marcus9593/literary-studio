@@ -14,3 +14,4 @@ export const testModel = (id) =>
 export const testModelConfig = (body) =>
   request('/models/test', { method: 'POST', body: JSON.stringify(body) })
 export const importCcSwitch = () => request('/models/import/cc-switch')
+export const listCcSwitchPresets = () => request('/models/presets/cc-switch')

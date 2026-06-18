@@ -51,63 +51,88 @@ export default function AiOverviewPanel() {
   }
 
   const activeModel = models.models?.find((m) => m.id === models.active_id)
-  const studioModel = health?.inference?.credentials === 'studio_settings'
+  const activeCliCompat = activeModel?.cli_compat || health?.cli_compat
   const cliOk = health?.claude_code?.available
   const apiConfigured = health?.api_model?.configured === true
   const apiVerified = health?.api_model?.verified
-  const credOk = !studioModel || apiVerified !== false
   const defaultSkill = overview?.default_skill
   const lw = overview?.literary_writer || {}
   const skillCount = overview?.installed_skills_count ?? 0
   const mcp = overview?.mcp
   const issues = []
 
-  if (!cliOk) issues.push({ text: 'Claude Code 未连接', to: '/ai/models' })
+  if (!cliOk) issues.push({ text: 'Claude Code CLI 未就绪，对话与写稿暂不可用', to: '/ai/models' })
+  if (activeCliCompat?.cli_ready === false) {
+    issues.push({ text: '当前注入模型不兼容 Claude CLI（需 Anthropic 协议）', to: '/ai/models' })
+  }
   if (apiConfigured && apiVerified === false) issues.push({ text: '模型凭据验证失败', to: '/ai/models' })
   if (apiConfigured && apiVerified === null) issues.push({ text: '模型凭据未验证（超过 24h）', to: '/ai/models' })
+  if (!apiConfigured) issues.push({ text: '未配置 HTTP 模型，语义审稿不可用', to: '/ai/models' })
   if (!defaultSkill?.valid) issues.push({ text: '未设置默认 Skill', to: '/ai/skills' })
   if (!lw.webnovel_cli) issues.push({ text: '写章 webnovel 脚本未找到', to: '/ai/skills' })
 
   return (
     <section className="ai-overview">
       <div className="ai-overview-grid">
-        <article className="card ai-overview-card">
-          <h3>推理引擎</h3>
-          <div className="ai-overview-status">
-            {cliOk ? (
-              <StatusBadge variant="ok" dot>Claude Code 已连接</StatusBadge>
-            ) : (
-              <StatusBadge variant="warn" dot>Claude Code 未连接</StatusBadge>
+        <article className="card ai-overview-card ai-overview-engine-card">
+          <h3>模型与推理</h3>
+
+          <div className="ai-overview-engine-block">
+            <h4 className="ai-overview-engine-label">对话 / 写稿 · Claude CLI</h4>
+            <div className="ai-overview-status">
+              {cliOk ? (
+                <StatusBadge variant="ok" dot>CLI 已就绪</StatusBadge>
+              ) : (
+                <StatusBadge variant="warn" dot>CLI 未就绪</StatusBadge>
+              )}
+              {activeCliCompat?.cli_ready === false && (
+                <StatusBadge variant="warn">注入模型不兼容</StatusBadge>
+              )}
+            </div>
+            <p className="ai-overview-detail">
+              {cliOk ? (
+                activeModel ? (
+                  <>
+                    注入模型：<strong>{activeModel.name}</strong>
+                    <span className="muted">（{activeModel.model}）</span>
+                  </>
+                ) : (
+                  <span className="muted">未配置注入模型，使用 CLI 本机凭据</span>
+                )
+              ) : (
+                <span className="muted">
+                  项目对话与写稿依赖本机 Claude Code CLI，当前不可用（非 HTTP 降级）。
+                </span>
+              )}
+            </p>
+            {cliOk && apiConfigured && apiVerified === false && (
+              <p className="muted ai-overview-cred-note">
+                CLI 已安装，但 API 凭据验证失败；对话可能报 Not logged in，请在模型页测试连接。
+              </p>
+            )}
+            {cliOk && !activeModel && (
+              <p className="muted ai-overview-cred-note">
+                未配置注入模型时将使用本机 Claude 登录态（终端 /login）或 OAuth。
+              </p>
             )}
           </div>
-          {/* 推理模式摘要 */}
-          <p className="ai-overview-detail">
-            {cliOk ? (
-              <>
-                <strong>Claude CLI</strong> 驱动对话与写稿
-                {activeModel ? (
-                  <span className="muted"> · 注入模型：{activeModel.name}（{activeModel.model}）</span>
-                ) : (
-                  <span className="muted"> · 使用 CLI 默认凭据</span>
-                )}
-              </>
-            ) : (
-              <>
-                <strong>HTTP API</strong> 降级模式
-                {activeModel ? (
-                  <span className="muted"> · {activeModel.name}（{activeModel.model}）</span>
-                ) : (
-                  <span className="muted"> · 未配置模型</span>
-                )}
-              </>
-            )}
-          </p>
-          {/* 凭据验证状态 */}
-          {apiConfigured && (
-            <p className="muted" style={{ fontSize: '0.85em', marginTop: 4 }}>
-              模型凭据：{apiVerified === true ? '已验证可用' : apiVerified === false ? '验证失败' : '待确认（超过 24h 未实测）'}
+
+          <div className="ai-overview-engine-block ai-overview-engine-block-secondary">
+            <h4 className="ai-overview-engine-label">语义审稿等 · HTTP API</h4>
+            <div className="ai-overview-status">
+              {apiConfigured ? (
+                <StatusBadge variant={apiVerified === false ? 'warn' : 'ok'} dot>
+                  {apiVerified === true ? 'API 已配置' : apiVerified === false ? '凭据验证失败' : '待验证'}
+                </StatusBadge>
+              ) : (
+                <StatusBadge variant="neutral">未配置</StatusBadge>
+              )}
+            </div>
+            <p className="ai-overview-detail muted">
+              叙事引擎语义审稿直连 HTTP，协议可为 Anthropic 或 OpenAI，与 CLI 注入独立。
             </p>
-          )}
+          </div>
+
           <Link to="/ai/models" className="btn btn-secondary btn-sm ai-overview-cta">
             配置模型
           </Link>

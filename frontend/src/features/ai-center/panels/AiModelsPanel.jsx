@@ -9,7 +9,9 @@ import {
   deleteModel,
   getAiUsage,
   importCcSwitch,
+  listCcSwitchPresets,
   listModels,
+  listProjects,
   testModel,
   testModelConfig,
   updateModel,
@@ -19,7 +21,13 @@ import CliCompatNotice, {
   getNormalizedModelPreview,
   OpenAiProtocolWarning,
 } from '../components/CliCompatNotice.jsx'
-import { normalizeModelForStorage } from '@shared/cli-model-compat.js'
+import OpenAiProtocolModal from '../components/OpenAiProtocolModal.jsx'
+import ModelConfirmModal from '../components/ModelConfirmModal.jsx'
+import PresetPicker from '../components/PresetPicker.jsx'
+import ProviderLogo from '../components/ProviderLogo.jsx'
+import { normalizeModelForStorage, listCliPresetTemplates, getCcSwitchPresetCatalogMeta } from '@shared/cli-model-compat.js'
+import { notifyStudioHealthChanged } from '../../../lib/studio-events.js'
+import { Link } from 'react-router-dom'
 
 const PROTOCOL_LABELS = {
   openai: 'OpenAI 兼容',
@@ -54,51 +62,6 @@ function inferProtocolFromBaseUrl(baseUrl) {
   return null
 }
 
-const TEMPLATES = [
-  {
-    label: 'DeepSeek',
-    name: 'DeepSeek',
-    protocol: 'anthropic',
-    base_url: 'https://api.deepseek.com/anthropic',
-    model: 'deepseek-chat',
-  },
-  {
-    label: 'MiMo',
-    name: '小米 MiMo',
-    protocol: 'anthropic',
-    base_url: 'https://token-plan-cn.xiaomimimo.com/anthropic',
-    model: 'mimo-v2.5-pro',
-  },
-  {
-    label: '通义 Bailian',
-    name: '通义千问 Bailian',
-    protocol: 'anthropic',
-    base_url: 'https://dashscope.aliyuncs.com/apps/anthropic',
-    model: 'qwen-plus',
-  },
-  {
-    label: 'Kimi',
-    name: 'Kimi',
-    protocol: 'anthropic',
-    base_url: 'https://api.moonshot.cn/anthropic',
-    model: 'moonshot-v1-8k',
-  },
-  {
-    label: 'OpenRouter',
-    name: 'OpenRouter',
-    protocol: 'anthropic',
-    base_url: 'https://openrouter.ai/api',
-    model: 'anthropic/claude-sonnet-4',
-  },
-  {
-    label: 'OpenAI（不推荐）',
-    name: 'OpenAI',
-    protocol: 'openai',
-    base_url: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-  },
-]
-
 export default function AiModelsPanel() {
   const [data, setData] = useState({ active_id: '', models: [] })
   const [loading, setLoading] = useState(true)
@@ -110,16 +73,58 @@ export default function AiModelsPanel() {
   const [testingForm, setTestingForm] = useState(false)
   const [testResult, setTestResult] = useState(null)
   const [usage, setUsage] = useState(null)
+  const [selectedPresetId, setSelectedPresetId] = useState(null)
+  const [openAiWarnOpen, setOpenAiWarnOpen] = useState(false)
+  const [cliPresets, setCliPresets] = useState(() => listCliPresetTemplates())
+  const [presetCatalog, setPresetCatalog] = useState(() => getCcSwitchPresetCatalogMeta())
+  const [projectUsage, setProjectUsage] = useState([])
+  const [confirmState, setConfirmState] = useState(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
   const showToast = useToast()
 
+  const mergeProjectUsage = useCallback((usageData, projects) => {
+    const byProject = usageData?.by_project || {}
+    const rows = Object.entries(byProject)
+      .filter(([id]) => id && id !== '_global')
+      .map(([id, stats]) => ({
+        id,
+        title: projects.find((p) => p.id === id)?.title || `${id.slice(0, 8)}…`,
+        requests: stats.requests || 0,
+        total: (stats.prompt_tokens || 0) + (stats.completion_tokens || 0),
+      }))
+      .filter((r) => r.total > 0 || r.requests > 0)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8)
+    setProjectUsage(rows)
+  }, [])
+
   const refresh = useCallback(() => {
-    return Promise.all([listModels(), getAiUsage().catch(() => null)])
-      .then(([models, usageData]) => {
+    return Promise.all([
+      listModels(),
+      getAiUsage().catch(() => null),
+      listProjects().catch(() => []),
+      listCcSwitchPresets().catch(() => null),
+    ])
+      .then(([models, usageData, projects, presetPayload]) => {
         setData(models)
         setUsage(usageData)
+        if (usageData) mergeProjectUsage(usageData, projects)
+        if (presetPayload?.templates?.length) {
+          setCliPresets(presetPayload.templates)
+        }
+        if (presetPayload) {
+          setPresetCatalog({
+            version: presetPayload.version,
+            source: presetPayload.source,
+            source_file: presetPayload.source_file,
+            synced_at: presetPayload.synced_at,
+            preset_count: presetPayload.preset_count,
+            cli_ready_count: presetPayload.cli_ready_count,
+          })
+        }
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [mergeProjectUsage])
 
   useEffect(() => {
     refresh()
@@ -128,7 +133,9 @@ export default function AiModelsPanel() {
   const openCreate = () => {
     setEditingId(null)
     setForm({ ...EMPTY_FORM })
+    setSelectedPresetId(null)
     setTestResult(null)
+    setOpenAiWarnOpen(false)
     setModalOpen(true)
   }
 
@@ -146,6 +153,7 @@ export default function AiModelsPanel() {
   }
 
   const applyTemplate = (tpl) => {
+    setSelectedPresetId(tpl.id)
     setForm((f) => ({
       ...f,
       name: tpl.name,
@@ -164,6 +172,14 @@ export default function AiModelsPanel() {
       }
       return next
     })
+    if (protocol === 'openai') {
+      setOpenAiWarnOpen(true)
+    }
+  }
+
+  const switchToAnthropicProtocol = () => {
+    handleProtocolChange('anthropic')
+    setOpenAiWarnOpen(false)
   }
 
   const applyNormalizedUrl = () => {
@@ -187,8 +203,11 @@ export default function AiModelsPanel() {
         }
         await updateModel(editingId, payload)
         showToast('模型配置已更新')
+        if (form.protocol === 'openai') {
+          showToast('OpenAI 协议仅可用于连接测试与语义审稿，无法驱动 Claude CLI 对话', 'info')
+        }
       } else {
-        await createModel({
+        const created = await createModel({
           name: form.name.trim(),
           protocol: form.protocol,
           base_url: form.base_url.trim(),
@@ -196,9 +215,13 @@ export default function AiModelsPanel() {
           api_key: form.api_key.trim(),
         })
         showToast('模型配置已添加')
+        if (form.protocol === 'openai') {
+          showToast('OpenAI 协议无法作为 CLI 注入模型，请另建 Anthropic 配置用于对话', 'info')
+        }
       }
       setModalOpen(false)
       await refresh()
+      notifyStudioHealthChanged({ source: 'models-save' })
     } catch (err) {
       showToast(err.message, 'error')
     } finally {
@@ -206,15 +229,30 @@ export default function AiModelsPanel() {
     }
   }
 
-  const onActivate = async (id) => {
-    const targetName = data.models.find(m => m.id === id)?.name || ''
-    if (!window.confirm(`切换注入模型将重置 Claude 对话上下文（新 session），历史消息仍保留在项目中。\n\n确定切换到「${targetName}」？`)) return
+  const onActivate = (id) => {
+    const target = data.models.find((m) => m.id === id)
+    if (!target) return
+    if (target.cli_compat?.cli_ready === false) {
+      showToast(target.cli_compat?.title || '该模型不兼容 Claude CLI，请改用 Anthropic 协议', 'error')
+      return
+    }
+    setConfirmState({ variant: 'activate', model: target })
+  }
+
+  const confirmActivate = async () => {
+    const target = confirmState?.model
+    if (!target) return
+    setConfirmLoading(true)
     try {
-      const result = await activateModel(id)
+      const result = await activateModel(target.id)
       setData(result)
-      showToast(`已设为 Claude Code 注入模型（${targetName}）`)
+      showToast(`已设为 Claude Code 注入模型（${target.name}）`)
+      notifyStudioHealthChanged({ source: 'models-activate' })
+      setConfirmState(null)
     } catch (err) {
       showToast(err.message, 'error')
+    } finally {
+      setConfirmLoading(false)
     }
   }
 
@@ -232,6 +270,9 @@ export default function AiModelsPanel() {
       if (!modalOpen) {
         setEditingId(null)
         setModalOpen(true)
+      }
+      if (cfg.protocol === 'openai') {
+        setOpenAiWarnOpen(true)
       }
       showToast(`已从 CC Switch 导入（${cfg.api_key_preview || '密钥已填入'}）`)
     } catch (err) {
@@ -258,7 +299,10 @@ export default function AiModelsPanel() {
         api_key: form.api_key.trim() || undefined,
         model_id: editingId || undefined,
       })
-      setTestResult({ ok: true, message: result.reply_preview || 'OK' })
+      setTestResult({
+        ok: !result.warning && result.ok !== false,
+        message: result.warning || result.reply_preview || 'OK',
+      })
     } catch (err) {
       setTestResult({ ok: false, message: err.message })
     } finally {
@@ -270,7 +314,11 @@ export default function AiModelsPanel() {
     setTestingId(item.id)
     try {
       const result = await testModel(item.id)
-      showToast(`连接成功：${result.reply_preview || 'OK'}`)
+      if (result.warning || (result.ok === false && !result.reply_preview)) {
+        showToast(result.warning || '模型已响应但未返回文本，对话可能无输出', 'error')
+      } else {
+        showToast(`连接成功：${result.reply_preview || 'OK'}`)
+      }
     } catch (err) {
       showToast(err.message, 'error')
     } finally {
@@ -278,8 +326,14 @@ export default function AiModelsPanel() {
     }
   }
 
-  const onDelete = async (item) => {
-    if (!window.confirm(`确定删除「${item.name}」？`)) return
+  const onDelete = (item) => {
+    setConfirmState({ variant: 'delete', model: item })
+  }
+
+  const confirmDelete = async () => {
+    const item = confirmState?.model
+    if (!item) return
+    setConfirmLoading(true)
     try {
       const result = await deleteModel(item.id)
       setData((prev) => ({
@@ -288,9 +342,18 @@ export default function AiModelsPanel() {
       }))
       showToast('已删除')
       await refresh()
+      notifyStudioHealthChanged({ source: 'models-delete' })
+      setConfirmState(null)
     } catch (err) {
       showToast(err.message, 'error')
+    } finally {
+      setConfirmLoading(false)
     }
+  }
+
+  const onConfirmModal = () => {
+    if (confirmState?.variant === 'delete') confirmDelete()
+    else if (confirmState?.variant === 'activate') confirmActivate()
   }
 
   const activeModel = data.models.find((m) => m.id === data.active_id)
@@ -303,8 +366,8 @@ export default function AiModelsPanel() {
     <>
       <div className="ai-panel-toolbar">
         <p className="hint ai-panel-hint">
-          项目对话由 Claude Code 驱动，<strong>请优先使用 Anthropic 兼容</strong>（与 CC Switch 一致）。
-          保存时 Anthropic 配置会自动规范化为 CC Switch 推荐地址；OpenAI 协议仅适合 HTTP 测试。
+          项目<strong>对话 / 写稿</strong>由 Claude CLI 驱动，须配置 <strong>Anthropic 兼容</strong> 并激活为注入模型。
+          <strong>语义审稿</strong>等 HTTP 能力可共用同一 API Key，OpenAI 协议仅适用于后者。
         </p>
         <div className="ai-panel-toolbar-actions">
           <button
@@ -379,6 +442,23 @@ export default function AiModelsPanel() {
               </ul>
             </>
           )}
+          {projectUsage.length > 0 && (
+            <>
+              <p className="muted" style={{ fontSize: '0.85em', marginTop: 12, marginBottom: 4 }}>按项目（估算）：</p>
+              <ul className="ai-usage-by-project">
+                {projectUsage.map((row) => (
+                  <li key={row.id}>
+                    <Link to={`/projects/${row.id}`} className="ai-usage-project-link">
+                      {row.title}
+                    </Link>
+                    <span className="muted">
+                      {row.requests} 次 · {row.total.toLocaleString()} tokens
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
@@ -411,6 +491,7 @@ export default function AiModelsPanel() {
               >
                 <div className="model-card-main">
                   <div className="model-card-title-row">
+                    <ProviderLogo icon={item.icon} name={item.name} size={28} className="model-card-logo" />
                     <h3>{item.name}</h3>
                     {isActive && (
                       <StatusBadge variant="ok">当前启用</StatusBadge>
@@ -453,6 +534,12 @@ export default function AiModelsPanel() {
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => onActivate(item.id)}
+                      disabled={item.cli_compat?.cli_ready === false}
+                      title={
+                        item.cli_compat?.cli_ready === false
+                          ? (item.cli_compat?.title || '不兼容 Claude CLI')
+                          : undefined
+                      }
                     >
                       设为 CLI 注入模型
                     </button>
@@ -480,7 +567,10 @@ export default function AiModelsPanel() {
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false)
+          setOpenAiWarnOpen(false)
+        }}
         panelClassName="modal-panel-form"
         title={editingId ? '编辑模型配置' : '添加模型配置'}
         footer={
@@ -513,22 +603,12 @@ export default function AiModelsPanel() {
       >
         <form id="model-form" className="model-config-form" onSubmit={onSave}>
           {!editingId && (
-            <details className="model-preset-details">
-              <summary>快速模板（点击展开）</summary>
-              <div className="model-preset-scroll">
-                {TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl.label}
-                    type="button"
-                    className="preset-card"
-                    onClick={() => applyTemplate(tpl)}
-                  >
-                    <strong>{tpl.label}</strong>
-                    <span>{tpl.model}</span>
-                  </button>
-                ))}
-              </div>
-            </details>
+            <PresetPicker
+              presets={cliPresets}
+              catalogMeta={presetCatalog}
+              selectedId={selectedPresetId}
+              onSelect={applyTemplate}
+            />
           )}
 
           <div className="field">
@@ -642,6 +722,22 @@ export default function AiModelsPanel() {
           )}
         </form>
       </Modal>
+
+      <OpenAiProtocolModal
+        open={openAiWarnOpen}
+        onClose={() => setOpenAiWarnOpen(false)}
+        onSwitchAnthropic={switchToAnthropicProtocol}
+      />
+
+      <ModelConfirmModal
+        open={!!confirmState}
+        variant={confirmState?.variant}
+        model={confirmState?.model}
+        isActive={confirmState?.model?.id === data.active_id}
+        loading={confirmLoading}
+        onClose={() => !confirmLoading && setConfirmState(null)}
+        onConfirm={onConfirmModal}
+      />
     </>
   )
 }

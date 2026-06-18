@@ -4,10 +4,23 @@ import { buildClaudeChildEnv } from '../model-resolver.js';
 import { getRuntimeMcpConfigPath } from '../../mcp-adapter/config.js';
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
+const CLI_TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 300000);
+const PROMPT_ARG_MAX = 6000;
+
+function shouldUsePromptArg(promptText) {
+  if (!promptText || promptText.length > PROMPT_ARG_MAX) return false;
+  // Windows argv 对中文等非 ASCII 编码不可靠，一律走 stdin
+  if (process.platform === 'win32') return false;
+  if (/[^\x00-\x7F]/.test(promptText)) return false;
+  return true;
+}
 
 export const id = 'claude';
 
-function runClaude(prompt, cwd, allowedTools = [], { sessionId, resume = false, modelConfig } = {}) {
+function runClaude(prompt, cwd, allowedTools = [], { sessionId, resume = false, modelConfig, timeoutMs = CLI_TIMEOUT_MS } = {}) {
+  const promptText = String(prompt || '');
+  const usePromptArg = shouldUsePromptArg(promptText);
+
   const args = [
     '-p',
     '--output-format', 'stream-json',
@@ -36,6 +49,10 @@ function runClaude(prompt, cwd, allowedTools = [], { sessionId, resume = false, 
     args.push('--mcp-config', mcpConfigPath);
   }
 
+  if (usePromptArg) {
+    args.push(promptText);
+  }
+
   const iter = {
     _child: null,
     abort() {
@@ -48,18 +65,59 @@ function runClaude(prompt, cwd, allowedTools = [], { sessionId, resume = false, 
 
       const child = spawn(CLAUDE_BIN, args, {
         cwd,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: [usePromptArg ? 'ignore' : 'pipe', 'pipe', 'pipe'],
         env: childEnv,
+        windowsHide: true,
       });
       iter._child = child;
 
-      child.stdin.write(prompt);
-      child.stdin.end();
+      if (!usePromptArg && promptText) {
+        child.stdin.write(promptText, 'utf8', () => {
+          try { child.stdin.end(); } catch {}
+        });
+      } else if (!usePromptArg) {
+        try { child.stdin.end(); } catch {}
+      }
 
       let buffer = '';
+      let stderrBuf = '';
       let resolveNext = null;
       let done = false;
       const queue = [];
+      let timedOut = false;
+
+      const timer = setTimeout(() => {
+        timedOut = true;
+        try { child.kill('SIGTERM'); } catch {}
+      }, timeoutMs);
+
+      const finish = (code) => {
+        clearTimeout(timer);
+        if (buffer.trim()) {
+          try {
+            queue.push(JSON.parse(buffer.trim()));
+          } catch {}
+        }
+        const errLine = stderrBuf.split('\n').map((l) => l.trim()).find(Boolean);
+        if (timedOut) {
+          queue.push({ type: 'error', error: `Claude CLI 超时（${Math.round(timeoutMs / 1000)}s），请检查网络或 API 配置` });
+        } else if (code !== 0 && errLine) {
+          queue.push({ type: 'error', error: errLine.slice(0, 500) });
+        } else if (code === 0 && errLine && /error|invalid|not logged|unauthorized|balance/i.test(errLine)) {
+          queue.push({ type: 'error', error: errLine.slice(0, 500) });
+        }
+        done = true;
+        if (resolveNext) {
+          const r = resolveNext;
+          resolveNext = null;
+          r({ value: undefined, done: true });
+        }
+      };
+
+      child.stderr.on('data', (chunk) => {
+        stderrBuf += chunk.toString();
+        if (stderrBuf.length > 16000) stderrBuf = stderrBuf.slice(-16000);
+      });
 
       child.stdout.on('data', (chunk) => {
         buffer += chunk.toString();
@@ -78,25 +136,16 @@ function runClaude(prompt, cwd, allowedTools = [], { sessionId, resume = false, 
             } else {
               queue.push(evt);
             }
-          } catch {}
+          } catch {
+            // ignore malformed partial lines
+          }
         }
       });
 
-      child.on('close', () => {
-        if (buffer.trim()) {
-          try {
-            queue.push(JSON.parse(buffer.trim()));
-          } catch {}
-        }
-        done = true;
-        if (resolveNext) {
-          const r = resolveNext;
-          resolveNext = null;
-          r({ value: undefined, done: true });
-        }
-      });
+      child.on('close', (code) => finish(code));
 
       child.on('error', (err) => {
+        clearTimeout(timer);
         done = true;
         if (resolveNext) {
           const r = resolveNext;
@@ -126,49 +175,83 @@ async function* normalizeStream(prompt, cwd, allowedTools, options = {}) {
     sessionId: options.sessionId,
     resume: options.resume,
     modelConfig: options.modelConfig,
+    timeoutMs: options.timeoutMs,
   });
   options.onRunner?.(runner);
 
-  let hasStreamed = false;
-  let streamedViaDelta = false;
+  let streamedText = '';
+  let thinkingText = '';
+  let lastResult = null;
+  let sawToolUse = false;
+  const rawTypes = [];
 
   for await (const evt of runner) {
+    rawTypes.push(evt?.type);
     if (evt.type === 'system' && evt.subtype === 'init' && evt.session_id) {
       yield { type: 'session_meta', claude_session_id: evt.session_id };
     } else if (evt.type === 'stream_event' && evt.event?.type === 'content_block_delta') {
       const delta = evt.event.delta;
       if (delta?.type === 'text_delta' && delta.text) {
-        hasStreamed = true;
-        streamedViaDelta = true;
+        streamedText += delta.text;
         yield { type: 'content', text: delta.text };
+      } else if (delta?.type === 'thinking_delta' && delta.thinking) {
+        thinkingText += delta.thinking;
       }
-    } else if (evt.type === 'assistant' && evt.message?.content && !streamedViaDelta) {
-      for (const block of evt.message.content) {
-        if (block.type === 'text' && block.text) {
-          hasStreamed = true;
-          yield { type: 'content', text: block.text };
-        }
-        if (block.type === 'tool_use') {
-          yield {
-            type: 'tool_call',
-            toolCall: { name: block.name, input: block.input },
-          };
+    } else if (evt.type === 'assistant' && evt.message?.content) {
+      if (!streamedText.trim()) {
+        for (const block of evt.message.content) {
+          if (block.type === 'text' && block.text) {
+            streamedText += block.text;
+            yield { type: 'content', text: block.text };
+          } else if (block.type === 'thinking' && block.thinking) {
+            thinkingText += block.thinking;
+          } else if (block.type === 'tool_use') {
+            sawToolUse = true;
+            yield {
+              type: 'tool_call',
+              toolCall: { name: block.name, input: block.input },
+            };
+          }
         }
       }
     } else if (evt.type === 'result') {
+      lastResult = evt;
       if (evt.is_error || evt.subtype === 'error_during_execution') {
         const msg = [].concat(evt.errors || []).filter(Boolean).join('; ')
+          || evt.result
           || evt.error
           || 'Claude 执行失败';
         const recoverable = /no conversation found|invalid session/i.test(msg);
         yield { type: 'error', error: msg, recoverable };
-      } else if (evt.result && !hasStreamed) {
+      } else if (evt.result && !streamedText.trim()) {
+        streamedText = evt.result;
         yield { type: 'content', text: evt.result };
       }
     } else if (evt.type === 'error') {
       yield { type: 'error', error: evt.error || 'Claude error' };
     }
   }
+
+  if (!streamedText.trim() && thinkingText.trim()) {
+    streamedText = thinkingText;
+    yield { type: 'content', text: thinkingText };
+  }
+
+  if (!streamedText.trim()) {
+    const hint = lastResult?.result
+      || (lastResult?.is_error ? 'Claude CLI 返回错误但未输出正文' : null)
+      || (sawToolUse ? 'Claude CLI 已调用工具但未返回可见文本，请重试或换用 deepseek-chat' : null);
+    const model = options.modelConfig?.model || 'unknown';
+    console.warn(
+      `[claude-provider] 空回复 model=${model} resume=${!!options.resume} `
+      + `tools=${!!allowedTools?.length} sawToolUse=${sawToolUse} `
+      + `result=${JSON.stringify(lastResult)?.slice(0, 400)} events=${rawTypes.slice(-8).join(',')}`,
+    );
+    if (hint && !lastResult?.is_error) {
+      yield { type: 'content', text: hint };
+    }
+  }
+
   yield { type: 'done' };
 }
 
@@ -212,6 +295,7 @@ export async function checkHealth() {
     const child = spawn(CLAUDE_BIN, ['--version'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: childEnv,
+      windowsHide: true,
     });
     let stdout = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });
@@ -220,8 +304,6 @@ export async function checkHealth() {
       resolved = true;
       clearTimeout(timeout);
       if (code === 0 && stdout.trim()) {
-        // CLI 已安装即可用
-        // API Token 模式不需要 OAuth，只要有配置就能工作
         resolve({
           available: true,
           version: stdout.trim(),

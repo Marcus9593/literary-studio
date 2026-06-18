@@ -40,7 +40,8 @@ const SOLUTIONS = {
   useBailianAnthropic: '通义千问请使用 https://dashscope.aliyuncs.com/apps/anthropic 或 https://coding.dashscope.aliyuncs.com/apps/anthropic（不是 compatible-mode/v1）。',
   useKimiAnthropic: 'Kimi 请使用 https://api.moonshot.cn/anthropic 或 https://api.kimi.com/coding/ 。',
   useProxy: '若厂商无 Anthropic 端点，可经 CC Switch、LiteLLM 或 OpenRouter 等网关转发，再填入网关的 Anthropic Base URL。',
-  claudeLogin: 'Claude 官方账号可在终端运行 claude 后执行 /login，无需 API Key。',
+  claudeLogin:
+    '备选：在本机终端运行 claude，输入 /login 完成 Claude 官方 OAuth 登录（适用于官方账号，无需第三方 API Key）。',
   fixProtocol: 'Claude Code 只认 ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN，OpenAI 协议配置无法用于 CLI 对话。',
 };
 
@@ -272,6 +273,12 @@ export function resolveAnthropicBaseUrl(baseUrl) {
   return base;
 }
 
+/** CC Switch 供应商 icon id（按 Base URL 域名匹配预设） */
+export function resolveProviderIconForModel(model = {}) {
+  const preset = findPresetByHost(extractHost(model.base_url || ''));
+  return preset?.icon || null;
+}
+
 /** Persisted model profile: prefer Anthropic; rewrite URL when applicable. */
 export function normalizeModelForStorage(model = {}) {
   let protocol = String(model.protocol || '').trim().toLowerCase();
@@ -295,8 +302,37 @@ export const OPENAI_PROTOCOL_CLI_WARNING = {
     SOLUTIONS.fixProtocol,
     SOLUTIONS.useAnthropicEndpoint,
     SOLUTIONS.useCcSwitchPreset,
+    SOLUTIONS.claudeLogin,
     SOLUTIONS.useProxy,
   ],
+};
+
+/** Not logged in 备选方案：本机 Claude Code OAuth 登录步骤（AI 中心弹窗等复用） */
+export const CLAUDE_CLI_OAUTH_GUIDE = {
+  title: '遇到 Not logged in？',
+  subtitle: '除配置 Anthropic API 外，也可在本机终端登录 Claude 官方账号',
+  steps: [
+    {
+      title: '打开系统终端',
+      desc: 'Windows 打开 PowerShell 或 CMD；macOS 打开「终端」。',
+    },
+    {
+      title: '启动 Claude Code',
+      desc:
+        '输入 claude 并回车。文匠 Windows/macOS 安装包已内置 Claude CLI；若提示找不到命令，请从 Anthropic 官网安装 Claude Code。',
+    },
+    {
+      title: '执行 /login',
+      desc: '在 Claude 交互界面输入 /login，按提示在浏览器中完成 OAuth 授权。',
+    },
+    {
+      title: '重启文匠并重试',
+      desc:
+        '登录成功后关闭并重新打开文匠 Studio。若 AI 中心未配置第三方 API，项目对话将使用本机 Claude 登录态。',
+    },
+  ],
+  note:
+    'OAuth 登录仅适用于 Claude 官方账号。使用 DeepSeek、Kimi、通义等第三方网关时，仍须在 AI 中心配置 Anthropic 兼容协议与 API Key。',
 };
 
 export function listCcSwitchClaudePresets() {
@@ -304,9 +340,49 @@ export function listCcSwitchClaudePresets() {
     name: p.name,
     hosts: p.hosts,
     base_url: p.base_url,
+    default_model: p.default_model ?? null,
+    website_url: p.website_url ?? null,
+    api_key_url: p.api_key_url ?? null,
     apiFormat: p.apiFormat,
     oauth: Boolean(p.oauth),
+    category: p.category ?? null,
+    cli_ready: Boolean(p.cli_ready),
   }));
+}
+
+/** AI 中心「快速模板」：仅含 Claude CLI 可用的 Anthropic 预设（与 CC Switch 同步） */
+export function listCliPresetTemplates() {
+  return PRESETS.filter((p) => p.cli_ready && p.base_url)
+    .map((p) => {
+      const base_url = normalizeModelForStorage({
+        protocol: 'anthropic',
+        base_url: p.base_url,
+      }).base_url
+      return {
+        id: p.name,
+        label: p.name,
+        name: p.name,
+        protocol: 'anthropic',
+        base_url,
+        model: p.default_model || '',
+        website_url: p.api_key_url || p.website_url || null,
+        category: p.category || 'other',
+        icon: p.icon || null,
+      }
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
+}
+
+export function getCcSwitchPresetCatalogMeta() {
+  return {
+    version: presetCatalog.version,
+    source: presetCatalog.source,
+    source_file: presetCatalog.source_file ?? null,
+    synced_at: presetCatalog.synced_at ?? null,
+    preset_count: presetCatalog.preset_count ?? PRESETS.length,
+    cli_ready_count: presetCatalog.cli_ready_count
+      ?? PRESETS.filter((p) => p.cli_ready).length,
+  };
 }
 
 export { PRESETS as CC_SWITCH_CLAUDE_PRESETS, SOLUTIONS as CLI_COMPAT_SOLUTIONS };

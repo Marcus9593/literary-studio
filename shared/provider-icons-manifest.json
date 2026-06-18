@@ -1,0 +1,202 @@
+{
+  "source": "https://raw.githubusercontent.com/farion1231/cc-switch/main/src/icons/extracted",
+  "synced_at": "2026-06-18T01:37:03.075Z",
+  "icons": {
+    "claude": {
+      "file": "claude.svg",
+      "url": "/provider-icons/claude.svg"
+    },
+    "shengsuanyun": {
+      "file": "shengsuanyun.svg",
+      "url": "/provider-icons/shengsuanyun.svg"
+    },
+    "pateway": {
+      "file": "pateway.jpg",
+      "url": "/provider-icons/pateway.jpg"
+    },
+    "huoshan": {
+      "file": "huoshan.png",
+      "url": "/provider-icons/huoshan.png"
+    },
+    "byteplus": {
+      "file": "byteplus.png",
+      "url": "/provider-icons/byteplus.png"
+    },
+    "doubao": {
+      "file": "doubao.svg",
+      "url": "/provider-icons/doubao.svg"
+    },
+    "ccsub": {
+      "file": "ccsub.svg",
+      "url": "/provider-icons/ccsub.svg"
+    },
+    "unity2": {
+      "file": "unity2.png",
+      "url": "/provider-icons/unity2.png"
+    },
+    "gemini": {
+      "file": "gemini.svg",
+      "url": "/provider-icons/gemini.svg"
+    },
+    "deepseek": {
+      "file": "deepseek.svg",
+      "url": "/provider-icons/deepseek.svg"
+    },
+    "opencode": {
+      "file": "opencode-logo-light.svg",
+      "url": "/provider-icons/opencode-logo-light.svg"
+    },
+    "zhipu": {
+      "file": "zhipu.svg",
+      "url": "/provider-icons/zhipu.svg"
+    },
+    "baidu": {
+      "file": "baidu.svg",
+      "url": "/provider-icons/baidu.svg"
+    },
+    "bailian": {
+      "file": "bailian.svg",
+      "url": "/provider-icons/bailian.svg"
+    },
+    "kimi": {
+      "file": "kimi.svg",
+      "url": "/provider-icons/kimi.svg"
+    },
+    "stepfun": {
+      "file": "stepfun.svg",
+      "url": "/provider-icons/stepfun.svg"
+    },
+    "modelscope": {
+      "file": "modelscope-color.svg",
+      "url": "/provider-icons/modelscope-color.svg"
+    },
+    "catcoder": {
+      "file": "catcoder.svg",
+      "url": "/provider-icons/catcoder.svg"
+    },
+    "longcat": {
+      "file": "longcat-color.svg",
+      "url": "/provider-icons/longcat-color.svg"
+    },
+    "minimax": {
+      "file": "minimax.svg",
+      "url": "/provider-icons/minimax.svg"
+    },
+    "aihubmix": {
+      "file": "aihubmix-color.svg",
+      "url": "/provider-icons/aihubmix-color.svg"
+    },
+    "cherryin": {
+      "file": "cherryin.png",
+      "url": "/provider-icons/cherryin.png"
+    },
+    "siliconflow": {
+      "file": "siliconflow.svg",
+      "url": "/provider-icons/siliconflow.svg"
+    },
+    "packycode": {
+      "file": "packycode.svg",
+      "url": "/provider-icons/packycode.svg"
+    },
+    "apikeyfun": {
+      "file": "apikeyfun.png",
+      "url": "/provider-icons/apikeyfun.png"
+    },
+    "apinebula": {
+      "file": "apinebula_icon.png",
+      "url": "/provider-icons/apinebula_icon.png"
+    },
+    "atlascloud": {
+      "file": "atlascloud_icon.png",
+      "url": "/provider-icons/atlascloud_icon.png"
+    },
+    "sudocode": {
+      "file": "sudocode.png",
+      "url": "/provider-icons/sudocode.png"
+    },
+    "claudeapi": {
+      "file": "ClaudeApi.png",
+      "url": "/provider-icons/ClaudeApi.png"
+    },
+    "claudecn": {
+      "file": "claudecn.png",
+      "url": "/provider-icons/claudecn.png"
+    },
+    "runapi": {
+      "file": "runapi.jpg",
+      "url": "/provider-icons/runapi.jpg"
+    },
+    "relaxcode": {
+      "file": "relaxcode.png",
+      "url": "/provider-icons/relaxcode.png"
+    },
+    "cubence": {
+      "file": "cubence.svg",
+      "url": "/provider-icons/cubence.svg"
+    },
+    "rc": {
+      "file": "rc.svg",
+      "url": "/provider-icons/rc.svg"
+    },
+    "aicodemirror": {
+      "file": "aicodemirror.svg",
+      "url": "/provider-icons/aicodemirror.svg"
+    },
+    "crazyrouter": {
+      "file": "crazyrouter.svg",
+      "url": "/provider-icons/crazyrouter.svg"
+    },
+    "sssaicode": {
+      "file": "sssaicode.svg",
+      "url": "/provider-icons/sssaicode.svg"
+    },
+    "ucloud": {
+      "file": "ucloud.svg",
+      "url": "/provider-icons/ucloud.svg"
+    },
+    "micu": {
+      "file": "micu.svg",
+      "url": "/provider-icons/micu.svg"
+    },
+    "ctok": {
+      "file": "ctok.svg",
+      "url": "/provider-icons/ctok.svg"
+    },
+    "eflowcode": {
+      "file": "eflowcode.png",
+      "url": "/provider-icons/eflowcode.png"
+    },
+    "openrouter": {
+      "file": "openrouter.svg",
+      "url": "/provider-icons/openrouter.svg"
+    },
+    "novita": {
+      "file": "novita.svg",
+      "url": "/provider-icons/novita.svg"
+    },
+    "github": {
+      "file": "githubcopilot.svg",
+      "url": "/provider-icons/githubcopilot.svg"
+    },
+    "openai": {
+      "file": "openai.svg",
+      "url": "/provider-icons/openai.svg"
+    },
+    "nvidia": {
+      "file": "nvidia.svg",
+      "url": "/provider-icons/nvidia.svg"
+    },
+    "pipellm": {
+      "file": "pipellm.png",
+      "url": "/provider-icons/pipellm.png"
+    },
+    "xiaomimimo": {
+      "file": "xiaomimimo.svg",
+      "url": "/provider-icons/xiaomimimo.svg"
+    },
+    "aws": {
+      "file": "aws.svg",
+      "url": "/provider-icons/aws.svg"
+    }
+  }
+}

@@ -9,6 +9,7 @@ import ChatMessageBody from './ChatMessageBody.jsx'
 import ChatBubble from './ChatBubble.jsx'
 import { useToast } from './Toast.jsx'
 import CliCompatNotice from '../features/ai-center/components/CliCompatNotice.jsx'
+import { onStudioHealthChanged } from '../lib/studio-events.js'
 import { quickPromptsFor, unitLabel } from '../lib/projectProfile.js'
 import { isChapterSession, sessionScopeLabel } from '../lib/sessionScope.js'
 
@@ -44,18 +45,19 @@ function connectionLabel(status, contextSummary, u, emptyManuscripts, isReplying
   const modelTag = inference?.name || inference?.model
     ? ` · ${inference.name || inference.model}`
     : ''
+  const engine = inference?.mode === 'http_fallback' ? 'API 兜底' : 'Claude Code'
   if (status === 'connected') {
     if (emptyManuscripts) {
-      return `Claude Code${modelTag} 已连接 · 暂无文稿，可先聊创作方向`
+      return `${engine}${modelTag} 已连接 · 暂无文稿，可先聊创作方向`
     }
     const count = contextSummary?.chapter_count ?? 0
     const skill = contextSummary?.default_skill
-    const base = `Claude Code${modelTag} · ${count} ${u}`
+    const base = `${engine}${modelTag} · ${count} ${u}`
     return skill ? `${base} · ${skill}` : base
   }
   if (status === 'connecting') return '正在重新连接…'
   if (status === 'error') return '连接异常'
-  return `正在连接 Claude Code${modelTag}…`
+  return `正在连接${engine}${modelTag}…`
 }
 
 const ChatPanel = forwardRef(function ChatPanel(
@@ -63,6 +65,7 @@ const ChatPanel = forwardRef(function ChatPanel(
     project, projectId, currentChapter,
     sessions, chapters = [], activeSessionId, onSessionChange, onCreateSession, onDeleteSession, onRefreshSessions,
     onApplyWritePlan, onWriteResult, onError, onSessionSync,
+    onWorkspaceChanged, onPreviewFile, outlineAvailableHint, onOpenOutlinePanel,
     chapterCount = 0,
     activeManuscript = null,
     pendingPlanExecution = null,
@@ -111,6 +114,7 @@ const ChatPanel = forwardRef(function ChatPanel(
   const wsRef = useRef(null)
   const streamTextRef = useRef('')
   const streamFlushRef = useRef(null)
+  const stopRequestedRef = useRef(false)
   const stickToBottomRef = useRef(true)
   const showToast = useToast()
   const setStreamText = useChatStore((s) => s.setStreamText)
@@ -120,7 +124,14 @@ const ChatPanel = forwardRef(function ChatPanel(
   }, [emptyManuscripts, messages.length])
 
   const callbacksRef = useRef({})
-  callbacksRef.current = { onError, onWriteResult, onRefreshSessions, onSessionSync }
+  callbacksRef.current = {
+    onError,
+    onWriteResult,
+    onRefreshSessions,
+    onSessionSync,
+    onWorkspaceChanged,
+    onPreviewFile,
+  }
 
   const scrollToBottom = (force = false) => {
     requestAnimationFrame(() => {
@@ -196,19 +207,23 @@ const ChatPanel = forwardRef(function ChatPanel(
   }
 
   useEffect(() => {
-    getHealth()
-      .then((h) => {
-        setInference(h?.inference ?? null)
-        setApiModel(h?.api_model ?? null)
-        setClaudeAvailable(h?.claude_code?.available ?? null)
-        setCliCompat(h?.cli_compat ?? null)
-      })
-      .catch(() => {
-        setInference(null)
-        setApiModel(null)
-        setClaudeAvailable(null)
-        setCliCompat(null)
-      })
+    const loadHealth = () => {
+      getHealth()
+        .then((h) => {
+          setInference(h?.inference ?? null)
+          setApiModel(h?.api_model ?? null)
+          setClaudeAvailable(h?.claude_code?.available ?? null)
+          setCliCompat(h?.cli_compat ?? null)
+        })
+        .catch(() => {
+          setInference(null)
+          setApiModel(null)
+          setClaudeAvailable(null)
+          setCliCompat(null)
+        })
+    }
+    loadHealth()
+    return onStudioHealthChanged(loadHealth)
   }, [])
 
   const scheduleStreamFlush = useCallback(() => {
@@ -286,9 +301,11 @@ const ChatPanel = forwardRef(function ChatPanel(
   const runPlanExecutionRef = useRef(null)
 
   const onStop = useCallback(() => {
+    stopRequestedRef.current = true
     wsRef.current?.cancel()
     finishStreaming(true)
     setWriteStatus('')
+    focusComposer()
   }, [finishStreaming])
 
   useEffect(() => {
@@ -298,6 +315,9 @@ const ChatPanel = forwardRef(function ChatPanel(
       onStatus: (status, meta) => {
         if (status === 'connected') {
           setConnectionStatus('connected')
+          return
+        }
+        if (stopRequestedRef.current && (status === 'thinking' || status === 'streaming')) {
           return
         }
         if (status === 'thinking' || status === 'streaming') {
@@ -320,6 +340,7 @@ const ChatPanel = forwardRef(function ChatPanel(
           }
         }
         if (status === 'done' || status === 'error' || status === 'cancelled') {
+          stopRequestedRef.current = false
           finishStreamingRef.current(true)
           setActivePlanExec((prev) => (
             prev?.status === 'executing' ? { ...prev, status: 'await_complete' } : prev
@@ -327,6 +348,7 @@ const ChatPanel = forwardRef(function ChatPanel(
         }
       },
       onContent: (text) => {
+        if (stopRequestedRef.current) return
         setPendingReply(true)
         setStreaming(true)
         streamTextRef.current += text
@@ -339,6 +361,12 @@ const ChatPanel = forwardRef(function ChatPanel(
         setWriteStatus('')
         finishStreamingRef.current(true)
         callbacksRef.current.onWriteResult?.(result)
+      },
+      onToolActivity: (msg) => {
+        if (msg?.hint) setActivityHint(String(msg.hint))
+      },
+      onWorkspaceChanged: (msg) => {
+        callbacksRef.current.onWorkspaceChanged?.(msg)
       },
       onSession: (meta) => {
         if (meta.sessionId) {
@@ -438,6 +466,7 @@ const ChatPanel = forwardRef(function ChatPanel(
     }
 
     setInput('')
+    stopRequestedRef.current = false
     setPendingReply(true)
     setActivityHint(planCard ? '总编辑执行改稿任务…' : '')
     setStreaming(true)
@@ -607,6 +636,7 @@ const ChatPanel = forwardRef(function ChatPanel(
   useImperativeHandle(ref, () => ({
     triggerWrite(plan) {
       if (!wsRef.current || isReplying) return
+      stopRequestedRef.current = false
       const chapter = plan.chapter ?? currentChapter ?? 1
       setPendingReply(true)
       setWriteStatus(`正在写第 ${chapter} ${unitLabel(project, 1)}：${plan.title || '未命名'}…`)
@@ -735,7 +765,7 @@ const ChatPanel = forwardRef(function ChatPanel(
               需安装 Claude Code CLI
             </span>
           ) : inference?.credentials === 'studio_settings' && apiModel?.available === false ? (
-            <span className="chat-connection-link muted" title="请在设置页测试模型连接">
+            <span className="chat-connection-link muted" title="请在 AI 中心测试模型连接">
               模型凭据不可用
             </span>
           ) : (
@@ -748,6 +778,14 @@ const ChatPanel = forwardRef(function ChatPanel(
             </button>
           )
         )}
+        <button
+          type="button"
+          className="chat-connection-detail-btn"
+          onClick={() => callbacksRef.current.onWorkspaceChanged?.({ manual: true })}
+          title="刷新项目文件列表（大纲/正文等）"
+        >
+          刷新文件
+        </button>
         <button
           type="button"
           className="chat-connection-detail-btn"
@@ -765,7 +803,7 @@ const ChatPanel = forwardRef(function ChatPanel(
               {claudeAvailable === false ? (
                 <>对话依赖本机 <code>claude</code> CLI，请安装 Claude Code 后重启服务。</>
               ) : inference?.credentials === 'studio_settings' && apiModel?.available === false ? (
-                <>Claude Code 已就绪，但设置页模型连接测试失败：{apiModel?.error || '请检查 Base URL 与 API Key'}。</>
+                <>Claude Code 已就绪，但 AI 中心模型连接测试失败：{apiModel?.error || '请检查 Base URL 与 API Key'}。</>
               ) : (
                 <>WebSocket 未连接，可点击「重连」。</>
               )}
@@ -773,7 +811,7 @@ const ChatPanel = forwardRef(function ChatPanel(
           )}
           {connectionStatus === 'connected' && inference?.credentials === 'studio_settings' && (
             <p className="hint">
-              当前推理：Claude Code，模型凭据来自设置页
+              当前推理：Claude Code，模型凭据来自 AI 中心
               <strong> {inference?.name || inference?.model}</strong>
               （{inference?.protocol === 'anthropic' ? 'Anthropic' : 'OpenAI 兼容'}）。
             </p>
@@ -841,6 +879,15 @@ const ChatPanel = forwardRef(function ChatPanel(
                 ? '聊清题材、人物与开篇后，可说「续写第一章」或去中间区导入 docx。'
                 : '助手会读取文稿、大纲、设定与知识库；复杂改动会走总编辑流程。'}
             </p>
+            {emptyManuscripts && outlineAvailableHint && (
+              <p className="chat-empty-outline-hint">
+                AI 可能已更新
+                <button type="button" className="chat-inline-link" onClick={onOpenOutlinePanel}>
+                  大纲目录
+                </button>
+                ，可点上方「刷新文件」后在对话卡片中预览。
+              </p>
+            )}
             {emptyManuscripts && quickPrompts.length > 0 && (
               <div className="chat-empty-starters">
                 {quickPrompts.map((prompt) => (
@@ -868,6 +915,7 @@ const ChatPanel = forwardRef(function ChatPanel(
                 onRetry={m.role === 'user' ? handleRetry : undefined}
                 onRegenerate={m.role === 'assistant' ? handleRegenerate : undefined}
                 onApplyWritePlan={onApplyWritePlan}
+                onPreviewFile={onPreviewFile}
                 onCopy={(ok) => {
                   if (ok === false) showToast('复制失败', 'error')
                 }}

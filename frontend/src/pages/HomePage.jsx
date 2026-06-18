@@ -4,6 +4,7 @@ import Modal from '../components/Modal.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { createProject, deleteProject, getHealth, listProjects, updateProject } from '../api.js'
+import { onStudioHealthChanged } from '../lib/studio-events.js'
 import {
   CREATION_MODE_LIST,
   GENRES_BY_WORK_TYPE,
@@ -135,7 +136,11 @@ export default function HomePage() {
 
   useEffect(() => {
     refresh()
-    getHealth().then(setHealth).catch(() => setHealth(null))
+    const loadHealth = () => {
+      getHealth().then(setHealth).catch(() => setHealth(null))
+    }
+    loadHealth()
+    return onStudioHealthChanged(loadHealth)
   }, [refresh])
 
   useEffect(() => {
@@ -566,7 +571,7 @@ export default function HomePage() {
               <span>
                 {!cliOk
                   ? 'Claude Code 未连接，对话与写稿暂不可用。'
-                  : '设置页模型凭据不可用，对话与写稿可能失败。'}
+                  : 'AI 中心模型凭据不可用，对话与写稿可能失败。'}
               </span>
               <Link to="/ai" className="home-engine-banner-link">前往 AI 中心</Link>
             </div>

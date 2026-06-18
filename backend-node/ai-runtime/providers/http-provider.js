@@ -3,6 +3,7 @@ import {
   formatModelTestError,
   formatModerationError,
   isContentModerationText,
+  isDeepSeekAnthropicUrl,
   postStreamWithAuth,
   postWithAuth,
   parseSseStream,
@@ -90,15 +91,20 @@ async function* streamAnthropic(cfg, request, signal) {
     content: m.content,
   }));
 
+  const payload = {
+    model: cfg.model,
+    max_tokens: DEFAULT_MAX_TOKENS,
+    stream: true,
+    ...(systemParts.length ? { system: systemParts.join('\n\n') } : {}),
+    messages: messages.length ? messages : [{ role: 'user', content: '你好' }],
+  };
+  if (isDeepSeekAnthropicUrl(cfg.base_url)) {
+    payload.thinking = { type: 'disabled' };
+  }
+
   const res = await postStreamWithAuth(
     url,
-    {
-      model: cfg.model,
-      max_tokens: DEFAULT_MAX_TOKENS,
-      stream: true,
-      ...(systemParts.length ? { system: systemParts.join('\n\n') } : {}),
-      messages: messages.length ? messages : [{ role: 'user', content: '你好' }],
-    },
+    payload,
     cfg.api_key,
     'anthropic',
     signal,

@@ -15,6 +15,9 @@ export default function WorkspaceHeader({
   onOpenUpload,
   onOpenShortcuts,
   onShowTakeover,
+  onRefreshWorkspace,
+  refreshingWorkspace = false,
+  workspaceSummary = null,
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -38,6 +41,20 @@ export default function WorkspaceHeader({
         </Link>
         <h1 className="reader-toolbar-title">{project.title}</h1>
         <div className="workspace-header-actions">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm workspace-refresh-btn"
+            onClick={onRefreshWorkspace}
+            disabled={refreshingWorkspace}
+            title="刷新大纲/正文等文件列表"
+          >
+            {refreshingWorkspace ? '刷新中…' : '刷新文件'}
+          </button>
+          {workspaceSummary?.outline_count > 0 && (chapters?.length ?? 0) === 0 && (
+            <span className="workspace-outline-badge muted" title="大纲目录已有文件">
+              大纲 {workspaceSummary.outline_count}
+            </span>
+          )}
           <ContextPicker projectId={projectId} compact />
           <button
             type="button"

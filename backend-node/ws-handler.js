@@ -11,6 +11,12 @@ import { emit, EVENTS } from './event-bus/bus.js';
 import { resolveWrittenChapter } from './workflow/write-chapter-resolve.js';
 import { formatModerationError, isContentModerationText } from './ai-runtime/http-client.js';
 import { stripModelToolArtifacts } from './ai-runtime/output-sanitize.js';
+import path from 'path';
+import {
+  snapshotWorkspace,
+  diffWorkspace,
+  getWorkspaceSummary,
+} from './lib/workspace-sync.js';
 
 const WS_MAX_PAYLOAD = 256 * 1024;
 const WS_AUTH_TIMEOUT_MS = 10_000;
@@ -173,6 +179,39 @@ function sendSessionMeta(ws, projectId, sessionId, { syncMessages = false } = {}
   } catch {}
 }
 
+function toolActivityPayload(toolCall) {
+  const name = String(toolCall?.name || toolCall?.tool || '').trim();
+  const input = toolCall?.input || {};
+  const target = String(
+    input.file_path || input.filePath || input.path || input.notebook_path || input.filename || '',
+  ).trim();
+  const label = name === 'Write' ? '写入'
+    : name === 'Edit' ? '编辑'
+      : name === 'Read' ? '读取'
+        : name || '工具';
+  return {
+    tool: name,
+    label,
+    target: target || null,
+    hint: target ? `${label} ${path.basename(target)}…` : `${label}…`,
+  };
+}
+
+function sendWorkspaceChanges(ws, projectId, beforeSnap, { source = 'chat' } = {}) {
+  const changes = diffWorkspace(projectId, beforeSnap);
+  if (!changes.length) return [];
+  invalidateProjectContext(projectId);
+  store.touchProject(projectId);
+  emit(EVENTS.PROJECT_UPDATED, { projectId });
+  ws.send(JSON.stringify({
+    type: 'workspace_changed',
+    source,
+    changes,
+    summary: getWorkspaceSummary(projectId),
+  }));
+  return changes;
+}
+
 async function handleChat(ws, projectId, message, sessionId, regenerate, setRunner, isCancelled, planId, contextOptions) {
   if (!message?.trim()) {
     ws.send(JSON.stringify({ type: 'error', error: '消息不能为空' }));
@@ -183,12 +222,12 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
   if (!sid) {
     try { sid = store.getActiveSessionId(projectId); } catch {}
     if (!sid) {
-      const session = store.createSession(projectId, '默认会话');
-      sid = session.id;
+      const created = await store.createSession(projectId, '默认会话');
+      sid = created.id;
     }
   }
 
-  store.setActiveSession(projectId, sid);
+  await store.setActiveSession(projectId, sid);
   ws.send(JSON.stringify({ type: 'session', sessionId: sid }));
 
   let session;
@@ -216,6 +255,7 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
 
   ws.send(JSON.stringify({ type: 'status', status: 'thinking' }));
 
+  const wsSnap = snapshotWorkspace(projectId);
   const trimmed = message.trim();
   const lastMsg = session.messages[session.messages.length - 1];
   const isRetrySameUser = regenerate
@@ -225,20 +265,20 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
 
   if (!regenerate || !isRetrySameUser) {
     if (!isRegenerateAssistant) {
-      store.appendSessionMessage(projectId, sid, 'user', trimmed);
+      await store.appendSessionMessage(projectId, sid, 'user', trimmed);
       session = store.getSessionWithMessages(projectId, sid);
       emit(EVENTS.MESSAGE_RECEIVED, { projectId, sessionId: sid, role: 'user' });
     }
   }
 
   if (isRegenerateAssistant) {
-    store.removeLastSessionMessage(projectId, sid, 'assistant');
+    await store.removeLastSessionMessage(projectId, sid, 'assistant');
     session = store.getSessionWithMessages(projectId, sid);
   }
 
   if (!session.claude_session_id) {
     const claudeId = ensureClaudeSessionId(session);
-    store.updateSessionFields(projectId, sid, { claude_session_id: claudeId });
+    await store.updateSessionFields(projectId, sid, { claude_session_id: claudeId });
     session.claude_session_id = claudeId;
   }
 
@@ -253,7 +293,7 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
   const runStream = async (forceFullHistory = false, clearClaudeSession = false) => {
     if (clearClaudeSession) {
       const newId = ensureClaudeSessionId({});
-      store.updateSessionFields(projectId, sid, { claude_session_id: newId });
+      await store.updateSessionFields(projectId, sid, { claude_session_id: newId });
       session = store.getSessionWithMessages(projectId, sid);
     }
 
@@ -266,9 +306,10 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
       planId: planId || undefined,
       contextOptions: contextOptions || undefined,
     })) {
+      if (isCancelled?.()) break;
       if (event.type === 'session_meta' && event.claude_session_id) {
         if (session.claude_session_id !== event.claude_session_id) {
-          store.updateSessionFields(projectId, sid, {
+          await store.updateSessionFields(projectId, sid, {
             claude_session_id: event.claude_session_id,
           });
           session.claude_session_id = event.claude_session_id;
@@ -325,7 +366,15 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
           words: created?.words,
         }));
         if (created?.title) fullText = fullText || `已完成写稿：${created.title}`;
+      } else if (event.type === 'tool_call') {
+        const activity = toolActivityPayload(event.toolCall);
+        ws.send(JSON.stringify({
+          type: 'tool_activity',
+          ...activity,
+          phase: 'running',
+        }));
       } else if (event.type === 'status') {
+        if (isCancelled?.()) break;
         ws.send(JSON.stringify({
           type: 'status',
           status: event.status,
@@ -334,6 +383,7 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
           label: event.label,
         }));
       } else if (event.type === 'content') {
+        if (isCancelled?.()) break;
         ws.send(JSON.stringify({ type: 'status', status: 'streaming' }));
         fullText += event.text;
         ws.send(JSON.stringify({ type: 'content', text: event.text }));
@@ -400,20 +450,26 @@ async function handleChat(ws, projectId, message, sessionId, regenerate, setRunn
   if (fullText) {
     const body = cancelled ? `${fullText}\n\n[已停止生成]` : fullText;
     const writePlan = extractWritePlan(body);
-    const extra = writePlan ? { write_plan: writePlan } : {};
+    const fileChanges = sendWorkspaceChanges(ws, projectId, wsSnap, { source: 'chat' });
+    const extra = {
+      ...(writePlan ? { write_plan: writePlan } : {}),
+      ...(fileChanges.length ? { file_changes: fileChanges } : {}),
+    };
     const activeModel = store.getActiveModel?.();
     if (activeModel?.id) {
-      store.updateSessionFields(projectId, sid, {
+      await store.updateSessionFields(projectId, sid, {
         inference_model_id: activeModel.id,
         claude_bound_model_id: activeModel.id,
       });
     }
-    store.appendSessionMessage(projectId, sid, 'assistant', body, extra);
-    store.refreshSessionMemory(projectId, sid);
+    await store.appendSessionMessage(projectId, sid, 'assistant', body, extra);
+    await store.refreshSessionMemory(projectId, sid);
     emit(EVENTS.MESSAGE_RECEIVED, { projectId, sessionId: sid, role: 'assistant' });
     if (usedWorkflow) {
       emit(EVENTS.WORKFLOW_FINISHED, { projectId, sessionId: sid });
     }
+  } else if (!cancelled) {
+    sendWorkspaceChanges(ws, projectId, wsSnap, { source: 'chat' });
   }
 
   sendSessionMeta(ws, projectId, sid, { syncMessages: true });
@@ -432,6 +488,7 @@ async function handleWrite(ws, projectId, chapter, title, outline, setRunner, is
 
   ws.send(JSON.stringify({ type: 'status', status: 'thinking' }));
 
+  const wsSnap = snapshotWorkspace(projectId);
   const job = store.createJob(projectId, 'write_chapter', { chapter, title, outline });
   store.updateJob(job.id, { status: 'running' });
   store.appendJobStep(job.id, 'start', 'running', `开始写第${chapter}章：${title || '未命名'}`);
@@ -443,6 +500,7 @@ async function handleWrite(ws, projectId, chapter, title, outline, setRunner, is
     for await (const event of streamWriteChapter(projectId, chapter, title || '未命名', outline || '', {
       onRunner: setRunner,
     })) {
+      if (isCancelled?.()) break;
       if (event.type === 'content') {
         ws.send(JSON.stringify({ type: 'status', status: 'streaming' }));
         fullText += event.text;
@@ -503,6 +561,7 @@ async function handleWrite(ws, projectId, chapter, title, outline, setRunner, is
         title: created?.title,
         words: created?.words || fullText.length,
       }));
+      sendWorkspaceChanges(ws, projectId, wsSnap, { source: 'write' });
     }
   }
 

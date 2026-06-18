@@ -135,6 +135,7 @@ function AppShell() {
             <Route path="skills" element={<AiSkillsPanel />} />
             <Route path="skills/discover" element={<AiDiscoverPanel />} />
             <Route path="mcp" element={<AiMcpPanel />} />
+            <Route path="*" element={<Navigate to="/ai" replace />} />
           </Route>
           <Route path="/settings" element={<Navigate to="/ai/models" replace />} />
           <Route path="/tools" element={<Navigate to="/ai/skills" replace />} />

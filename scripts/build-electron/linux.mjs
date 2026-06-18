@@ -15,6 +15,7 @@ import {
   prepReleaseDir,
   cleanPackEnvironment,
   printReleaseArtifacts,
+  runPrepackChecklist,
   installDependencies,
   buildFrontend,
   bundleVendorDeps,
@@ -30,6 +31,7 @@ console.log('╚═════════════════════�
 console.log('\n目标平台: linux-x64')
 console.log('输出目录: release/')
 
+runPrepackChecklist('linux')
 cleanPackEnvironment('linux', { keepUserData })
 prepReleaseDir()
 installDependencies()

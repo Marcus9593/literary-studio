@@ -1,7 +1,7 @@
 {
   "name": "literary-studio",
   "private": true,
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "文匠 Studio — cross-platform literary writing workspace",
   "main": "electron/main.js",
   "engines": {
@@ -11,6 +11,7 @@
     "start": "node scripts/start.mjs",
     "build": "node scripts/build.mjs",
     "sync:skill": "node scripts/sync-literary-writer.mjs",
+    "sync:cc-switch-presets": "node scripts/sync-cc-switch-presets.mjs && node scripts/sync-cc-switch-icons.mjs",
     "backend": "npm run start --prefix backend-node",
     "frontend:dev": "npm run dev --prefix frontend",
     "docker:release": "node scripts/release-docker.mjs",
@@ -19,6 +20,7 @@
     "electron:bundle": "node scripts/bundle-deps.mjs",
     "electron:icons": "python3 scripts/build-app-icon.py",
     "electron:validate-vendor": "node scripts/validate-electron-vendor.mjs",
+    "electron:prepack-check": "node scripts/prepack-checklist.mjs",
     "electron:validate-packaged": "node scripts/validate-electron-packaged.mjs",
     "clean:test-data": "node scripts/clean-test-data.mjs",
     "clean:test-data:all": "node scripts/clean-test-data.mjs --appdata",
@@ -47,6 +49,7 @@
       "backend-node/**/*",
       "!backend-node/node_modules/.cache/**",
       "!backend-node/data/**",
+      "shared/**/*",
       "frontend/dist/**/*",
       "electron/**/*",
       "!electron/vendor/**",
@@ -61,17 +64,23 @@
       {
         "from": "skills",
         "to": "skills",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "electron/vendor",
         "to": "vendor",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "backend",
         "to": "backend",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
@@ -106,7 +115,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "electron/icons/icon.ico"
@@ -124,7 +135,9 @@
       "target": [
         {
           "target": "rpm",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Office",

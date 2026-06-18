@@ -17,6 +17,7 @@ import {
   prepReleaseDir,
   cleanPackEnvironment,
   printReleaseArtifacts,
+  runPrepackChecklist,
   installDependencies,
   buildFrontend,
   bundleVendorDeps,
@@ -40,6 +41,7 @@ if (!exists('electron/icons/icon.icns')) {
   console.log('\n⚠️  未找到 electron/icons/icon.icns，将使用 Electron 默认图标。')
 }
 
+runPrepackChecklist('mac')
 cleanPackEnvironment('mac', { arch, keepUserData })
 prepReleaseDir()
 installDependencies()

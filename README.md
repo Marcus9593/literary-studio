@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)
 ![React](https://img.shields.io/badge/React-19-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-literarycraft%2Fstudio-2496ED?logo=docker&logoColor=white)
-![Version](https://img.shields.io/badge/Version-2.6.0-orange.svg)
+![Version](https://img.shields.io/badge/Version-2.7.0-orange.svg)
 [![Release](https://img.shields.io/github/v/release/Marcus9593/literary-studio?label=Download&style=flat-square)](https://github.com/Marcus9593/literary-studio/releases/latest)
 
 </div>

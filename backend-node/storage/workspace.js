@@ -241,13 +241,13 @@ export function saveChapterByNumber(projectId, chapter, title, content) {
   };
 }
 
-export function deleteManuscriptFile(projectId, filename) {
+export async function deleteManuscriptFile(projectId, filename) {
   const filePath = resolveManuscriptPath(projectId, filename);
   if (!fs.existsSync(filePath)) throw new Error('文稿不存在');
   const safe = path.basename(filePath);
   // 先清理关联会话，再删除文件，避免文件删除后会话清理失败导致孤立数据
   try {
-    deleteSessionsForManuscript(projectId, safe);
+    await deleteSessionsForManuscript(projectId, safe);
   } catch (e) {
     console.error(`[storage] 清理关联会话失败 (${safe}):`, e.message);
   }

@@ -1,571 +1,994 @@
 {
   "version": "cc-switch-claude-presets",
   "source": "farion1231/cc-switch",
+  "source_file": "src/config/claudeProviderPresets.ts",
+  "synced_at": "2026-06-18T01:36:29.861Z",
+  "preset_count": 62,
+  "cli_ready_count": 53,
   "presets": [
     {
       "name": "Claude Official",
-      "hosts": [
-        "anthropic.com",
-        "claude.ai"
-      ],
+      "icon": "claude",
+      "hosts": [],
       "base_url": null,
+      "default_model": null,
+      "website_url": "https://www.anthropic.com/claude-code",
+      "api_key_url": "https://www.anthropic.com/claude-code",
       "apiFormat": "anthropic",
-      "oauth": true
+      "oauth": true,
+      "category": "official",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "Shengsuanyun",
+      "icon": "shengsuanyun",
       "hosts": [
         "router.shengsuanyun.com"
       ],
       "base_url": "https://router.shengsuanyun.com/api",
+      "default_model": "anthropic/claude-sonnet-4.6",
+      "website_url": "https://www.shengsuanyun.com/?from=CH_4HHXMRYF",
+      "api_key_url": "https://www.shengsuanyun.com/?from=CH_4HHXMRYF",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "PatewayAI",
+      "icon": "pateway",
       "hosts": [
         "api.pateway.ai"
       ],
       "base_url": "https://api.pateway.ai",
+      "default_model": null,
+      "website_url": "https://pateway.ai",
+      "api_key_url": "https://pateway.ai/?ch=etzpm8&aff=WB6M6F67#/",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "火山Agentplan",
+      "icon": "huoshan",
       "hosts": [
-        "ark.ap-southeast.bytepluses.com",
         "ark.cn-beijing.volces.com"
       ],
       "base_url": "https://ark.cn-beijing.volces.com/api/coding",
+      "default_model": "ark-code-latest",
+      "website_url": "https://www.volcengine.com/activity/codingplan?ac=MMAP8JTTCAQ2&rc=6J6FV5N2&utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
+      "api_key_url": "https://www.volcengine.com/activity/codingplan?ac=MMAP8JTTCAQ2&rc=6J6FV5N2&utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "BytePlus",
+      "icon": "byteplus",
       "hosts": [
         "ark.ap-southeast.bytepluses.com"
       ],
       "base_url": "https://ark.ap-southeast.bytepluses.com/api/coding",
+      "default_model": "ark-code-latest",
+      "website_url": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
+      "api_key_url": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "DouBaoSeed",
+      "icon": "doubao",
       "hosts": [
-        "ark.ap-southeast.bytepluses.com",
         "ark.cn-beijing.volces.com"
       ],
       "base_url": "https://ark.cn-beijing.volces.com/api/compatible",
+      "default_model": "doubao-seed-2-0-code-preview-latest",
+      "website_url": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
+      "api_key_url": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "CCSub",
+      "icon": "ccsub",
       "hosts": [
         "www.ccsub.net"
       ],
       "base_url": "https://www.ccsub.net",
+      "default_model": null,
+      "website_url": "https://www.ccsub.net",
+      "api_key_url": "https://www.ccsub.net/register?ref=Y6Z8DXEA",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Unity2.ai",
+      "icon": "unity2",
       "hosts": [
         "api.unity2.ai"
       ],
       "base_url": "https://api.unity2.ai",
+      "default_model": null,
+      "website_url": "https://unity2.ai",
+      "api_key_url": "https://unity2.ai/register?source=ccs",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Gemini Native",
+      "icon": "gemini",
       "hosts": [
         "generativelanguage.googleapis.com"
       ],
       "base_url": "https://generativelanguage.googleapis.com",
+      "default_model": "gemini-3.5-flash",
+      "website_url": "https://ai.google.dev/gemini-api",
+      "api_key_url": "https://aistudio.google.com/app/apikey",
       "apiFormat": "gemini_native",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "DeepSeek",
+      "icon": "deepseek",
       "hosts": [
         "api.deepseek.com"
       ],
       "base_url": "https://api.deepseek.com/anthropic",
+      "default_model": "deepseek-chat",
+      "website_url": "https://platform.deepseek.com",
+      "api_key_url": "https://platform.deepseek.com",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "OpenCode Go",
+      "icon": "opencode",
       "hosts": [
         "opencode.ai"
       ],
       "base_url": "https://opencode.ai/zen/go",
+      "default_model": "deepseek-v4-flash",
+      "website_url": "https://opencode.ai",
+      "api_key_url": "https://opencode.ai",
       "apiFormat": "openai_chat",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "Zhipu GLM",
+      "icon": "zhipu",
       "hosts": [
         "open.bigmodel.cn"
       ],
       "base_url": "https://open.bigmodel.cn/api/anthropic",
+      "default_model": "glm-5.1",
+      "website_url": "https://open.bigmodel.cn",
+      "api_key_url": "https://www.bigmodel.cn/claude-code?ic=RRVJPB5SII",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Zhipu GLM en",
+      "icon": "zhipu",
       "hosts": [
         "api.z.ai"
       ],
       "base_url": "https://api.z.ai/api/anthropic",
+      "default_model": "glm-5.1",
+      "website_url": "https://z.ai",
+      "api_key_url": "https://z.ai/subscribe?ic=8JVLJQFSKB",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Baidu Qianfan Coding Plan",
+      "icon": "baidu",
       "hosts": [
         "qianfan.baidubce.com"
       ],
       "base_url": "https://qianfan.baidubce.com/anthropic/coding",
+      "default_model": "qianfan-code-latest",
+      "website_url": "https://cloud.baidu.com/product/qianfan_modelbuilder",
+      "api_key_url": "https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Bailian",
+      "icon": "bailian",
       "hosts": [
-        "coding.dashscope.aliyuncs.com",
         "dashscope.aliyuncs.com"
       ],
       "base_url": "https://dashscope.aliyuncs.com/apps/anthropic",
+      "default_model": null,
+      "website_url": "https://bailian.console.aliyun.com",
+      "api_key_url": "https://bailian.console.aliyun.com",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Bailian For Coding",
+      "icon": "bailian",
       "hosts": [
-        "coding.dashscope.aliyuncs.com",
-        "dashscope.aliyuncs.com"
+        "coding.dashscope.aliyuncs.com"
       ],
       "base_url": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+      "default_model": null,
+      "website_url": "https://bailian.console.aliyun.com",
+      "api_key_url": "https://bailian.console.aliyun.com",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Kimi",
+      "icon": "kimi",
       "hosts": [
-        "api.kimi.com",
         "api.moonshot.cn"
       ],
       "base_url": "https://api.moonshot.cn/anthropic",
+      "default_model": "kimi-k2.7-code",
+      "website_url": "https://platform.moonshot.cn/console?aff=cc-switch",
+      "api_key_url": "https://platform.moonshot.cn/console?aff=cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Kimi For Coding",
+      "icon": "kimi",
       "hosts": [
-        "api.kimi.com",
-        "api.moonshot.cn"
+        "api.kimi.com"
       ],
       "base_url": "https://api.kimi.com/coding/",
+      "default_model": null,
+      "website_url": "https://www.kimi.com/code/docs/?aff=cc-switch",
+      "api_key_url": "https://www.kimi.com/code/docs/?aff=cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "StepFun",
+      "icon": "stepfun",
       "hosts": [
         "api.stepfun.com"
       ],
       "base_url": "https://api.stepfun.com/step_plan",
+      "default_model": "step-3.5-flash-2603",
+      "website_url": "https://platform.stepfun.com/step-plan",
+      "api_key_url": "https://platform.stepfun.com/interface-key",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "StepFun en",
+      "icon": "stepfun",
       "hosts": [
         "api.stepfun.ai"
       ],
       "base_url": "https://api.stepfun.ai/step_plan",
+      "default_model": "step-3.5-flash-2603",
+      "website_url": "https://platform.stepfun.ai/step-plan",
+      "api_key_url": "https://platform.stepfun.ai/interface-key",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "ModelScope",
+      "icon": "modelscope",
       "hosts": [
         "api-inference.modelscope.cn"
       ],
       "base_url": "https://api-inference.modelscope.cn",
+      "default_model": "ZhipuAI/GLM-5.1",
+      "website_url": "https://modelscope.cn",
+      "api_key_url": "https://modelscope.cn",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "KAT-Coder",
+      "icon": "catcoder",
       "hosts": [],
       "base_url": "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/claude-code-proxy",
+      "default_model": "KAT-Coder-Pro V1",
+      "website_url": "https://console.streamlake.ai",
+      "api_key_url": "https://console.streamlake.ai/console/api-key",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "Longcat",
+      "icon": "longcat",
       "hosts": [
         "api.longcat.chat"
       ],
       "base_url": "https://api.longcat.chat/anthropic",
+      "default_model": "LongCat-Flash-Chat",
+      "website_url": "https://longcat.chat/platform",
+      "api_key_url": "https://longcat.chat/platform/api_keys",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "MiniMax",
+      "icon": "minimax",
       "hosts": [
         "api.minimaxi.com"
       ],
       "base_url": "https://api.minimaxi.com/anthropic",
+      "default_model": "MiniMax-M2.7",
+      "website_url": "https://platform.minimaxi.com",
+      "api_key_url": "https://platform.minimaxi.com/subscribe/coding-plan",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "MiniMax en",
+      "icon": "minimax",
       "hosts": [
         "api.minimax.io"
       ],
       "base_url": "https://api.minimax.io/anthropic",
+      "default_model": "MiniMax-M2.7",
+      "website_url": "https://platform.minimax.io",
+      "api_key_url": "https://platform.minimax.io/subscribe/coding-plan",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "BaiLing",
+      "icon": null,
       "hosts": [
         "api.tbox.cn"
       ],
       "base_url": "https://api.tbox.cn/api/anthropic",
+      "default_model": "Ling-2.5-1T",
+      "website_url": "https://alipaytbox.yuque.com/sxs0ba/ling/get_started",
+      "api_key_url": "https://alipaytbox.yuque.com/sxs0ba/ling/get_started",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "AiHubMix",
+      "icon": "aihubmix",
       "hosts": [
         "aihubmix.com"
       ],
       "base_url": "https://aihubmix.com",
+      "default_model": null,
+      "website_url": "https://aihubmix.com",
+      "api_key_url": "https://aihubmix.com",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "CherryIN",
+      "icon": "cherryin",
       "hosts": [
         "open.cherryin.net"
       ],
       "base_url": "https://open.cherryin.net",
+      "default_model": "anthropic/claude-sonnet-4.6",
+      "website_url": "https://open.cherryin.ai",
+      "api_key_url": "https://open.cherryin.ai/console/token",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "SiliconFlow",
+      "icon": "siliconflow",
       "hosts": [
         "api.siliconflow.cn"
       ],
       "base_url": "https://api.siliconflow.cn",
+      "default_model": "Pro/MiniMaxAI/MiniMax-M2.7",
+      "website_url": "https://siliconflow.cn",
+      "api_key_url": "https://cloud.siliconflow.cn/i/drGuwc9k",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "SiliconFlow en",
+      "icon": "siliconflow",
       "hosts": [
         "api.siliconflow.com"
       ],
       "base_url": "https://api.siliconflow.com",
+      "default_model": "MiniMaxAI/MiniMax-M2.7",
+      "website_url": "https://siliconflow.com",
+      "api_key_url": "https://cloud.siliconflow.cn/i/drGuwc9k",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "DMXAPI",
+      "icon": null,
       "hosts": [
         "www.dmxapi.cn"
       ],
       "base_url": "https://www.dmxapi.cn",
+      "default_model": null,
+      "website_url": "https://www.dmxapi.cn",
+      "api_key_url": "https://www.dmxapi.cn",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "PackyCode",
+      "icon": "packycode",
       "hosts": [
         "www.packyapi.com"
       ],
       "base_url": "https://www.packyapi.com",
+      "default_model": null,
+      "website_url": "https://www.packyapi.com",
+      "api_key_url": "https://www.packyapi.com/register?aff=cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "APIKEY.FUN",
+      "icon": "apikeyfun",
       "hosts": [
         "api.apikey.fun"
       ],
       "base_url": "https://api.apikey.fun",
+      "default_model": null,
+      "website_url": "https://apikey.fun",
+      "api_key_url": "https://apikey.fun/register?aff=CCSwitch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "APINebula",
+      "icon": "apinebula",
       "hosts": [
         "apinebula.com"
       ],
       "base_url": "https://apinebula.com",
+      "default_model": null,
+      "website_url": "https://apinebula.com",
+      "api_key_url": "https://apinebula.com/02rw5X",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "AtlasCloud",
+      "icon": "atlascloud",
       "hosts": [
         "api.atlascloud.ai"
       ],
       "base_url": "https://api.atlascloud.ai",
+      "default_model": "zai-org/glm-5.1",
+      "website_url": "https://www.atlascloud.ai/console/coding-plan",
+      "api_key_url": "https://www.atlascloud.ai/console/coding-plan",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "SudoCode",
+      "icon": "sudocode",
       "hosts": [
         "sudocode.us"
       ],
       "base_url": "https://sudocode.us",
+      "default_model": null,
+      "website_url": "https://sudocode.us",
+      "api_key_url": "https://sudocode.us",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "ClaudeAPI",
+      "icon": "claudeapi",
       "hosts": [
         "gw.claudeapi.com"
       ],
       "base_url": "https://gw.claudeapi.com",
+      "default_model": null,
+      "website_url": "https://claudeapi.com",
+      "api_key_url": "https://console.claudeapi.com/register?aff=pCLD",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "ClaudeCN",
+      "icon": "claudecn",
       "hosts": [
         "claudecn.top"
       ],
       "base_url": "https://claudecn.top",
+      "default_model": null,
+      "website_url": "https://claudecn.top",
+      "api_key_url": "https://claudecn.top/register?aff=ccswitch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "RunAPI",
+      "icon": "runapi",
       "hosts": [
         "runapi.co"
       ],
       "base_url": "https://runapi.co",
+      "default_model": null,
+      "website_url": "https://runapi.co",
+      "api_key_url": "https://runapi.co",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "RelaxyCode",
+      "icon": "relaxcode",
       "hosts": [
         "www.relaxycode.com"
       ],
       "base_url": "https://www.relaxycode.com",
+      "default_model": null,
+      "website_url": "https://www.relaxycode.com",
+      "api_key_url": "https://www.relaxycode.com/register",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Cubence",
+      "icon": "cubence",
       "hosts": [
         "api.cubence.com"
       ],
       "base_url": "https://api.cubence.com",
+      "default_model": null,
+      "website_url": "https://cubence.com",
+      "api_key_url": "https://cubence.com/signup?code=CCSWITCH&source=ccs",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "AIGoCode",
+      "icon": "aigocode",
       "hosts": [
         "api.aigocode.com"
       ],
       "base_url": "https://api.aigocode.com",
+      "default_model": null,
+      "website_url": "https://aigocode.com",
+      "api_key_url": "https://aigocode.com/invite/CC-SWITCH",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "RightCode",
+      "icon": "rc",
       "hosts": [
         "www.right.codes"
       ],
       "base_url": "https://www.right.codes/claude",
+      "default_model": null,
+      "website_url": "https://www.right.codes",
+      "api_key_url": "https://www.right.codes/register?aff=CCSWITCH",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "AICodeMirror",
+      "icon": "aicodemirror",
       "hosts": [
         "api.aicodemirror.com"
       ],
       "base_url": "https://api.aicodemirror.com/api/claudecode",
+      "default_model": null,
+      "website_url": "https://www.aicodemirror.com",
+      "api_key_url": "https://www.aicodemirror.com/register?invitecode=9915W3",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "CrazyRouter",
+      "icon": "crazyrouter",
       "hosts": [
         "cn.crazyrouter.com"
       ],
       "base_url": "https://cn.crazyrouter.com",
+      "default_model": null,
+      "website_url": "https://www.crazyrouter.com",
+      "api_key_url": "https://www.crazyrouter.com/register?aff=OZcm&ref=cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "SSSAiCode",
+      "icon": "sssaicode",
       "hosts": [
         "node-hk.sssaicodeapi.com"
       ],
       "base_url": "https://node-hk.sssaicodeapi.com/api",
+      "default_model": null,
+      "website_url": "https://sssaicodeapi.com",
+      "api_key_url": "https://sssaicodeapi.com/register?ref=DCP0SM",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Compshare",
+      "icon": "ucloud",
       "hosts": [
         "api.modelverse.cn"
       ],
       "base_url": "https://api.modelverse.cn",
+      "default_model": null,
+      "website_url": "https://www.compshare.cn",
+      "api_key_url": "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Compshare Coding Plan",
+      "icon": "ucloud",
       "hosts": [
         "cp.compshare.cn"
       ],
       "base_url": "https://cp.compshare.cn",
+      "default_model": null,
+      "website_url": "https://www.compshare.cn",
+      "api_key_url": "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Micu",
+      "icon": "micu",
       "hosts": [
         "www.micuapi.ai"
       ],
       "base_url": "https://www.micuapi.ai",
+      "default_model": null,
+      "website_url": "https://www.micuapi.ai",
+      "api_key_url": "https://www.micuapi.ai/register?aff=aOYQ",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "CTok.ai",
+      "icon": "ctok",
       "hosts": [
         "api.ctok.ai"
       ],
       "base_url": "https://api.ctok.ai",
+      "default_model": null,
+      "website_url": "https://ctok.ai",
+      "api_key_url": "https://ctok.ai",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "E-FlowCode",
+      "icon": "eflowcode",
       "hosts": [
         "e-flowcode.cc"
       ],
       "base_url": "https://e-flowcode.cc",
+      "default_model": null,
+      "website_url": "https://e-flowcode.cc",
+      "api_key_url": "https://e-flowcode.cc",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "OpenRouter",
+      "icon": "openrouter",
       "hosts": [
         "openrouter.ai"
       ],
       "base_url": "https://openrouter.ai/api",
+      "default_model": "anthropic/claude-sonnet-4.6",
+      "website_url": "https://openrouter.ai",
+      "api_key_url": "https://openrouter.ai/keys",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "TheRouter",
+      "icon": null,
       "hosts": [
         "api.therouter.ai"
       ],
       "base_url": "https://api.therouter.ai",
+      "default_model": "anthropic/claude-sonnet-4.6",
+      "website_url": "https://therouter.ai",
+      "api_key_url": "https://dashboard.therouter.ai",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Novita AI",
+      "icon": "novita",
       "hosts": [
         "api.novita.ai"
       ],
       "base_url": "https://api.novita.ai/anthropic",
+      "default_model": "zai-org/glm-5.1",
+      "website_url": "https://novita.ai",
+      "api_key_url": "https://novita.ai",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "GitHub Copilot",
+      "icon": "github",
       "hosts": [
         "api.githubcopilot.com"
       ],
       "base_url": "https://api.githubcopilot.com",
+      "default_model": "claude-sonnet-4.6",
+      "website_url": "https://github.com/features/copilot",
+      "api_key_url": "https://github.com/features/copilot",
       "apiFormat": "openai_chat",
-      "oauth": true
+      "oauth": true,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "Codex",
+      "icon": "openai",
       "hosts": [
         "chatgpt.com"
       ],
       "base_url": "https://chatgpt.com/backend-api/codex",
+      "default_model": "gpt-5.5",
+      "website_url": "https://openai.com/chatgpt/pricing",
+      "api_key_url": "https://openai.com/chatgpt/pricing",
       "apiFormat": "openai_responses",
-      "oauth": true
+      "oauth": true,
+      "category": "third_party",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "Nvidia",
+      "icon": "nvidia",
       "hosts": [
         "integrate.api.nvidia.com"
       ],
       "base_url": "https://integrate.api.nvidia.com",
+      "default_model": "moonshotai/kimi-k2.5",
+      "website_url": "https://build.nvidia.com",
+      "api_key_url": "https://build.nvidia.com/settings/api-keys",
       "apiFormat": "openai_chat",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "PIPELLM",
+      "icon": "pipellm",
       "hosts": [
         "cc-api.pipellm.ai"
       ],
       "base_url": "https://cc-api.pipellm.ai",
+      "default_model": "claude-opus-4-8",
+      "website_url": "https://code.pipellm.ai",
+      "api_key_url": "https://code.pipellm.ai/login?ref=uvw650za",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "aggregator",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Xiaomi MiMo",
+      "icon": "xiaomimimo",
       "hosts": [
-        "api.xiaomimimo.com",
-        "token-plan-cn.xiaomimimo.com"
+        "api.xiaomimimo.com"
       ],
       "base_url": "https://api.xiaomimimo.com/anthropic",
+      "default_model": "mimo-v2.5-pro",
+      "website_url": "https://platform.xiaomimimo.com",
+      "api_key_url": "https://platform.xiaomimimo.com/#/console/api-keys",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "Xiaomi MiMo Token Plan (China)",
+      "icon": "xiaomimimo",
       "hosts": [
-        "api.xiaomimimo.com",
         "token-plan-cn.xiaomimimo.com"
       ],
       "base_url": "https://token-plan-cn.xiaomimimo.com/anthropic",
+      "default_model": "mimo-v2.5-pro",
+      "website_url": "https://platform.xiaomimimo.com/#/token-plan",
+      "api_key_url": "https://platform.xiaomimimo.com/#/console/plan-manage",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cn_official",
+      "hidden": false,
+      "cli_ready": true
     },
     {
       "name": "AWS Bedrock (AKSK)",
-      "hosts": [
-        "bedrock-runtime.amazonaws.com"
-      ],
+      "icon": "aws",
+      "hosts": [],
       "base_url": "https://bedrock-runtime.${AWS_REGION}.amazonaws.com",
+      "default_model": "global.anthropic.claude-opus-4-8",
+      "website_url": "https://aws.amazon.com/bedrock/",
+      "api_key_url": "https://aws.amazon.com/bedrock/",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cloud_provider",
+      "hidden": false,
+      "cli_ready": false
     },
     {
       "name": "AWS Bedrock (API Key)",
-      "hosts": [
-        "bedrock-runtime.amazonaws.com"
-      ],
+      "icon": "aws",
+      "hosts": [],
       "base_url": "https://bedrock-runtime.${AWS_REGION}.amazonaws.com",
+      "default_model": "global.anthropic.claude-opus-4-8",
+      "website_url": "https://aws.amazon.com/bedrock/",
+      "api_key_url": "https://aws.amazon.com/bedrock/",
       "apiFormat": "anthropic",
-      "oauth": false
+      "oauth": false,
+      "category": "cloud_provider",
+      "hidden": false,
+      "cli_ready": false
     }
   ]
 }

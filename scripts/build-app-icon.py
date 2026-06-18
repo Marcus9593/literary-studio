@@ -96,7 +96,10 @@ def write_ico(padded: Image.Image, out: Path) -> None:
 def main() -> None:
     padded = with_dock_padding(load_source())
     padded.save(ICONS / 'icon-dock-preview.png')
-    write_icns(padded, ICONS / 'icon.icns')
+    if sys.platform == 'darwin':
+        write_icns(padded, ICONS / 'icon.icns')
+    else:
+        print('⏭ 跳过 icon.icns（非 macOS）')
     write_ico(padded, ICONS / 'icon.ico')
     inner = round(CANVAS * SAFE_SCALE)
     print(f'✅ icon.icns / icon.ico 已生成（内容 {inner}×{inner}，安全区 {SAFE_SCALE:.1%}）')

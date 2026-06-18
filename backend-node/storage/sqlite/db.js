@@ -80,15 +80,29 @@ function attachTransactionPolyfill(database) {
   };
 }
 
+function applySqlitePragmas(database) {
+  try {
+    database.exec('PRAGMA journal_mode = WAL');
+  } catch (err) {
+    console.warn('[sqlite] WAL 不可用，回退默认 journal 模式:', err.message);
+  }
+  try {
+    database.exec('PRAGMA busy_timeout = 5000');
+  } catch (err) {
+    console.warn('[sqlite] 无法设置 busy_timeout:', err.message);
+  }
+}
+
+/** Run synchronous work inside a single IMMEDIATE transaction. */
+export function runInTransaction(fn) {
+  return getDb().transaction(fn)();
+}
+
 export function getDb() {
   if (db) return db;
   fs.mkdirSync(DATA_DIR, { recursive: true });
   db = new DatabaseSync(DB_PATH);
-  try {
-    db.exec('PRAGMA journal_mode = WAL');
-  } catch {
-    /* WAL 不可用时忽略 */
-  }
+  applySqlitePragmas(db);
   attachTransactionPolyfill(db);
   db.exec(SCHEMA);
   migrateAwrEngine(db);
@@ -212,9 +226,11 @@ export function listProjectMetas() {
 }
 
 export function deleteProjectRow(projectId) {
-  getDb().prepare('DELETE FROM projects WHERE id = ?').run(projectId);
-  getDb().prepare('DELETE FROM sessions WHERE project_id = ?').run(projectId);
-  getDb().prepare('DELETE FROM session_index WHERE project_id = ?').run(projectId);
-  getDb().prepare('DELETE FROM session_archive WHERE project_id = ?').run(projectId);
-  deleteProjectEngineData(projectId);
+  runInTransaction(() => {
+    getDb().prepare('DELETE FROM projects WHERE id = ?').run(projectId);
+    getDb().prepare('DELETE FROM sessions WHERE project_id = ?').run(projectId);
+    getDb().prepare('DELETE FROM session_index WHERE project_id = ?').run(projectId);
+    getDb().prepare('DELETE FROM session_archive WHERE project_id = ?').run(projectId);
+    deleteProjectEngineData(projectId);
+  });
 }

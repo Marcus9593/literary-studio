@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { getDb, runInTransaction } from '../db.js';
 
 const CANON_LEVELS = new Set(['immutable', 'semi_mutable', 'mutable']);
 const DEFAULT_MAX_OVERRIDES = 2;
@@ -117,51 +117,51 @@ export function softDeleteCanonRule(projectId, id) {
   return result.changes > 0;
 }
 
-export function getOverrideBudget(projectId, unitIndex) {
-  const row = getDb().prepare(
+function fetchOverrideBudgetRow(projectId, unitIndex) {
+  return getDb().prepare(
     'SELECT * FROM override_budget WHERE project_id = ? AND unit_index = ?',
   ).get(projectId, unitIndex);
+}
 
-  if (row) {
-    return {
-      id: row.id,
-      project_id: row.project_id,
-      unit_index: row.unit_index,
-      used: row.used,
-      max: row.max_overrides,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-    };
-  }
-
-  const ts = now();
-  const result = getDb().prepare(`
-    INSERT INTO override_budget (project_id, unit_index, used, max_overrides, created_at, updated_at)
-    VALUES (?, ?, 0, ?, ?, ?)
-  `).run(projectId, unitIndex, DEFAULT_MAX_OVERRIDES, ts, ts);
-
+function rowToBudget(row) {
+  if (!row) return null;
   return {
-    id: result.lastInsertRowid,
-    project_id: projectId,
-    unit_index: unitIndex,
-    used: 0,
-    max: DEFAULT_MAX_OVERRIDES,
-    created_at: ts,
-    updated_at: ts,
+    id: row.id,
+    project_id: row.project_id,
+    unit_index: row.unit_index,
+    used: row.used,
+    max: row.max_overrides,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 
-export function useOverride(projectId, unitIndex) {
-  const budget = getOverrideBudget(projectId, unitIndex);
-  if (budget.used >= budget.max) return { ok: false, budget };
+export function getOverrideBudget(projectId, unitIndex) {
+  let row = fetchOverrideBudgetRow(projectId, unitIndex);
+  if (row) return rowToBudget(row);
 
   const ts = now();
   getDb().prepare(`
-    UPDATE override_budget SET used = used + 1, updated_at = ?
-    WHERE project_id = ? AND unit_index = ?
-  `).run(ts, projectId, unitIndex);
+    INSERT OR IGNORE INTO override_budget (project_id, unit_index, used, max_overrides, created_at, updated_at)
+    VALUES (?, ?, 0, ?, ?, ?)
+  `).run(projectId, unitIndex, DEFAULT_MAX_OVERRIDES, ts, ts);
 
-  return { ok: true, budget: getOverrideBudget(projectId, unitIndex) };
+  row = fetchOverrideBudgetRow(projectId, unitIndex);
+  if (!row) throw new Error('无法初始化 override 预算');
+  return rowToBudget(row);
+}
+
+export function useOverride(projectId, unitIndex) {
+  return runInTransaction(() => {
+    getOverrideBudget(projectId, unitIndex);
+    const ts = now();
+    const result = getDb().prepare(`
+      UPDATE override_budget SET used = used + 1, updated_at = ?
+      WHERE project_id = ? AND unit_index = ? AND used < max_overrides
+    `).run(ts, projectId, unitIndex);
+    const budget = rowToBudget(fetchOverrideBudgetRow(projectId, unitIndex));
+    return { ok: result.changes > 0, budget };
+  });
 }
 
 export function deleteProjectCanonData(projectId) {

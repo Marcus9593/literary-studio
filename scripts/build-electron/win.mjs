@@ -15,6 +15,7 @@ import {
   prepReleaseDir,
   cleanPackEnvironment,
   printReleaseArtifacts,
+  runPrepackChecklist,
   installDependencies,
   buildFrontend,
   bundleVendorDeps,
@@ -34,6 +35,7 @@ if (!exists('electron/icons/icon.ico')) {
   console.log('\n⚠️  未找到 electron/icons/icon.ico，将使用 Electron 默认图标。')
 }
 
+runPrepackChecklist('win')
 cleanPackEnvironment('win', { keepUserData })
 prepReleaseDir()
 installDependencies()
