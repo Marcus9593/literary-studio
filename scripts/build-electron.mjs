@@ -8,7 +8,9 @@
  *   node scripts/build-electron.mjs --win      # Windows    → release/*.exe
  *   node scripts/build-electron.mjs --linux    # Linux RPM  → release/*.rpm
  *   node scripts/build-electron.mjs --arm64    # 仅 macOS，传给 mac.mjs
+ *   node scripts/build-electron.mjs --keep-user-data  # 打包前保留 Electron 用户数据
  *
+ * 默认打包前会清理 release 旧产物、仓库 data/ 与 Electron userData，确保纯净环境。
  * 所有平台安装包统一输出到项目根目录 release/
  */
 

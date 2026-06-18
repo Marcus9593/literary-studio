@@ -5,6 +5,7 @@
  * 用法:
  *   node scripts/build-electron/win.mjs
  *   node scripts/build-electron/win.mjs --rebuild-deps
+ *   node scripts/build-electron/win.mjs --keep-user-data
  */
 
 import {
@@ -12,7 +13,7 @@ import {
   exists,
   RELEASE_DIR,
   prepReleaseDir,
-  cleanTestData,
+  cleanPackEnvironment,
   printReleaseArtifacts,
   installDependencies,
   buildFrontend,
@@ -21,6 +22,7 @@ import {
 } from './shared.mjs'
 
 const args = process.argv.slice(2)
+const keepUserData = args.includes('--keep-user-data')
 
 console.log('╔══════════════════════════════════════╗')
 console.log('║   文匠 Studio — Windows NSIS 构建    ║')
@@ -32,8 +34,8 @@ if (!exists('electron/icons/icon.ico')) {
   console.log('\n⚠️  未找到 electron/icons/icon.ico，将使用 Electron 默认图标。')
 }
 
+cleanPackEnvironment('win', { keepUserData })
 prepReleaseDir()
-cleanTestData()
 installDependencies()
 buildFrontend()
 bundleVendorDeps(args)

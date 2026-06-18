@@ -72,13 +72,16 @@ export async function checkServerHealth(serverId) {
 
 export async function checkAllEnabledHealth() {
   const enabled = listAllServers().filter((s) => s.enabled);
-  const results = [];
-  for (const s of enabled) {
-    results.push(await checkServerHealth(s.id));
-  }
+  // 并行检查所有服务器，单个超时 30s，整体不超最慢的那个
+  const results = await Promise.allSettled(
+    enabled.map((s) => checkServerHealth(s.id))
+  );
+  const settled = results.map((r, i) =>
+    r.status === 'fulfilled' ? r.value : { server_id: enabled[i].id, ok: false, error: r.reason?.message || '检查超时' }
+  );
   return {
-    checked: results.length,
-    ok_count: results.filter((r) => r.ok).length,
-    results,
+    checked: settled.length,
+    ok_count: settled.filter((r) => r.ok).length,
+    results: settled,
   };
 }

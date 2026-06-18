@@ -27,14 +27,34 @@ function parseDirArg() {
   }
   const candidates = [
     path.join(ROOT, 'release', 'win-unpacked'),
+    path.join(ROOT, 'release', 'mac'),
+    path.join(ROOT, 'release', 'mac-arm64'),
     path.join(ROOT, 'release', 'mac-unpacked'),
     path.join(ROOT, 'release', 'linux-unpacked'),
   ]
   return candidates.find((d) => fs.existsSync(d)) || candidates[0]
 }
 
+/** win/linux: appDir/resources；mac .app: Contents/Resources */
+function resolveResourcesDir(appDir) {
+  if (appDir.endsWith('.app')) {
+    return path.join(appDir, 'Contents', 'Resources')
+  }
+  if (fs.existsSync(path.join(appDir, 'Contents', 'Resources'))) {
+    return path.join(appDir, 'Contents', 'Resources')
+  }
+  if (fs.existsSync(appDir)) {
+    for (const name of fs.readdirSync(appDir)) {
+      if (name.endsWith('.app')) {
+        return path.join(appDir, name, 'Contents', 'Resources')
+      }
+    }
+  }
+  return path.join(appDir, 'resources')
+}
+
 const appDir = parseDirArg()
-const resources = path.join(appDir, 'resources')
+const resources = resolveResourcesDir(appDir)
 const errors = []
 
 function requireFile(full, label) {

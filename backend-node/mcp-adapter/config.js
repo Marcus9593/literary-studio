@@ -213,7 +213,13 @@ export function getRuntimeMcpConfigPath() {
 export function getMcpOverview() {
   const servers = listAllServers();
   const enabled = servers.filter((s) => s.enabled);
-  const runtime = writeRuntimeSnapshot();
+  // 只读：不触发 writeRuntimeSnapshot，快照由 enable/save/refresh 显式触发
+  const runtimePath = path.join(DATA_DIR, 'mcp.runtime.json');
+  let runtimeServerCount = 0;
+  try {
+    const snap = JSON.parse(fs.readFileSync(runtimePath, 'utf-8'));
+    runtimeServerCount = Object.keys(snap.mcpServers || {}).length;
+  } catch { /* 快照不存在时为 0 */ }
   return {
     sources: MCP_SOURCES.map((s) => {
       const file = readMcpFile(s.path);
@@ -230,11 +236,11 @@ export function getMcpOverview() {
     servers,
     enabled_count: enabled.length,
     total_count: servers.length,
-    runtime_path: runtime.path,
-    runtime_server_count: runtime.server_count,
+    runtime_path: runtimePath,
+    runtime_server_count: runtimeServerCount,
     studio_path: STUDIO_MCP_PATH,
     template: MCP_TEMPLATE,
-    cli_injection: Boolean(runtime.server_count),
+    cli_injection: Boolean(runtimeServerCount),
     registry_cache: readRegistryCacheMeta(),
   };
 }

@@ -1,9 +1,15 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { BRAND } from '../../lib/brand.js'
 import PageSlogan from '../../components/PageSlogan.jsx'
 import AiSubnav from './AiSubnav.jsx'
 
 export default function AiCenterPage() {
+  const location = useLocation()
+
+  // 路由切换时 key 变化 → 子面板 remount → 自动重新拉取数据
+  // 解决「在模型页激活后切回总览需手动刷新」的问题
+  const outletKey = location.pathname
+
   return (
     <div className="page ai-center-page">
       <header className="page-header">
@@ -19,7 +25,7 @@ export default function AiCenterPage() {
       <AiSubnav />
 
       <div className="ai-center-content">
-        <Outlet />
+        <Outlet key={outletKey} />
       </div>
     </div>
   )

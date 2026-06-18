@@ -8,6 +8,7 @@ import ConfirmModal from './ConfirmModal.jsx'
 import ChatMessageBody from './ChatMessageBody.jsx'
 import ChatBubble from './ChatBubble.jsx'
 import { useToast } from './Toast.jsx'
+import CliCompatNotice from '../features/ai-center/components/CliCompatNotice.jsx'
 import { quickPromptsFor, unitLabel } from '../lib/projectProfile.js'
 import { isChapterSession, sessionScopeLabel } from '../lib/sessionScope.js'
 
@@ -92,6 +93,7 @@ const ChatPanel = forwardRef(function ChatPanel(
   const [claudeAvailable, setClaudeAvailable] = useState(null)
   const [inference, setInference] = useState(null)
   const [apiModel, setApiModel] = useState(null)
+  const [cliCompat, setCliCompat] = useState(null)
   const [promptsOpen, setPromptsOpen] = useState(emptyManuscripts)
   const [pendingReply, setPendingReply] = useState(false)
   const [activityHint, setActivityHint] = useState('')
@@ -199,11 +201,13 @@ const ChatPanel = forwardRef(function ChatPanel(
         setInference(h?.inference ?? null)
         setApiModel(h?.api_model ?? null)
         setClaudeAvailable(h?.claude_code?.available ?? null)
+        setCliCompat(h?.cli_compat ?? null)
       })
       .catch(() => {
         setInference(null)
         setApiModel(null)
         setClaudeAvailable(null)
+        setCliCompat(null)
       })
   }, [])
 
@@ -706,6 +710,15 @@ const ChatPanel = forwardRef(function ChatPanel(
             ? `正在完善：${scopeTag}`
             : `当前会话：${scopeTag}`}
         </p>
+      )}
+
+      {cliCompat && cliCompat.cli_ready === false && (
+        <div className="chat-cli-compat-banner">
+          <CliCompatNotice compat={cliCompat} compact />
+          <p className="hint">
+            请前往 <strong>AI 中心 → 模型</strong> 按 CC Switch 预设修正配置，或点击「从 CC Switch 导入」。
+          </p>
+        </div>
       )}
 
       <div className={`chat-connection-bar ${isReplying ? 'is-busy' : ''}`} data-status={connectionStatus}>

@@ -7,6 +7,7 @@
  *   node scripts/build-electron/mac.mjs --arm64
  *   node scripts/build-electron/mac.mjs --x64
  *   node scripts/build-electron/mac.mjs --all
+ *   node scripts/build-electron/mac.mjs --keep-user-data
  */
 
 import {
@@ -14,6 +15,7 @@ import {
   exists,
   RELEASE_DIR,
   prepReleaseDir,
+  cleanPackEnvironment,
   printReleaseArtifacts,
   installDependencies,
   buildFrontend,
@@ -26,6 +28,7 @@ let arch = process.arch === 'arm64' ? 'arm64' : 'x64'
 if (args.includes('--all')) arch = 'universal'
 if (args.includes('--arm64')) arch = 'arm64'
 if (args.includes('--x64')) arch = 'x64'
+const keepUserData = args.includes('--keep-user-data')
 
 console.log('╔══════════════════════════════════════╗')
 console.log('║   文匠 Studio — macOS DMG 构建       ║')
@@ -37,6 +40,7 @@ if (!exists('electron/icons/icon.icns')) {
   console.log('\n⚠️  未找到 electron/icons/icon.icns，将使用 Electron 默认图标。')
 }
 
+cleanPackEnvironment('mac', { arch, keepUserData })
 prepReleaseDir()
 installDependencies()
 buildFrontend()
@@ -56,7 +60,7 @@ const archFlag = arch === 'universal' ? '' : `--${arch}`
 run(`npx electron-builder --mac dmg ${archFlag}`)
 
 console.log('\n━━━ 校验打包产物 (extraResources / spawn) ━━━')
-run('node scripts/validate-electron-packaged.mjs --dir release/mac-unpacked')
+run('node scripts/validate-electron-packaged.mjs --dir release/mac')
 
 console.log('\n╔══════════════════════════════════════╗')
 console.log('║           macOS 构建完成！            ║')

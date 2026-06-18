@@ -2,6 +2,10 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
+import {
+  assessClaudeCliCompatibility,
+  normalizeModelForStorage,
+} from '../../shared/cli-model-compat.js';
 import { SETTINGS_PATH, now, readJSON, writeJSON, sqlAdapter } from './core.js';
 
 // ── Settings / Models ──
@@ -78,19 +82,30 @@ export function listModelsPublic() {
   return { active_id: activeId, models };
 }
 
+function buildModelEntry(payload, { id, ts }) {
+  const normalized = normalizeModelForStorage({
+    name: String(payload.name || payload.model || '新模型').trim(),
+    protocol: payload.protocol,
+    base_url: String(payload.base_url || '').trim(),
+    model: String(payload.model || '').trim(),
+  });
+  return {
+    id,
+    name: normalized.name,
+    protocol: normalized.protocol || inferProtocol(normalized.base_url),
+    base_url: normalized.base_url,
+    model: normalized.model,
+    api_key: String(payload.api_key || '').trim(),
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
 export function createModel(payload) {
   const data = loadSettingsRaw();
   const id = randomUUID().slice(0, 12);
   const ts = now();
-  const baseUrl = String(payload.base_url || '').trim();
-  const entry = {
-    id, name: String(payload.name || payload.model || '新模型').trim(),
-    protocol: String(payload.protocol || inferProtocol(baseUrl)).trim(),
-    base_url: baseUrl,
-    model: String(payload.model || '').trim(),
-    api_key: String(payload.api_key || '').trim(),
-    created_at: ts, updated_at: ts,
-  };
+  const entry = buildModelEntry(payload, { id, ts });
   if (!entry.base_url) throw new Error('Base URL 不能为空');
   if (!entry.model) throw new Error('模型名称不能为空');
   if (!entry.api_key) throw new Error('API Key 不能为空');
@@ -104,13 +119,24 @@ export function updateModel(modelId, payload) {
   const models = [...(data.models || [])];
   const idx = models.findIndex(m => m.id === modelId);
   if (idx === -1) throw new Error(`模型配置不存在: ${modelId}`);
-  const entry = { ...models[idx] };
-  if (payload.name != null) entry.name = String(payload.name).trim() || entry.name;
-  if (payload.protocol) entry.protocol = String(payload.protocol).trim();
-  if (payload.base_url != null) { const u = String(payload.base_url).trim(); if (u) entry.base_url = u; }
-  if (payload.model != null) { const m = String(payload.model).trim(); if (m) entry.model = m; }
-  if (payload.api_key && String(payload.api_key).trim()) entry.api_key = String(payload.api_key).trim();
-  entry.updated_at = now();
+  const merged = {
+    name: payload.name != null ? String(payload.name).trim() : models[idx].name,
+    protocol: payload.protocol || models[idx].protocol,
+    base_url: payload.base_url != null ? String(payload.base_url).trim() : models[idx].base_url,
+    model: payload.model != null ? String(payload.model).trim() : models[idx].model,
+  };
+  const normalized = normalizeModelForStorage(merged);
+  const entry = {
+    ...models[idx],
+    name: normalized.name || models[idx].name,
+    protocol: normalized.protocol || inferProtocol(normalized.base_url),
+    base_url: normalized.base_url,
+    model: normalized.model || models[idx].model,
+    updated_at: now(),
+  };
+  if (payload.api_key && String(payload.api_key).trim()) {
+    entry.api_key = String(payload.api_key).trim();
+  }
   models[idx] = entry;
   saveSettingsData({ active_id: data.active_id || '', models });
   return modelPublic(entry);
@@ -169,7 +195,7 @@ export function readCcSwitchConfig() {
 
 function modelPublic(entry) {
   const key = String(entry.api_key || '');
-  return {
+  const publicEntry = {
     id: entry.id, name: entry.name || entry.model || '未命名',
     protocol: entry.protocol || inferProtocol(entry.base_url),
     base_url: entry.base_url || '', model: entry.model || '',
@@ -177,4 +203,6 @@ function modelPublic(entry) {
     api_key_preview: maskKey(key),
     created_at: entry.created_at, updated_at: entry.updated_at,
   };
+  publicEntry.cli_compat = assessClaudeCliCompatibility(publicEntry);
+  return publicEntry;
 }

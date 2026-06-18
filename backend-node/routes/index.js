@@ -45,6 +45,7 @@ import {
   validateModelProtocol,
   postWithAuth,
 } from '../ai-runtime/http-client.js';
+import { assessClaudeCliCompatibility } from '../../shared/cli-model-compat.js';
 import guestbookRouter from '../guestbook/guestbook-routes.js';
 import authRouter from '../auth/auth-routes.js';
 import { bootstrapAuth } from '../auth/bootstrap.js';
@@ -96,6 +97,15 @@ router.param('projectId', attachProjectParam);
 function maskKey(key) {
   const k = String(key || '');
   return k.length > 8 ? `${k.slice(0, 4)}…${k.slice(-4)}` : '';
+}
+
+function trySyncClaudeSettings() {
+  try {
+    return syncClaudeSettingsFromActiveModel();
+  } catch (err) {
+    console.warn('[models] 同步 ~/.claude/settings.json 失败:', err.message);
+    return { synced: false, error: err.message };
+  }
 }
 
 async function testModelConnection(cfg) {
@@ -172,12 +182,25 @@ async function healthCheckWithTimeout(timeoutMs = 5000) {
       try {
         runtime_providers = (await import('../ai-runtime/runtime.js')).getProviderIds();
       } catch {}
+      let cli_compat = null;
+      try {
+        const active = store.getActiveModel();
+        if (active?.base_url) {
+          cli_compat = assessClaudeCliCompatibility({
+            name: active.name,
+            protocol: active.protocol,
+            base_url: active.base_url,
+            model: active.model,
+          });
+        }
+      } catch {}
       return {
         status: 'ok',
         version: '2.6.0',
         inference: aiHealth.inference,
         claude_code: aiHealth.claude_code,
         api_model: aiHealth.api_model,
+        cli_compat,
         memory,
         runtime_providers,
       };
@@ -232,13 +255,19 @@ router.get('/models', (_req, res) => {
 });
 
 router.post('/models', (req, res) => {
-  try { res.json(store.createModel(req.body)); }
-  catch (e) { res.status(400).json({ error: e.message }); }
+  try {
+    const created = store.createModel(req.body);
+    trySyncClaudeSettings();
+    res.json(created);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 router.put('/models/:modelId', (req, res) => {
-  try { res.json(store.updateModel(req.params.modelId, req.body)); }
-  catch (e) { res.status(e.message.includes('不存在') ? 404 : 400).json({ error: e.message }); }
+  try {
+    const updated = store.updateModel(req.params.modelId, req.body);
+    trySyncClaudeSettings();
+    res.json(updated);
+  } catch (e) { res.status(e.message.includes('不存在') ? 404 : 400).json({ error: e.message }); }
 });
 
 router.delete('/models/:modelId', (req, res) => {
@@ -247,8 +276,11 @@ router.delete('/models/:modelId', (req, res) => {
 });
 
 router.post('/models/:modelId/activate', (req, res) => {
-  try { res.json(store.setActiveModel(req.params.modelId)); }
-  catch (e) { res.status(404).json({ error: e.message }); }
+  try {
+    const result = store.setActiveModel(req.params.modelId);
+    const sync = trySyncClaudeSettings();
+    res.json({ ...result, claude_settings_sync: sync });
+  } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
 router.get('/models/import/cc-switch', (req, res) => {

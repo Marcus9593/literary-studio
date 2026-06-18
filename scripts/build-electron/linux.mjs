@@ -5,6 +5,7 @@
  * 用法:
  *   node scripts/build-electron/linux.mjs
  *   node scripts/build-electron/linux.mjs --rebuild-deps
+ *   node scripts/build-electron/linux.mjs --keep-user-data
  */
 
 import {
@@ -12,6 +13,7 @@ import {
   exists,
   RELEASE_DIR,
   prepReleaseDir,
+  cleanPackEnvironment,
   printReleaseArtifacts,
   installDependencies,
   buildFrontend,
@@ -20,6 +22,7 @@ import {
 } from './shared.mjs'
 
 const args = process.argv.slice(2)
+const keepUserData = args.includes('--keep-user-data')
 
 console.log('╔══════════════════════════════════════╗')
 console.log('║   文匠 Studio — Linux RPM 构建       ║')
@@ -27,6 +30,7 @@ console.log('╚═════════════════════�
 console.log('\n目标平台: linux-x64')
 console.log('输出目录: release/')
 
+cleanPackEnvironment('linux', { keepUserData })
 prepReleaseDir()
 installDependencies()
 buildFrontend()

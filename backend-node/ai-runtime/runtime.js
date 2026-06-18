@@ -111,5 +111,10 @@ export {
   usesHttpRuntime,
   hasConfiguredHttpModel,
   buildClaudeChildEnv,
+  claudeEnvFromModelConfig,
+  resolveClaudeCodeEndpoint,
+  toClaudeCodeAnthropicBase,
+  syncClaudeSettingsFromModel,
+  syncClaudeSettingsFromActiveModel,
 } from './model-resolver.js';
 export { providers };

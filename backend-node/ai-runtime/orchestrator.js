@@ -779,6 +779,11 @@ ${contextAfter ? `\n【后文上下文】\n${contextAfter.slice(0, 500)}` : ''}
   } catch {}
 }
 
+// 模型验证结果缓存（内存级，避免频繁外部请求）
+const modelVerifyCache = { verified: null, checked_at: 0, model: '' };
+const VERIFY_CACHE_TTL = 5 * 60 * 1000; // 5 分钟缓存
+const VERIFY_STALE_MS = 24 * 60 * 60 * 1000; // 24 小时视为过期
+
 /**
  * @param {{ skipRemoteProbe?: boolean }} options
  *   skipRemoteProbe: 状态页用本地配置判断，不探测远端 API（避免 /health 阻塞 UI）
@@ -790,17 +795,39 @@ export async function checkHealth({ skipRemoteProbe = false } = {}) {
   const cfg = runtime.resolveActiveModelConfig();
   if (cfg) {
     if (skipRemoteProbe) {
+      // 仅标记已配置，不远程探测；检查缓存中的验证状态
+      const now = Date.now();
+      const cacheValid = modelVerifyCache.model === cfg.model && (now - modelVerifyCache.checked_at) < VERIFY_CACHE_TTL;
+      const cached = cacheValid ? modelVerifyCache.verified : null;
+      const stale = modelVerifyCache.model === cfg.model && (now - modelVerifyCache.checked_at) > VERIFY_STALE_MS;
       api = {
-        available: true,
+        available: cached === true,
         provider: 'http',
         model: cfg.model,
         name: cfg.name,
         protocol: cfg.protocol,
         configured: true,
+        verified: stale ? null : cached, // 超过 24h 设为 null（待确认）
+        last_verified_at: modelVerifyCache.checked_at ? new Date(modelVerifyCache.checked_at).toISOString() : null,
       };
     } else {
-      api = await runtime.checkHealth('http');
+      // 真实探测
+      const result = await runtime.checkHealth('http');
+      const ok = result?.available === true;
+      modelVerifyCache.verified = ok;
+      modelVerifyCache.checked_at = now;
+      modelVerifyCache.model = cfg.model;
+      api = {
+        ...result,
+        configured: true,
+        verified: ok,
+        last_verified_at: new Date(now).toISOString(),
+      };
     }
   }
-  return { inference, claude_code: claude, api_model: api };
+  return {
+    inference,
+    claude_code: claude,
+    api_model: api,
+  };
 }

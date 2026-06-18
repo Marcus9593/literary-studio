@@ -220,7 +220,14 @@ export async function checkHealth() {
       resolved = true;
       clearTimeout(timeout);
       if (code === 0 && stdout.trim()) {
-        resolve({ available: true, version: stdout.trim(), cli: CLAUDE_BIN, provider: id });
+        // CLI 已安装即可用
+        // API Token 模式不需要 OAuth，只要有配置就能工作
+        resolve({
+          available: true,
+          version: stdout.trim(),
+          cli: CLAUDE_BIN,
+          provider: id,
+        });
       } else {
         resolve({ available: false, error: 'claude CLI 不可用', provider: id });
       }

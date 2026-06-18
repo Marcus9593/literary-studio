@@ -53,7 +53,9 @@ export default function AiOverviewPanel() {
   const activeModel = models.models?.find((m) => m.id === models.active_id)
   const studioModel = health?.inference?.credentials === 'studio_settings'
   const cliOk = health?.claude_code?.available
-  const credOk = !studioModel || health?.api_model?.available !== false
+  const apiConfigured = health?.api_model?.configured === true
+  const apiVerified = health?.api_model?.verified
+  const credOk = !studioModel || apiVerified !== false
   const defaultSkill = overview?.default_skill
   const lw = overview?.literary_writer || {}
   const skillCount = overview?.installed_skills_count ?? 0
@@ -61,7 +63,8 @@ export default function AiOverviewPanel() {
   const issues = []
 
   if (!cliOk) issues.push({ text: 'Claude Code 未连接', to: '/ai/models' })
-  if (!credOk && models.models?.length) issues.push({ text: '模型凭据不可用', to: '/ai/models' })
+  if (apiConfigured && apiVerified === false) issues.push({ text: '模型凭据验证失败', to: '/ai/models' })
+  if (apiConfigured && apiVerified === null) issues.push({ text: '模型凭据未验证（超过 24h）', to: '/ai/models' })
   if (!defaultSkill?.valid) issues.push({ text: '未设置默认 Skill', to: '/ai/skills' })
   if (!lw.webnovel_cli) issues.push({ text: '写章 webnovel 脚本未找到', to: '/ai/skills' })
 
@@ -77,13 +80,33 @@ export default function AiOverviewPanel() {
               <StatusBadge variant="warn" dot>Claude Code 未连接</StatusBadge>
             )}
           </div>
-          {activeModel ? (
-            <p className="ai-overview-detail">
-              当前模型：<strong>{activeModel.name}</strong>
-              <span className="muted">（{activeModel.model}）</span>
+          {/* 推理模式摘要 */}
+          <p className="ai-overview-detail">
+            {cliOk ? (
+              <>
+                <strong>Claude CLI</strong> 驱动对话与写稿
+                {activeModel ? (
+                  <span className="muted"> · 注入模型：{activeModel.name}（{activeModel.model}）</span>
+                ) : (
+                  <span className="muted"> · 使用 CLI 默认凭据</span>
+                )}
+              </>
+            ) : (
+              <>
+                <strong>HTTP API</strong> 降级模式
+                {activeModel ? (
+                  <span className="muted"> · {activeModel.name}（{activeModel.model}）</span>
+                ) : (
+                  <span className="muted"> · 未配置模型</span>
+                )}
+              </>
+            )}
+          </p>
+          {/* 凭据验证状态 */}
+          {apiConfigured && (
+            <p className="muted" style={{ fontSize: '0.85em', marginTop: 4 }}>
+              模型凭据：{apiVerified === true ? '已验证可用' : apiVerified === false ? '验证失败' : '待确认（超过 24h 未实测）'}
             </p>
-          ) : (
-            <p className="muted">尚未配置备用模型</p>
           )}
           <Link to="/ai/models" className="btn btn-secondary btn-sm ai-overview-cta">
             配置模型
@@ -112,7 +135,12 @@ export default function AiOverviewPanel() {
         <article className="card ai-overview-card">
           <h3>本机技能</h3>
           <p className="ai-overview-metric">{skillCount}</p>
-          <p className="muted">已扫描安装</p>
+          <p className="muted">
+            已扫描安装
+            {overview?.installed_skills_count_partial && (
+              <span style={{ color: 'var(--ink-faint)', marginLeft: 4 }}>（计数可能不完整）</span>
+            )}
+          </p>
           {lw.webnovel_cli ? (
             <StatusBadge variant="ok">写章脚本可用</StatusBadge>
           ) : (

@@ -1,0 +1,571 @@
+{
+  "version": "cc-switch-claude-presets",
+  "source": "farion1231/cc-switch",
+  "presets": [
+    {
+      "name": "Claude Official",
+      "hosts": [
+        "anthropic.com",
+        "claude.ai"
+      ],
+      "base_url": null,
+      "apiFormat": "anthropic",
+      "oauth": true
+    },
+    {
+      "name": "Shengsuanyun",
+      "hosts": [
+        "router.shengsuanyun.com"
+      ],
+      "base_url": "https://router.shengsuanyun.com/api",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "PatewayAI",
+      "hosts": [
+        "api.pateway.ai"
+      ],
+      "base_url": "https://api.pateway.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "火山Agentplan",
+      "hosts": [
+        "ark.ap-southeast.bytepluses.com",
+        "ark.cn-beijing.volces.com"
+      ],
+      "base_url": "https://ark.cn-beijing.volces.com/api/coding",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "BytePlus",
+      "hosts": [
+        "ark.ap-southeast.bytepluses.com"
+      ],
+      "base_url": "https://ark.ap-southeast.bytepluses.com/api/coding",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "DouBaoSeed",
+      "hosts": [
+        "ark.ap-southeast.bytepluses.com",
+        "ark.cn-beijing.volces.com"
+      ],
+      "base_url": "https://ark.cn-beijing.volces.com/api/compatible",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "CCSub",
+      "hosts": [
+        "www.ccsub.net"
+      ],
+      "base_url": "https://www.ccsub.net",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Unity2.ai",
+      "hosts": [
+        "api.unity2.ai"
+      ],
+      "base_url": "https://api.unity2.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Gemini Native",
+      "hosts": [
+        "generativelanguage.googleapis.com"
+      ],
+      "base_url": "https://generativelanguage.googleapis.com",
+      "apiFormat": "gemini_native",
+      "oauth": false
+    },
+    {
+      "name": "DeepSeek",
+      "hosts": [
+        "api.deepseek.com"
+      ],
+      "base_url": "https://api.deepseek.com/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "OpenCode Go",
+      "hosts": [
+        "opencode.ai"
+      ],
+      "base_url": "https://opencode.ai/zen/go",
+      "apiFormat": "openai_chat",
+      "oauth": false
+    },
+    {
+      "name": "Zhipu GLM",
+      "hosts": [
+        "open.bigmodel.cn"
+      ],
+      "base_url": "https://open.bigmodel.cn/api/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Zhipu GLM en",
+      "hosts": [
+        "api.z.ai"
+      ],
+      "base_url": "https://api.z.ai/api/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Baidu Qianfan Coding Plan",
+      "hosts": [
+        "qianfan.baidubce.com"
+      ],
+      "base_url": "https://qianfan.baidubce.com/anthropic/coding",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Bailian",
+      "hosts": [
+        "coding.dashscope.aliyuncs.com",
+        "dashscope.aliyuncs.com"
+      ],
+      "base_url": "https://dashscope.aliyuncs.com/apps/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Bailian For Coding",
+      "hosts": [
+        "coding.dashscope.aliyuncs.com",
+        "dashscope.aliyuncs.com"
+      ],
+      "base_url": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Kimi",
+      "hosts": [
+        "api.kimi.com",
+        "api.moonshot.cn"
+      ],
+      "base_url": "https://api.moonshot.cn/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Kimi For Coding",
+      "hosts": [
+        "api.kimi.com",
+        "api.moonshot.cn"
+      ],
+      "base_url": "https://api.kimi.com/coding/",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "StepFun",
+      "hosts": [
+        "api.stepfun.com"
+      ],
+      "base_url": "https://api.stepfun.com/step_plan",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "StepFun en",
+      "hosts": [
+        "api.stepfun.ai"
+      ],
+      "base_url": "https://api.stepfun.ai/step_plan",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "ModelScope",
+      "hosts": [
+        "api-inference.modelscope.cn"
+      ],
+      "base_url": "https://api-inference.modelscope.cn",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "KAT-Coder",
+      "hosts": [],
+      "base_url": "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/claude-code-proxy",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Longcat",
+      "hosts": [
+        "api.longcat.chat"
+      ],
+      "base_url": "https://api.longcat.chat/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "MiniMax",
+      "hosts": [
+        "api.minimaxi.com"
+      ],
+      "base_url": "https://api.minimaxi.com/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "MiniMax en",
+      "hosts": [
+        "api.minimax.io"
+      ],
+      "base_url": "https://api.minimax.io/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "BaiLing",
+      "hosts": [
+        "api.tbox.cn"
+      ],
+      "base_url": "https://api.tbox.cn/api/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AiHubMix",
+      "hosts": [
+        "aihubmix.com"
+      ],
+      "base_url": "https://aihubmix.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "CherryIN",
+      "hosts": [
+        "open.cherryin.net"
+      ],
+      "base_url": "https://open.cherryin.net",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "SiliconFlow",
+      "hosts": [
+        "api.siliconflow.cn"
+      ],
+      "base_url": "https://api.siliconflow.cn",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "SiliconFlow en",
+      "hosts": [
+        "api.siliconflow.com"
+      ],
+      "base_url": "https://api.siliconflow.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "DMXAPI",
+      "hosts": [
+        "www.dmxapi.cn"
+      ],
+      "base_url": "https://www.dmxapi.cn",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "PackyCode",
+      "hosts": [
+        "www.packyapi.com"
+      ],
+      "base_url": "https://www.packyapi.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "APIKEY.FUN",
+      "hosts": [
+        "api.apikey.fun"
+      ],
+      "base_url": "https://api.apikey.fun",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "APINebula",
+      "hosts": [
+        "apinebula.com"
+      ],
+      "base_url": "https://apinebula.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AtlasCloud",
+      "hosts": [
+        "api.atlascloud.ai"
+      ],
+      "base_url": "https://api.atlascloud.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "SudoCode",
+      "hosts": [
+        "sudocode.us"
+      ],
+      "base_url": "https://sudocode.us",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "ClaudeAPI",
+      "hosts": [
+        "gw.claudeapi.com"
+      ],
+      "base_url": "https://gw.claudeapi.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "ClaudeCN",
+      "hosts": [
+        "claudecn.top"
+      ],
+      "base_url": "https://claudecn.top",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "RunAPI",
+      "hosts": [
+        "runapi.co"
+      ],
+      "base_url": "https://runapi.co",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "RelaxyCode",
+      "hosts": [
+        "www.relaxycode.com"
+      ],
+      "base_url": "https://www.relaxycode.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Cubence",
+      "hosts": [
+        "api.cubence.com"
+      ],
+      "base_url": "https://api.cubence.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AIGoCode",
+      "hosts": [
+        "api.aigocode.com"
+      ],
+      "base_url": "https://api.aigocode.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "RightCode",
+      "hosts": [
+        "www.right.codes"
+      ],
+      "base_url": "https://www.right.codes/claude",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AICodeMirror",
+      "hosts": [
+        "api.aicodemirror.com"
+      ],
+      "base_url": "https://api.aicodemirror.com/api/claudecode",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "CrazyRouter",
+      "hosts": [
+        "cn.crazyrouter.com"
+      ],
+      "base_url": "https://cn.crazyrouter.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "SSSAiCode",
+      "hosts": [
+        "node-hk.sssaicodeapi.com"
+      ],
+      "base_url": "https://node-hk.sssaicodeapi.com/api",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Compshare",
+      "hosts": [
+        "api.modelverse.cn"
+      ],
+      "base_url": "https://api.modelverse.cn",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Compshare Coding Plan",
+      "hosts": [
+        "cp.compshare.cn"
+      ],
+      "base_url": "https://cp.compshare.cn",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Micu",
+      "hosts": [
+        "www.micuapi.ai"
+      ],
+      "base_url": "https://www.micuapi.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "CTok.ai",
+      "hosts": [
+        "api.ctok.ai"
+      ],
+      "base_url": "https://api.ctok.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "E-FlowCode",
+      "hosts": [
+        "e-flowcode.cc"
+      ],
+      "base_url": "https://e-flowcode.cc",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "OpenRouter",
+      "hosts": [
+        "openrouter.ai"
+      ],
+      "base_url": "https://openrouter.ai/api",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "TheRouter",
+      "hosts": [
+        "api.therouter.ai"
+      ],
+      "base_url": "https://api.therouter.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Novita AI",
+      "hosts": [
+        "api.novita.ai"
+      ],
+      "base_url": "https://api.novita.ai/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "GitHub Copilot",
+      "hosts": [
+        "api.githubcopilot.com"
+      ],
+      "base_url": "https://api.githubcopilot.com",
+      "apiFormat": "openai_chat",
+      "oauth": true
+    },
+    {
+      "name": "Codex",
+      "hosts": [
+        "chatgpt.com"
+      ],
+      "base_url": "https://chatgpt.com/backend-api/codex",
+      "apiFormat": "openai_responses",
+      "oauth": true
+    },
+    {
+      "name": "Nvidia",
+      "hosts": [
+        "integrate.api.nvidia.com"
+      ],
+      "base_url": "https://integrate.api.nvidia.com",
+      "apiFormat": "openai_chat",
+      "oauth": false
+    },
+    {
+      "name": "PIPELLM",
+      "hosts": [
+        "cc-api.pipellm.ai"
+      ],
+      "base_url": "https://cc-api.pipellm.ai",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Xiaomi MiMo",
+      "hosts": [
+        "api.xiaomimimo.com",
+        "token-plan-cn.xiaomimimo.com"
+      ],
+      "base_url": "https://api.xiaomimimo.com/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "Xiaomi MiMo Token Plan (China)",
+      "hosts": [
+        "api.xiaomimimo.com",
+        "token-plan-cn.xiaomimimo.com"
+      ],
+      "base_url": "https://token-plan-cn.xiaomimimo.com/anthropic",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AWS Bedrock (AKSK)",
+      "hosts": [
+        "bedrock-runtime.amazonaws.com"
+      ],
+      "base_url": "https://bedrock-runtime.${AWS_REGION}.amazonaws.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    },
+    {
+      "name": "AWS Bedrock (API Key)",
+      "hosts": [
+        "bedrock-runtime.amazonaws.com"
+      ],
+      "base_url": "https://bedrock-runtime.${AWS_REGION}.amazonaws.com",
+      "apiFormat": "anthropic",
+      "oauth": false
+    }
+  ]
+}

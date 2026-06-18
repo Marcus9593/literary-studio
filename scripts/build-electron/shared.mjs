@@ -2,6 +2,7 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { runCleanPackEnvironment } from '../clean-pack-environment.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const ROOT = path.resolve(__dirname, '../..')
@@ -10,17 +11,20 @@ export const RELEASE_DIR = path.join(ROOT, 'release')
 
 export function prepReleaseDir() {
   fs.mkdirSync(RELEASE_DIR, { recursive: true })
-  for (const entry of fs.readdirSync(RELEASE_DIR, { withFileTypes: true })) {
-    const full = path.join(RELEASE_DIR, entry.name)
-    if (entry.name.endsWith('.tmp') || entry.name === 'win-unpacked') {
-      fs.rmSync(full, { recursive: true, force: true })
-    }
-  }
 }
 
-export function cleanTestData() {
-  console.log('\n━━━ 清理测试数据（打包前） ━━━')
-  run('node scripts/clean-test-data.mjs')
+/**
+ * 打包前清理 release 产物、仓库测试数据、Electron userData
+ * @param {'mac'|'win'|'linux'} platform
+ * @param {{ arch?: string, keepUserData?: boolean }} [opts]
+ */
+export function cleanPackEnvironment(platform, opts = {}) {
+  runCleanPackEnvironment({
+    platform,
+    arch: opts.arch || 'x64',
+    freshUserData: !opts.keepUserData,
+    cleanRepo: true,
+  })
 }
 
 export function printReleaseArtifacts(filterFn, label = '安装包') {

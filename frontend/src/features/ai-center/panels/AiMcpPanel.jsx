@@ -104,15 +104,58 @@ export default function AiMcpPanel() {
     }
   }
 
+  const [studioJsonError, setStudioJsonError] = useState(null)
+
+  const validateMcpJson = (text) => {
+    try {
+      const parsed = JSON.parse(text)
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return '根节点必须是对象'
+      }
+      if (parsed.mcpServers !== undefined) {
+        if (typeof parsed.mcpServers !== 'object' || Array.isArray(parsed.mcpServers)) {
+          return 'mcpServers 必须是对象'
+        }
+        for (const [name, cfg] of Object.entries(parsed.mcpServers)) {
+          if (!cfg.command && !cfg.url) {
+            return `Server "${name}" 缺少 command 或 url`
+          }
+        }
+      }
+      return null
+    } catch (e) {
+      // 提取行号信息
+      const match = e.message.match(/position\s+(\d+)/)
+      if (match) {
+        const pos = parseInt(match[1])
+        const line = text.slice(0, pos).split('\n').length
+        return `JSON 语法错误（第 ${line} 行）`
+      }
+      return `JSON 语法错误：${e.message}`
+    }
+  }
+
+  const onStudioJsonChange = (text) => {
+    setStudioJson(text)
+    setStudioJsonError(validateMcpJson(text))
+  }
+
   const onSaveStudio = async () => {
+    const err = validateMcpJson(studioJson)
+    if (err) {
+      setStudioJsonError(err)
+      showToast(err, 'error')
+      return
+    }
     setBusy('studio-save')
     try {
       const content = JSON.parse(studioJson)
       await saveMcpStudioConfig(content)
       showToast('Studio MCP 配置已保存', 'success')
+      setStudioJsonError(null)
       await load()
-    } catch (err) {
-      showToast(err.message || '保存失败（请检查 JSON）', 'error')
+    } catch (e) {
+      showToast(e.message || '保存失败', 'error')
     } finally {
       setBusy('')
     }
@@ -337,15 +380,20 @@ export default function AiMcpPanel() {
         <textarea
           className="ai-mcp-json-editor"
           value={studioJson}
-          onChange={(e) => setStudioJson(e.target.value)}
+          onChange={(e) => onStudioJsonChange(e.target.value)}
           rows={12}
           spellCheck={false}
         />
+        {studioJsonError && (
+          <p className="ai-mcp-json-error" style={{ color: 'var(--red)', fontSize: '0.85em', marginTop: 4 }}>
+            ✕ {studioJsonError}
+          </p>
+        )}
         <div className="ai-mcp-studio-actions">
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            disabled={busy === 'studio-save'}
+            disabled={busy === 'studio-save' || !!studioJsonError}
             onClick={onSaveStudio}
           >
             {busy === 'studio-save' ? '保存中…' : '保存配置'}

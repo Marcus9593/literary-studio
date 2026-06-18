@@ -184,6 +184,15 @@ async function fetchRegistry(url) {
   }
 }
 
+function readRegistryCache() {
+  if (!fs.existsSync(REGISTRY_CACHE_PATH)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(REGISTRY_CACHE_PATH, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
 export async function searchRegistry(query = '', { limit = 20, cursor = '' } = {}) {
   const params = new URLSearchParams();
   params.set('limit', String(Math.min(Math.max(limit, 1), 50)));
@@ -192,31 +201,60 @@ export async function searchRegistry(query = '', { limit = 20, cursor = '' } = {
   if (cursor) params.set('cursor', cursor);
 
   const url = `${REGISTRY_API}?${params.toString()}`;
-  const data = await fetchRegistry(url);
-  const items = (data.servers || [])
-    .map(normalizeRegistryItem)
-    .filter(Boolean);
-
-  const result = {
-    items,
-    total: data.metadata?.count ?? items.length,
-    query: q,
-    limit: Number(params.get('limit')),
-    next_cursor: data.metadata?.nextCursor || null,
-    source: 'mcp-registry',
-    registry_api: REGISTRY_API,
-  };
 
   try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(REGISTRY_CACHE_PATH, JSON.stringify({
-      updated_at: new Date().toISOString(),
-      query: q,
-      ...result,
-    }, null, 2), 'utf-8');
-  } catch {}
+    const data = await fetchRegistry(url);
+    const items = (data.servers || [])
+      .map(normalizeRegistryItem)
+      .filter(Boolean);
 
-  return result;
+    const result = {
+      items,
+      total: data.metadata?.count ?? items.length,
+      query: q,
+      limit: Number(params.get('limit')),
+      next_cursor: data.metadata?.nextCursor || null,
+      source: 'mcp-registry',
+      registry_api: REGISTRY_API,
+    };
+
+    // 写入缓存
+    try {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(REGISTRY_CACHE_PATH, JSON.stringify({
+        updated_at: new Date().toISOString(),
+        query: q,
+        ...result,
+      }, null, 2), 'utf-8');
+    } catch {}
+
+    return result;
+  } catch (err) {
+    // 离线回退：读取本地缓存
+    const cache = readRegistryCache();
+    if (cache?.items?.length) {
+      // 对缓存结果做本地过滤
+      const filtered = q
+        ? cache.items.filter((item) =>
+            item.title?.toLowerCase().includes(q.toLowerCase()) ||
+            item.description?.toLowerCase().includes(q.toLowerCase()) ||
+            item.registry_name?.toLowerCase().includes(q.toLowerCase())
+          )
+        : cache.items;
+      return {
+        items: filtered.slice(0, limit),
+        total: filtered.length,
+        query: q,
+        limit,
+        next_cursor: null,
+        source: 'cache',
+        stale: true,
+        cached_at: cache.updated_at,
+        error: err.message,
+      };
+    }
+    throw err;
+  }
 }
 
 export function getRegistryCacheMeta() {

@@ -117,6 +117,30 @@ export default function AiDiscoverPanel() {
           >
             {busy === 'catalogue' ? '同步中…' : '同步全网技能'}
           </button>
+          {/* find-skill 缺失引导 */}
+          {catalogueMeta.catalogue_available === false && (
+            <div className="ai-discover-guidance" style={{ marginTop: 16, textAlign: 'left' }}>
+              <p className="muted" style={{ marginBottom: 8 }}>
+                <strong>提示：</strong>全网技能目录依赖 <code>find-skill</code> 工具。如果同步失败，请确认已安装：
+              </p>
+              <pre className="ai-discover-install-hint" style={{
+                background: 'var(--bg-subtle)',
+                padding: '8px 12px',
+                borderRadius: 6,
+                fontSize: '0.85em',
+                overflow: 'auto',
+              }}>
+{`# 安装 find-skill 到 Claude 技能目录
+~/.claude/skills/find-skill/install.sh
+
+# 或手动同步目录
+~/.claude/skills/find-skill/update-skills-catalogue.sh`}
+              </pre>
+              <p className="muted" style={{ marginTop: 8 }}>
+                即使没有全网目录，你仍可使用「本机技能」页已安装的 <code>literary-writer</code> 技能进行创作。
+              </p>
+            </div>
+          )}
         </div>
       )}
 

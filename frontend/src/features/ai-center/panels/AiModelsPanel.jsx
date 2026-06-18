@@ -14,19 +14,38 @@ import {
   testModelConfig,
   updateModel,
 } from '../../../api.js'
+import CliCompatNotice, {
+  getCliCompatAssessment,
+  getNormalizedModelPreview,
+  OpenAiProtocolWarning,
+} from '../components/CliCompatNotice.jsx'
+import { normalizeModelForStorage } from '@shared/cli-model-compat.js'
 
 const PROTOCOL_LABELS = {
   openai: 'OpenAI 兼容',
-  anthropic: 'Anthropic 兼容',
+  anthropic: 'Anthropic 兼容（推荐）',
 }
 
 const EMPTY_FORM = {
   name: '',
-  protocol: 'openai',
-  base_url: 'https://api.openai.com/v1',
-  model: 'gpt-4o-mini',
+  protocol: 'anthropic',
+  base_url: 'https://api.deepseek.com/anthropic',
+  model: 'deepseek-chat',
   api_key: '',
 }
+
+const PROTOCOL_OPTIONS = [
+  {
+    value: 'anthropic',
+    label: 'Anthropic 兼容',
+    meta: '推荐 · Claude Code / CC Switch',
+  },
+  {
+    value: 'openai',
+    label: 'OpenAI 兼容',
+    meta: '高级 · 仅 HTTP 测试',
+  },
+]
 
 function inferProtocolFromBaseUrl(baseUrl) {
   const url = String(baseUrl || '').trim().toLowerCase()
@@ -37,39 +56,46 @@ function inferProtocolFromBaseUrl(baseUrl) {
 
 const TEMPLATES = [
   {
-    label: 'OpenAI',
+    label: 'DeepSeek',
+    name: 'DeepSeek',
+    protocol: 'anthropic',
+    base_url: 'https://api.deepseek.com/anthropic',
+    model: 'deepseek-chat',
+  },
+  {
+    label: 'MiMo',
+    name: '小米 MiMo',
+    protocol: 'anthropic',
+    base_url: 'https://token-plan-cn.xiaomimimo.com/anthropic',
+    model: 'mimo-v2.5-pro',
+  },
+  {
+    label: '通义 Bailian',
+    name: '通义千问 Bailian',
+    protocol: 'anthropic',
+    base_url: 'https://dashscope.aliyuncs.com/apps/anthropic',
+    model: 'qwen-plus',
+  },
+  {
+    label: 'Kimi',
+    name: 'Kimi',
+    protocol: 'anthropic',
+    base_url: 'https://api.moonshot.cn/anthropic',
+    model: 'moonshot-v1-8k',
+  },
+  {
+    label: 'OpenRouter',
+    name: 'OpenRouter',
+    protocol: 'anthropic',
+    base_url: 'https://openrouter.ai/api',
+    model: 'anthropic/claude-sonnet-4',
+  },
+  {
+    label: 'OpenAI（不推荐）',
     name: 'OpenAI',
     protocol: 'openai',
     base_url: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
-  },
-  {
-    label: 'DeepSeek',
-    name: 'DeepSeek',
-    protocol: 'openai',
-    base_url: 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat',
-  },
-  {
-    label: '通义千问',
-    name: '通义千问',
-    protocol: 'openai',
-    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-plus',
-  },
-  {
-    label: 'MiMo OpenAI',
-    name: '小米 MiMo（OpenAI）',
-    protocol: 'openai',
-    base_url: 'https://token-plan-cn.xiaomimimo.com/v1',
-    model: 'mimo-v2.5-pro',
-  },
-  {
-    label: 'MiMo Anthropic',
-    name: '小米 MiMo（Anthropic）',
-    protocol: 'anthropic',
-    base_url: 'https://token-plan-cn.xiaomimimo.com/anthropic',
-    model: 'mimo-v2.5-pro',
   },
 ]
 
@@ -129,6 +155,22 @@ export default function AiModelsPanel() {
     }))
   }
 
+  const handleProtocolChange = (protocol) => {
+    setForm((f) => {
+      const next = { ...f, protocol }
+      if (protocol === 'anthropic' && f.base_url.trim()) {
+        const normalized = normalizeModelForStorage({ ...f, protocol: 'anthropic' })
+        next.base_url = normalized.base_url
+      }
+      return next
+    })
+  }
+
+  const applyNormalizedUrl = () => {
+    const normalized = normalizeModelForStorage(form)
+    setForm((f) => ({ ...f, protocol: 'anthropic', base_url: normalized.base_url }))
+  }
+
   const onSave = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -165,10 +207,12 @@ export default function AiModelsPanel() {
   }
 
   const onActivate = async (id) => {
+    const targetName = data.models.find(m => m.id === id)?.name || ''
+    if (!window.confirm(`切换注入模型将重置 Claude 对话上下文（新 session），历史消息仍保留在项目中。\n\n确定切换到「${targetName}」？`)) return
     try {
       const result = await activateModel(id)
       setData(result)
-      showToast('已设为当前写章模型')
+      showToast(`已设为 Claude Code 注入模型（${targetName}）`)
     } catch (err) {
       showToast(err.message, 'error')
     }
@@ -250,12 +294,17 @@ export default function AiModelsPanel() {
   }
 
   const activeModel = data.models.find((m) => m.id === data.active_id)
+  const activeCompat = activeModel?.cli_compat
+  const formCompat = modalOpen ? getCliCompatAssessment(form) : null
+  const normalizedUrlPreview = modalOpen ? getNormalizedModelPreview(form) : null
+  const isOpenAiProtocol = form.protocol === 'openai'
 
   return (
     <>
       <div className="ai-panel-toolbar">
         <p className="hint ai-panel-hint">
-          日常对话与写稿由 Claude Code 叙事引擎驱动；此处配置备用 API 模型与密钥。创作流程由「本机技能」中的默认 Skill 决定。
+          项目对话由 Claude Code 驱动，<strong>请优先使用 Anthropic 兼容</strong>（与 CC Switch 一致）。
+          保存时 Anthropic 配置会自动规范化为 CC Switch 推荐地址；OpenAI 协议仅适合 HTTP 测试。
         </p>
         <div className="ai-panel-toolbar-actions">
           <button
@@ -272,31 +321,42 @@ export default function AiModelsPanel() {
       </div>
 
       {activeModel && (
-        <div className="ai-active-model-banner">
-          <StatusBadge variant="ok" dot>
-            当前启用：{activeModel.name}（{activeModel.model}）
+        <div className={`ai-active-model-banner ${activeCompat?.severity === 'error' ? 'ai-active-model-banner-warn' : ''}`}>
+          <StatusBadge variant={activeCompat?.cli_ready === false ? 'warn' : 'ok'} dot>
+            CLI 注入模型：{activeModel.name}（{activeModel.model}）
+            {activeCompat?.matched_preset && activeCompat.severity === 'ok' && (
+              <span className="muted"> · CC Switch：{activeCompat.matched_preset}</span>
+            )}
           </StatusBadge>
-          <p className="hint">
-            激活模型的 API Key 与 Base URL 会注入 Claude Code；未配置时使用 CLI 默认凭据。
-          </p>
+          {activeCompat?.severity === 'ok' ? (
+            <p className="hint">
+              已同步 CC Switch 格式：注入 <code>ANTHROPIC_BASE_URL</code> / <code>ANTHROPIC_AUTH_TOKEN</code>
+              至 Claude CLI 与 <code>~/.claude/settings.json</code>。
+            </p>
+          ) : (
+            <CliCompatNotice model={activeModel} compact onFixProtocol={activeModel.protocol === 'openai' ? () => openEdit(activeModel) : undefined} />
+          )}
         </div>
       )}
 
       {usage && (
         <section className="card ai-usage-panel">
           <h3>AI 用量估算</h3>
-          <p className="hint">基于字符数估算 token（中文约 3.5 字/token），含对话、写章与行内 AI</p>
+          <p className="hint">
+            基于字符数估算 token（中文约 3.5 字/token），含对话、写章与行内 AI。
+            <span style={{ color: 'var(--ink-faint)' }}> CLI 对话为估算值，HTTP 请求未来将改为精确计量。</span>
+          </p>
           <div className="ai-usage-metrics">
             <article className="studio-metric-card">
               <span>总请求</span>
               <strong>{usage.totals?.requests ?? 0}</strong>
             </article>
             <article className="studio-metric-card">
-              <span>输入 token</span>
+              <span>输入 token <span className="muted" style={{ fontSize: '0.8em' }}>（估算）</span></span>
               <strong>{(usage.totals?.prompt_tokens ?? 0).toLocaleString()}</strong>
             </article>
             <article className="studio-metric-card">
-              <span>输出 token</span>
+              <span>输出 token <span className="muted" style={{ fontSize: '0.8em' }}>（估算）</span></span>
               <strong>{(usage.totals?.completion_tokens ?? 0).toLocaleString()}</strong>
             </article>
             <article className="studio-metric-card">
@@ -305,16 +365,19 @@ export default function AiModelsPanel() {
             </article>
           </div>
           {usage.by_kind && Object.keys(usage.by_kind).length > 0 && (
-            <ul className="ai-usage-by-kind">
-              {Object.entries(usage.by_kind).map(([kind, stats]) => (
-                <li key={kind}>
-                  <span>{kind}</span>
-                  <span className="muted">
-                    {stats.requests} 次 · {(stats.prompt_tokens + stats.completion_tokens).toLocaleString()} tokens
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="muted" style={{ fontSize: '0.85em', marginTop: 8, marginBottom: 4 }}>按用途分类：</p>
+              <ul className="ai-usage-by-kind">
+                {Object.entries(usage.by_kind).map(([kind, stats]) => (
+                  <li key={kind}>
+                    <span>{kind}</span>
+                    <span className="muted">
+                      {stats.requests} 次 · {(stats.prompt_tokens + stats.completion_tokens).toLocaleString()} tokens
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </section>
       )}
@@ -332,7 +395,7 @@ export default function AiModelsPanel() {
         <div className="empty-state">
           <div className="empty-state-icon">⚙</div>
           <h3>还没有模型配置</h3>
-          <p>添加至少一个 LLM 配置，写章时将使用「当前启用」的模型。</p>
+          <p>添加模型配置后，其 API Key 与 Base URL 将注入 Claude Code；对话与写稿仍由 CLI 驱动。</p>
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             添加第一个模型
           </button>
@@ -367,6 +430,14 @@ export default function AiModelsPanel() {
                     )}
                   </div>
                   <p className="model-card-url">{item.base_url}</p>
+                  {item.cli_compat?.severity !== 'ok' && (
+                    <CliCompatNotice model={item} compact />
+                  )}
+                  {item.cli_compat?.severity === 'ok' && item.cli_compat.matched_preset && (
+                    <p className="model-card-preset-ok muted">
+                      CC Switch 兼容 · {item.cli_compat.matched_preset}
+                    </p>
+                  )}
                 </div>
                 <div className="model-card-actions">
                   <button
@@ -383,7 +454,7 @@ export default function AiModelsPanel() {
                       className="btn btn-secondary btn-sm"
                       onClick={() => onActivate(item.id)}
                     >
-                      设为当前
+                      设为 CLI 注入模型
                     </button>
                   )}
                   <button
@@ -475,12 +546,33 @@ export default function AiModelsPanel() {
             label="协议类型"
             htmlFor="model-protocol"
             value={form.protocol}
-            onChange={(protocol) => setForm({ ...form, protocol })}
-            options={[
-              { value: 'openai', label: 'OpenAI 兼容', meta: '/chat/completions' },
-              { value: 'anthropic', label: 'Anthropic 兼容', meta: '/v1/messages' },
-            ]}
+            onChange={handleProtocolChange}
+            options={PROTOCOL_OPTIONS}
           />
+
+          {isOpenAiProtocol && (
+            <OpenAiProtocolWarning onFixProtocol={() => handleProtocolChange('anthropic')} />
+          )}
+
+          {!isOpenAiProtocol && formCompat && formCompat.severity !== 'ok' && (
+            <CliCompatNotice model={form} />
+          )}
+          {!isOpenAiProtocol && formCompat?.severity === 'ok' && formCompat.matched_preset && (
+            <p className="cli-compat-ok-hint">
+              与 CC Switch「{formCompat.matched_preset}」兼容，可用于 Claude Code CLI。
+            </p>
+          )}
+
+          {!isOpenAiProtocol && normalizedUrlPreview && (
+            <div className="cli-compat-url-fix">
+              <p className="hint">
+                将规范化为 Anthropic 地址：<code>{normalizedUrlPreview}</code>
+              </p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={applyNormalizedUrl}>
+                应用规范化地址
+              </button>
+            </div>
+          )}
 
           <div className="field model-form-api-key">
             <label htmlFor="model-api-key">
@@ -508,13 +600,18 @@ export default function AiModelsPanel() {
               onChange={(e) => {
                 const base_url = e.target.value
                 const inferred = inferProtocolFromBaseUrl(base_url)
-                setForm((f) => ({
-                  ...f,
-                  base_url,
-                  ...(inferred ? { protocol: inferred } : {}),
-                }))
+                setForm((f) => {
+                  const next = { ...f, base_url }
+                  if (inferred === 'anthropic') {
+                    next.protocol = 'anthropic'
+                    next.base_url = normalizeModelForStorage({ ...next, protocol: 'anthropic' }).base_url
+                  } else if (inferred === 'openai' && f.protocol === 'anthropic') {
+                    next.protocol = 'anthropic'
+                  }
+                  return next
+                })
               }}
-              placeholder="https://api.openai.com/v1"
+              placeholder="https://api.deepseek.com/anthropic"
               required
             />
           </div>
@@ -525,11 +622,13 @@ export default function AiModelsPanel() {
               id="model-model"
               value={form.model}
               onChange={(e) => setForm({ ...form, model: e.target.value })}
-              placeholder="gpt-4o-mini"
+              placeholder="deepseek-chat"
               required
             />
             <p className="field-hint" style={{ marginTop: 6 }}>
-              填写 API Key 与 Base URL 后，可点击底部「测试连接」验证是否可用。
+              {form.protocol === 'anthropic'
+                ? 'Anthropic 协议：保存后 Base URL 会规范化为 CC Switch 推荐地址，并写入 ~/.claude/settings.json。'
+                : 'OpenAI 协议：仅「测试连接」可用，无法用于 Claude Code 项目对话。'}
             </p>
           </div>
 
