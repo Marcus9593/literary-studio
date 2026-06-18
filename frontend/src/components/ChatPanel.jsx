@@ -66,6 +66,7 @@ const ChatPanel = forwardRef(function ChatPanel(
     sessions, chapters = [], activeSessionId, onSessionChange, onCreateSession, onDeleteSession, onRefreshSessions,
     onApplyWritePlan, onWriteResult, onError, onSessionSync,
     onWorkspaceChanged, onPreviewFile, outlineAvailableHint, onOpenOutlinePanel,
+    refreshingWorkspace = false,
     chapterCount = 0,
     activeManuscript = null,
     pendingPlanExecution = null,
@@ -781,10 +782,11 @@ const ChatPanel = forwardRef(function ChatPanel(
         <button
           type="button"
           className="chat-connection-detail-btn"
+          disabled={refreshingWorkspace}
           onClick={() => callbacksRef.current.onWorkspaceChanged?.({ manual: true })}
           title="刷新项目文件列表（大纲/正文等）"
         >
-          刷新文件
+          {refreshingWorkspace ? '刷新中…' : '刷新文件'}
         </button>
         <button
           type="button"

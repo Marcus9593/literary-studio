@@ -28,6 +28,7 @@ import {
   getProjectFile,
   getWorkspaceFile,
   listSessions,
+  listProjectFiles,
   refreshProjectWorkspace,
   saveChapter,
   saveProjectFile,
@@ -92,6 +93,7 @@ export default function ProjectPage() {
   const [outlineAvailableHint, setOutlineAvailableHint] = useState(false)
   const [workspaceSummary, setWorkspaceSummary] = useState(null)
   const [refreshingWorkspace, setRefreshingWorkspace] = useState(false)
+  const [filesRefreshKey, setFilesRefreshKey] = useState(0)
   const pendingNavRef = useRef(null)
   const selectionRef = useRef(null)
   const takeoverCheckedRef = useRef(false)
@@ -541,37 +543,63 @@ export default function ProjectPage() {
     }
   }, [refresh, showToast])
 
-  const handleRefreshWorkspace = useCallback(async ({ manual = false } = {}) => {
+  const handleRefreshWorkspace = useCallback(async ({ manual = false, openOutline = manual } = {}) => {
     setRefreshingWorkspace(true)
     try {
       const data = await refreshProjectWorkspace(projectId)
       const p = await refresh()
       setChapters(p.chapters || [])
       setWorkspaceSummary(data.summary || null)
-      if ((data.summary?.outline_count ?? 0) > 0 && (p.chapters?.length ?? 0) === 0) {
+      setFilesRefreshKey((k) => k + 1)
+
+      const outlineCount = data.summary?.outline_count ?? 0
+      if (outlineCount > 0) {
         setOutlineAvailableHint(true)
+        if (openOutline) {
+          setResourcePanel('outline')
+          if ((p.chapters?.length ?? 0) === 0 && contentSource === 'manuscript' && !selected) {
+            try {
+              const outlines = await listProjectFiles(projectId, 'outline')
+              if (outlines.length) {
+                loadFile('outline', outlines[0], { force: true })
+              }
+            } catch {}
+          }
+        }
       }
-      showToast(manual ? '已刷新项目文件列表' : '项目文件已同步', 'success')
+
+      const moved = data.moved?.length ?? 0
+      const hint = outlineCount > 0 ? `（大纲 ${outlineCount} 个）` : ''
+      const movedHint = moved > 0 ? `，已归位 ${moved} 个文件` : ''
+      showToast(
+        manual ? `已刷新项目文件列表${hint}${movedHint}` : `项目文件已同步${hint}`,
+        'success',
+      )
     } catch (e) {
-      showToast(e.message, 'error')
+      showToast(e.message || '刷新失败', 'error')
     } finally {
       setRefreshingWorkspace(false)
     }
-  }, [projectId, refresh, showToast])
+  }, [projectId, refresh, showToast, contentSource, selected, loadFile])
 
   const handleWorkspaceChanged = useCallback(async (msg) => {
     if (msg?.manual) {
-      await handleRefreshWorkspace({ manual: true })
+      await handleRefreshWorkspace({ manual: true, openOutline: true })
       return
     }
     const p = await refresh()
     setChapters(p.chapters || [])
+    setFilesRefreshKey((k) => k + 1)
     if (msg?.summary) setWorkspaceSummary(msg.summary)
     const changes = msg?.changes || []
-    if (changes.length) {
-      if ((msg.summary?.outline_count ?? 0) > 0 && (p.chapters?.length ?? 0) === 0) {
-        setOutlineAvailableHint(true)
+    const outlineCount = msg?.summary?.outline_count ?? 0
+    if (outlineCount > 0) {
+      setOutlineAvailableHint(true)
+      if ((p.chapters?.length ?? 0) === 0) {
+        setResourcePanel('outline')
       }
+    }
+    if (changes.length) {
       showToast(`AI 更新了 ${changes.length} 个文件，可在对话中点「预览」查看`, 'info')
     }
   }, [refresh, showToast, handleRefreshWorkspace])
@@ -1039,6 +1067,7 @@ export default function ProjectPage() {
         onShowDiagnosis={() => setShowTakeover(true)}
         outlineCount={workspaceSummary?.outline_count ?? 0}
         onOpenOutline={handleOpenOutlinePanel}
+        filesRefreshKey={filesRefreshKey}
       />
 
       <div className="reader-center">
@@ -1098,6 +1127,8 @@ export default function ProjectPage() {
             contentSource={contentSource}
             chapterNav={chapterNav}
             chapterCount={chapters.length}
+            outlineCount={workspaceSummary?.outline_count ?? 0}
+            onOpenOutline={handleOpenOutlinePanel}
             onImport={() => setUploadOpen(true)}
             onNewManuscript={openNewManuscriptModal}
             onFocusChat={focusChat}
@@ -1139,6 +1170,7 @@ export default function ProjectPage() {
           onPreviewFile={handlePreviewWorkspaceFile}
           outlineAvailableHint={outlineAvailableHint}
           onOpenOutlinePanel={handleOpenOutlinePanel}
+          refreshingWorkspace={refreshingWorkspace}
           pendingPlanExecution={pendingPlanExecution}
           planExecReady={planExecReady}
           onPendingPlanExecutionConsumed={() => setPendingPlanExecution(null)}

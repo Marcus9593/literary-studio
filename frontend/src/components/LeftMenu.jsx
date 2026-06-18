@@ -1,7 +1,7 @@
 const BASE_ITEMS = [
   { id: 'manuscripts', icon: '☰', label: '文稿', title: '章节与正文列表' },
   { id: 'outline', icon: '◇', label: '大纲', title: '故事大纲文件', needsChapters: false },
-  { id: 'settings', icon: '◎', label: '设定', title: '世界观与人物设定', needsChapters: false },
+  { id: 'settings', icon: '◎', label: '设定', title: '世界观与人物设定', needsChapters: true },
 ]
 
 const FILE_ITEMS = [
@@ -17,13 +17,15 @@ export default function LeftMenu({
 }) {
   const extra = project?.creation_mode === 'rewrite'
     ? [
-        { id: 'draft', icon: '✎', label: '试验', title: '试验稿' },
-        { id: 'archive', icon: '⊟', label: '旧稿', title: '归档旧稿' },
+        { id: 'draft', icon: '✎', label: '试验', title: '试验稿', needsChapters: true },
+        { id: 'archive', icon: '⊟', label: '旧稿', title: '归档旧稿', needsChapters: true },
       ]
     : []
 
   const renderBtn = (item) => {
-    const dimmed = chapterCount === 0 && ['outline', 'settings', 'draft', 'archive'].includes(item.id)
+    const dimmed = chapterCount === 0
+      && item.needsChapters !== false
+      && ['settings', 'draft', 'archive'].includes(item.id)
 
     if (item.isExport) {
       return (
@@ -46,7 +48,7 @@ export default function LeftMenu({
         type="button"
         className={`left-menu-btn left-menu-btn-labeled ${activePanel === item.id ? 'active' : ''} ${dimmed ? 'left-menu-btn-dimmed' : ''}`}
         onClick={() => !dimmed && onToggle(item.id)}
-        title={dimmed ? '先有文稿后可管理大纲与设定' : (item.title || item.label)}
+        title={dimmed ? '先有文稿后可管理设定与旧稿' : (item.title || item.label)}
         aria-label={item.label}
         aria-pressed={activePanel === item.id}
         disabled={dimmed}

@@ -49,6 +49,8 @@ export default function ReaderPane({
   onDeleteChapter,
   onExportChapter,
   chapterCount = 0,
+  outlineCount = 0,
+  onOpenOutline,
 }) {
   const u = unitLabel(project, 1)
   const sourceLabel = SOURCE_LABELS[contentSource] || '文稿'
@@ -304,6 +306,8 @@ export default function ReaderPane({
             onNewManuscript={onNewManuscript}
             onFocusChat={onFocusChat}
             onShowDiagnosis={onShowDiagnosis}
+            outlineCount={outlineCount}
+            onOpenOutline={onOpenOutline}
           />
         ) : (
           <div className="reader-empty reader-empty-minor">

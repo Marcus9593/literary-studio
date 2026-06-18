@@ -65,7 +65,7 @@ import {
   requireProjectManage,
   requireProjectWrite,
 } from '../auth/project-access.js';
-import { canReadProject, filterProjectsForUser, getProjectAccess } from '../auth/permissions.js';
+import { canReadProject, canWriteProject, filterProjectsForUser, getProjectAccess } from '../auth/permissions.js';
 import { listUsers as listAllUsers } from '../auth/user-store.js';
 import { isProduction } from '../auth/env.js';
 
@@ -464,11 +464,14 @@ router.get('/projects/:id/chapters', (req, res) => {
   catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-router.post('/projects/:id/workspace/refresh', requireProjectWrite, (req, res) => {
+router.post('/projects/:id/workspace/refresh', (req, res) => {
   try {
-    const moved = normalizeStrayWorkspaceFiles(req.params.id);
-    invalidateProjectContext(req.params.id);
-    store.touchProject(req.params.id);
+    let moved = [];
+    if (canWriteProject(req.user, req.projectMeta)) {
+      moved = normalizeStrayWorkspaceFiles(req.params.id);
+      invalidateProjectContext(req.params.id);
+      store.touchProject(req.params.id);
+    }
     res.json({
       ok: true,
       moved,

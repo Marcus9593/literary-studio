@@ -26,6 +26,7 @@ export default function ResourceSidebar({
   onShowDiagnosis,
   outlineCount = 0,
   onOpenOutline,
+  filesRefreshKey = 0,
 }) {
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
@@ -49,7 +50,7 @@ export default function ResourceSidebar({
       .then(setFiles)
       .catch(() => setFiles([]))
       .finally(() => setLoading(false))
-  }, [panel, project?.id])
+  }, [panel, project?.id, filesRefreshKey])
 
   if (!panel) return null
 
