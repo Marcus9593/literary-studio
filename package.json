@@ -56,6 +56,11 @@
       "package.json"
     ],
     "asar": true,
+    "compression": "maximum",
+    "electronLanguages": [
+      "zh-CN",
+      "en-US"
+    ],
     "asarUnpack": [
       "node_modules/@lancedb/**/*",
       "backend-node/node_modules/**/*"
