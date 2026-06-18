@@ -34,13 +34,55 @@ if (!isDev) {
   process.env.PYTHON_SCRIPTS_DIR = path.resolve(__dirname, '..', 'backend')
 }
 
+const HEALTH_WAIT_MS = 60000
+
 let backendPort = null
 let backendStarted = false
+let startupLogPath = null
+
+function getStartupLogPath() {
+  if (startupLogPath) return startupLogPath
+  const logsDir = path.join(app.getPath('userData'), 'logs')
+  fs.mkdirSync(logsDir, { recursive: true })
+  startupLogPath = path.join(logsDir, 'startup.log')
+  return startupLogPath
+}
+
+function logStartup(message, level = 'info') {
+  const line = `[${new Date().toISOString()}] [${level}] ${message}\n`
+  try {
+    fs.appendFileSync(getStartupLogPath(), line, 'utf8')
+  } catch (err) {
+    console.error('写入 startup.log 失败:', err.message)
+  }
+  if (level === 'error') console.error(message)
+  else console.log(message)
+}
+
+function initStartupLog() {
+  try {
+    const logPath = getStartupLogPath()
+    const header = [
+      '',
+      '='.repeat(60),
+      `文匠 Studio 启动 ${new Date().toISOString()}`,
+      `版本: ${app.getVersion?.() || 'unknown'} | packaged: ${app.isPackaged}`,
+      `平台: ${process.platform} ${process.arch}`,
+      `userData: ${app.getPath('userData')}`,
+      `resourcesPath: ${process.resourcesPath || '(dev)'}`,
+      '='.repeat(60),
+    ].join('\n')
+    fs.appendFileSync(logPath, `${header}\n`, 'utf8')
+  } catch (err) {
+    console.error('初始化 startup.log 失败:', err.message)
+  }
+}
 
 function failStartup(title, err) {
   const message = err?.stack || err?.message || String(err)
-  console.error(`${title}:`, message)
-  platformAdapter.showStartupError(title, message)
+  logStartup(`${title}: ${message}`, 'error')
+  logStartup(`详细日志: ${getStartupLogPath()}`, 'error')
+  platformAdapter.showStartupError(title, `${message}\n\n启动日志: ${getStartupLogPath()}`)
   app.quit()
 }
 
@@ -63,9 +105,9 @@ function setupBundledPython() {
   if (fs.existsSync(pythonBin)) {
     packagedPaths.assertNoAsarInSpawnPath('PYTHON', pythonBin)
     process.env.PYTHON = pythonBin
-    console.log(`使用打包的 Python: ${pythonBin}`)
+    logStartup(`使用打包的 Python: ${pythonBin}`)
   } else {
-    console.warn(`未找到打包的 Python: ${pythonBin}`)
+    logStartup(`未找到打包的 Python: ${pythonBin}`, 'warn')
   }
 }
 
@@ -80,11 +122,11 @@ function setupBundledClaude() {
   if (fs.existsSync(nativeBin)) {
     packagedPaths.assertNoAsarInSpawnPath('CLAUDE_BIN', nativeBin)
     process.env.CLAUDE_BIN = nativeBin
-    console.log(`使用打包的 Claude CLI: ${nativeBin}`)
+    logStartup(`使用打包的 Claude CLI: ${nativeBin}`)
     return
   }
 
-  console.warn('未找到打包的 Claude 原生二进制，将尝试系统 PATH 中的 claude 命令')
+  logStartup('未找到打包的 Claude 原生二进制，将尝试系统 PATH 中的 claude 命令', 'warn')
 }
 
 function setupBundledDeps() {
@@ -103,24 +145,39 @@ function findFreePort() {
   })
 }
 
-function waitForBackend(port, timeout = 20000) {
+function waitForBackend(port, timeout = HEALTH_WAIT_MS) {
   return new Promise((resolve) => {
     const start = Date.now()
+    let attempts = 0
     const check = () => {
+      attempts += 1
       const req = http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
         res.resume()
-        resolve(res.statusCode === 200)
+        const ok = res.statusCode === 200
+        logStartup(`health 探测 #${attempts}: HTTP ${res.statusCode} (${Date.now() - start}ms)`)
+        resolve(ok)
       })
-      req.on('error', () => {
-        if (Date.now() - start > timeout) resolve(false)
-        else setTimeout(check, 300)
+      req.on('error', (err) => {
+        const elapsed = Date.now() - start
+        if (elapsed > timeout) {
+          logStartup(`health 超时 (${elapsed}ms, ${attempts} 次): ${err.message}`, 'error')
+          resolve(false)
+        } else {
+          setTimeout(check, 300)
+        }
       })
       req.setTimeout(2000, () => {
         req.destroy()
-        if (Date.now() - start > timeout) resolve(false)
-        else setTimeout(check, 300)
+        const elapsed = Date.now() - start
+        if (elapsed > timeout) {
+          logStartup(`health 超时 (${elapsed}ms, ${attempts} 次): 请求 2s 无响应`, 'error')
+          resolve(false)
+        } else {
+          setTimeout(check, 300)
+        }
       })
     }
+    logStartup(`等待 /api/health 就绪（最多 ${timeout / 1000}s）…`)
     check()
   })
 }
@@ -143,14 +200,15 @@ async function startBackend(port) {
   require('module').Module._initPaths()
 
   const serverPath = path.join(backendDir, 'server.js')
-  console.log(`[${platformAdapter.id}] 启动后端: ${serverPath}`)
-  console.log(`数据目录: ${DATA_DIR}`)
-  console.log(`Node Modules: ${nodeModulesDir}`)
+  logStartup(`[${platformAdapter.id}] 启动后端: ${serverPath}`)
+  logStartup(`数据目录: ${DATA_DIR}`)
+  logStartup(`Node Modules: ${nodeModulesDir}`)
 
+  const t0 = Date.now()
   await platformAdapter.loadBackendModule(serverPath)
+  logStartup(`后端模块加载完成 (${Date.now() - t0}ms)`)
   backendStarted = true
   backendPort = port
-  console.log('后端加载完成')
   return port
 }
 
@@ -186,19 +244,25 @@ function createWindow(port) {
 }
 
 async function launchApp() {
+  initStartupLog()
+  logStartup('开始启动…')
+
   setupBundledDeps()
 
   const port = backendPort || await findFreePort()
-  console.log(`使用端口: ${port}`)
+  logStartup(`使用端口: ${port}`)
 
+  const backendT0 = Date.now()
   await startBackend(port)
+  logStartup(`startBackend 完成 (${Date.now() - backendT0}ms)`)
 
   const ready = await waitForBackend(port)
   if (!ready) {
-    failStartup('后端启动超时', new Error('等待 /api/health 超时，请查看日志或重新安装。'))
+    failStartup('后端启动超时', new Error(`等待 /api/health 超过 ${HEALTH_WAIT_MS / 1000}s，请查看启动日志或重新安装。`))
     return
   }
 
+  logStartup('后端已就绪，打开主窗口')
   createWindow(port)
 }
 
